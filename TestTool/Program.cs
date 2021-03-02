@@ -11,13 +11,13 @@ using YacGui;
 
 namespace TestTool
 {
-  static partial class Program
+  class Program: ConsoleExtras
   {
     static void Main(string[] args)
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 
-      ShowPicture(MainForm.DefaultChessPieces, mouseMove: (form, pos) => form.Text = "default chess pieces: " + pos);
+      BitmapTests.Run();
     }
   }
 }

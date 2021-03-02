@@ -8,13 +8,16 @@ using System.Windows.Forms;
 
 namespace TestTool
 {
-  static partial class Program
+  /// <summary>
+  /// Helper-Methods for the console
+  /// </summary>
+  public class ConsoleExtras
   {
     /// <summary>
-    /// display simple console header
+    /// Display simple console header
     /// </summary>
-    /// <param name="name">name of the program</param>
-    static void ConsoleHead(string name)
+    /// <param name="name">Name of the program</param>
+    public static void ConsoleHead(string name)
     {
       string asterisks = string.Concat(Enumerable.Repeat(" *", name.Length / 2 + 2));
 
@@ -36,12 +39,12 @@ namespace TestTool
     }
 
     /// <summary>
-    /// displays a picture
+    /// Displays a picture
     /// </summary>
-    /// <param name="image">image to be drawn</param>
-    /// <param name="title">optional: window-title</param>
-    /// <param name="mouseMove">optional: callback mouse move event</param>
-    static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null)
+    /// <param name="image">Image to be drawn</param>
+    /// <param name="title">Optional: Window-title</param>
+    /// <param name="mouseMove">Optional: Callback mouse move event</param>
+    public static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null)
     {
       var pic = new PictureBox
       {
