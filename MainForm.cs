@@ -22,7 +22,29 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 1;
+    const int SubVersion = 2;
+
+    /// <summary>
+    /// get title name
+    /// </summary>
+    public static string FullName
+    {
+      get
+      {
+        return "YacGui - v" + MainVersion + "." + SubVersion.ToString("D3");
+      }
+    }
+
+    /// <summary>
+    /// returns the standard chess pieces as an image (source: https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+    /// </summary>
+    public static Bitmap DefaultChessPieces
+    {
+      get
+      {
+        return Properties.Resources.ChessPieces;
+      }
+    }
 
     /// <summary>
     /// constructor
@@ -31,7 +53,7 @@ namespace YacGui
     {
       InitializeComponent();
 
-      Text = "YacGui - v" + MainVersion + "." + SubVersion.ToString("D3");
+      Text = FullName;
     }
 
     /// <summary>
@@ -39,7 +61,7 @@ namespace YacGui
     /// </summary>
     void MainForm_Load(object sender, EventArgs e)
     {
-      pictureBoxMain.Image = Properties.Resources.ChessPieces;
+      pictureBoxMain.Image = DefaultChessPieces;
     }
   }
 }
