@@ -32,18 +32,22 @@
       ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
       this.SuspendLayout();
       // 
-      // pictureBox1
+      // pictureBoxMain
       // 
+      this.pictureBoxMain.Cursor = System.Windows.Forms.Cursors.Hand;
       this.pictureBoxMain.Location = new System.Drawing.Point(12, 12);
       this.pictureBoxMain.Name = "pictureBoxMain";
       this.pictureBoxMain.Size = new System.Drawing.Size(1350, 450);
       this.pictureBoxMain.TabIndex = 0;
       this.pictureBoxMain.TabStop = false;
+      this.pictureBoxMain.Click += new System.EventHandler(this.pictureBoxMain_Click);
+      this.pictureBoxMain.DoubleClick += new System.EventHandler(this.pictureBoxMain_Click);
       // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+      this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(37)))), ((int)(((byte)(38)))));
       this.ClientSize = new System.Drawing.Size(1373, 474);
       this.Controls.Add(this.pictureBoxMain);
       this.Name = "MainForm";

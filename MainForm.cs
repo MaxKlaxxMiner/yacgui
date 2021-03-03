@@ -22,7 +22,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 4;
+    const int SubVersion = 6;
 
     /// <summary>
     /// get title name
@@ -36,13 +36,18 @@ namespace YacGui
     }
 
     /// <summary>
+    /// cache of the Bitmap
+    /// </summary>
+    static Bitmap defaultChessPiecesCache;
+
+    /// <summary>
     /// returns the standard chess pieces as an image (source: https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
     /// </summary>
     public static Bitmap DefaultChessPieces
     {
       get
       {
-        return Properties.Resources.ChessPieces;
+        return defaultChessPiecesCache ?? (defaultChessPiecesCache = Properties.Resources.ChessPieces);
       }
     }
 
@@ -62,6 +67,28 @@ namespace YacGui
     void MainForm_Load(object sender, EventArgs e)
     {
       pictureBoxMain.Image = DefaultChessPieces;
+    }
+
+    /// <summary>
+    /// "click"
+    /// </summary>
+    void pictureBoxMain_Click(object sender, EventArgs e)
+    {
+      if (pictureBoxMain.Image == DefaultChessPieces)
+      {
+        // draw alpha version
+        var fastBitmap = new FastBitmap(DefaultChessPieces);
+        fastBitmap.ConvertGreenPixelsToAlpha();
+        pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
+        Text = FullName + ": alpha on";
+      }
+      else
+      {
+        // draw original image
+        pictureBoxMain.Image = DefaultChessPieces;
+        Text = FullName + ": alpha off";
+      }
+      pictureBoxMain.Refresh();
     }
   }
 }

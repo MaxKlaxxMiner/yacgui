@@ -44,7 +44,8 @@ namespace TestTool
     /// <param name="image">Image to be drawn</param>
     /// <param name="title">Optional: Window-title</param>
     /// <param name="mouseMove">Optional: Callback mouse move event</param>
-    public static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null)
+    /// <param name="backgroundColor">Optional: set the background-color (Only visible with transparent images)</param>
+    public static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null, Color backgroundColor = default(Color))
     {
       var pic = new PictureBox
       {
@@ -56,7 +57,8 @@ namespace TestTool
       var form = new Form
       {
         ClientSize = image.Size,
-        Text = title
+        Text = title,
+        BackColor = backgroundColor
       };
 
       form.Controls.Add(pic);

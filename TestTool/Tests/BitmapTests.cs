@@ -1,5 +1,6 @@
 ﻿#region # using *.*
 // ReSharper disable RedundantUsingDirective
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -32,9 +33,29 @@ namespace TestTool
 
       fastBitmap.SetPixel(9, 4, 0xff0066ff); // Places a light blue pixel in the bottom right corner of the image
 
-      var newBitmap = fastBitmap.GetGDIBitmap();
+      var newBitmap = fastBitmap.ToGDIBitmap();
       Debug.Assert(newBitmap.Width == 10 && newBitmap.Height == 5);
       Debug.Assert((uint)newBitmap.GetPixel(9, 4).ToArgb() == 0xff0066ff);
+
+      bitmap.Dispose();
+      newBitmap.Dispose();
+    }
+
+    /// <summary>
+    /// Checks the transparent effects of images
+    /// </summary>
+    public static void TestAlphaMask()
+    {
+      var bitmap = MainForm.DefaultChessPieces;
+      Debug.Assert((uint)bitmap.GetPixel(0, 0).ToArgb() == 0xff00ff00); // A green pixel is expected at the top left
+
+      var fastBitmap = new FastBitmap(bitmap);
+      fastBitmap.ConvertGreenPixelsToAlpha();
+
+      var newBitmap = fastBitmap.ToGDIBitmap();
+      Debug.Assert((uint)newBitmap.GetPixel(0, 0).ToArgb() == 0x00000000); // black pixel with expected alpha = 0
+
+      ShowPicture(newBitmap, "Opacity-Test", (form, pos) => form.Text = pos + " - Opacity: " + (newBitmap.GetPixel(pos.X, pos.Y).A * 100 / 255) + " %", Color.FromArgb(0x0066ff - 16777216));
 
       bitmap.Dispose();
       newBitmap.Dispose();
@@ -48,6 +69,7 @@ namespace TestTool
       //ShowPicture(MainForm.DefaultChessPieces, mouseMove: (form, pos) => form.Text = "default chess pieces: " + pos);
 
       TestFastBitmap();
+      TestAlphaMask();
 
       //var bitmap = new FastBitmap(MainForm.DefaultChessPieces);
     }

@@ -48,6 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="core\FastBitmap\FastBitmap.Extras.cs" />
+    <Compile Include="core\FastBitmap\FastBitmap.GDIBitmap.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
