@@ -28,6 +28,20 @@ namespace YacGui
     public readonly uint[] pixels;
 
     /// <summary>
+    /// Constructor: Create a bitmap
+    /// </summary>
+    /// <param name="width">Width in pixels</param>
+    /// <param name="height">Height in pixels</param>
+    public FastBitmap(int width, int height)
+    {
+      if (width < 1 || width > 10000000) throw new ArgumentOutOfRangeException("width");
+      if (height < 1 || height > 10000000) throw new ArgumentOutOfRangeException("height");
+      this.width = width;
+      this.height = height;
+      pixels = new uint[width * height];
+    }
+
+    /// <summary>
     /// Constructor: Create a bitmap from GDI-Bitmap
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
@@ -64,6 +78,15 @@ namespace YacGui
       if ((uint)x >= width || (uint)y >= height) throw new ArgumentOutOfRangeException();
 
       pixels[x + y * width] = argbColor;
+    }
+
+    /// <summary>
+    /// Returns the properties as a readable string.
+    /// </summary>
+    /// <returns>Readable string</returns>
+    public override string ToString()
+    {
+      return new { width, height, pixels = "uint[" + pixels.Length + "]" }.ToString();
     }
   }
 }

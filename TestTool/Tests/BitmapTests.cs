@@ -1,9 +1,12 @@
 ﻿#region # using *.*
 // ReSharper disable RedundantUsingDirective
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Linq;
 using YacGui;
 // ReSharper disable MemberCanBePrivate.Global
 #endregion
@@ -44,21 +47,86 @@ namespace TestTool
     /// <summary>
     /// Checks the transparent effects of images
     /// </summary>
-    public static void TestAlphaMask()
+    /// <param name="showPicture">Optional: show test picture</param>
+    public static void TestAlphaMask(bool showPicture = false)
     {
-      var bitmap = MainForm.DefaultChessPieces;
-      Debug.Assert((uint)bitmap.GetPixel(0, 0).ToArgb() == 0xff00ff00); // A green pixel is expected at the top left
+      var bitmapPieces = MainForm.DefaultChessPieces;
+      Debug.Assert((uint)bitmapPieces.GetPixel(0, 0).ToArgb() == 0xff00ff00); // A green pixel is expected at the top left
 
-      var fastBitmap = new FastBitmap(bitmap);
+      var fastBitmap = new FastBitmap(bitmapPieces);
       fastBitmap.ConvertGreenPixelsToAlpha();
 
       var newBitmap = fastBitmap.ToGDIBitmap();
       Debug.Assert((uint)newBitmap.GetPixel(0, 0).ToArgb() == 0x00000000); // black pixel with expected alpha = 0
 
-      ShowPicture(newBitmap, "Opacity-Test", (form, pos) => form.Text = pos + " - Opacity: " + (newBitmap.GetPixel(pos.X, pos.Y).A * 100 / 255) + " %", Color.FromArgb(0x0066ff - 16777216));
+      if (showPicture) ShowPicture(newBitmap, "Opacity-Test", (form, pos) => form.Text = pos + " - Opacity: " + (newBitmap.GetPixel(pos.X, pos.Y).A * 100 / 255) + " %", Color.FromArgb(0x0066ff - 16777216));
 
-      bitmap.Dispose();
       newBitmap.Dispose();
+    }
+
+    /// <summary>
+    /// Test Subpixel-Versions
+    /// </summary>
+    public static void TestSubPixel()
+    {
+      var fastBitmap = new FastBitmap(MainForm.DefaultChessPieces);
+      fastBitmap.ConvertGreenPixelsToAlpha();
+
+      int width = fastBitmap.width;
+      int height = fastBitmap.height;
+
+      var testBaseBitmap = new Bitmap(width, height * 4, PixelFormat.Format32bppArgb);
+      var gTest = Graphics.FromImage(testBaseBitmap);
+      gTest.InterpolationMode = InterpolationMode.HighQualityBicubic;
+      gTest.CompositingQuality = CompositingQuality.HighQuality;
+      gTest.SmoothingMode = SmoothingMode.HighQuality;
+      gTest.Clear(Color.DarkSeaGreen);
+      gTest.FillRectangle(new SolidBrush(Color.White), 0, 0, width, height);
+      gTest.DrawImage(fastBitmap.ToGDIBitmap(), 0, 0, width, height);
+      gTest.DrawImage(fastBitmap.ToGDIBitmap(), 0, height, width, height);
+      gTest.FillRectangle(new SolidBrush(Color.LightYellow), 0, height * 2, width / 2, height);
+      gTest.FillRectangle(new SolidBrush(Color.Black), width / 2, height * 2, width / 2, height);
+
+      var poly = new List<PointF>();
+
+      for (int i = 0; i <= 180; i += 10)
+      {
+        poly.Add(new PointF((float)Math.Cos(Math.PI / 180.0 * i), (float)-Math.Sin(Math.PI / 180.0 * i) * 3.0f));
+        if (i < 180) poly.Add(new PointF((float)Math.Cos(Math.PI / 180.0 * (i + 5)) * 0.5f, (float)-Math.Sin(Math.PI / 180.0 * (i + 5)) * 0.5f));
+      }
+
+      gTest.DrawPolygon(new Pen(Color.Black, 2), poly.Select(p => new PointF(p.X * 120 + 180, p.Y * 120 + height * 2 + 400)).ToArray());
+      gTest.FillPolygon(new SolidBrush(Color.Black), poly.Select(p => new PointF(p.X * 120 + 480, p.Y * 120 + height * 2 + 400)).ToArray());
+
+      gTest.DrawPolygon(new Pen(Color.LightSkyBlue, 2), poly.Select(p => new PointF(p.X * 120 + 180 + width / 2, p.Y * 120 + height * 2 + 400)).ToArray());
+      gTest.FillPolygon(new SolidBrush(Color.LightSkyBlue), poly.Select(p => new PointF(p.X * 120 + 480 + width / 2, p.Y * 120 + height * 2 + 400)).ToArray());
+
+      int outWidth = testBaseBitmap.Width / 6;
+      int outHeight = testBaseBitmap.Height / 6;
+
+      var outputBitmap = new Bitmap(outWidth * 2, outHeight, PixelFormat.Format32bppArgb);
+      var gOut = Graphics.FromImage(outputBitmap);
+      gOut.InterpolationMode = InterpolationMode.HighQualityBicubic;
+      gOut.CompositingQuality = CompositingQuality.HighQuality;
+      gOut.SmoothingMode = SmoothingMode.HighQuality;
+
+      Action<string> InfoText = txt =>
+      {
+        gTest.FillRectangle(new SolidBrush(Color.LightGray), 0, height * 3, width, height);
+        var font = new Font("Helvetica", 80.0f);
+        txt = "|||||| ////// iiiiiiii WWW\r\n" + txt;
+        var measure = gTest.MeasureString(txt, font);
+        gTest.DrawString(txt, font, new SolidBrush(Color.Black), (width - measure.Width) / 2, height * 3 + (height - measure.Height) / 2);
+      };
+
+      InfoText("default - high quality");
+      gOut.DrawImage(testBaseBitmap, 0, 0, outWidth, outHeight);
+      InfoText("fastest - low quality");
+      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedSimple(outWidth, outHeight).ToGDIBitmap(), outWidth, 0);
+      //InfoText("fast - good quality");
+      //gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedSimple(outWidth, outHeight).ToGDIBitmap(), outWidth * 2, 0);
+
+      ShowPicture(outputBitmap, "SubPixel-Test");
     }
 
     /// <summary>
@@ -66,12 +134,11 @@ namespace TestTool
     /// </summary>
     public static void Run()
     {
-      //ShowPicture(MainForm.DefaultChessPieces, mouseMove: (form, pos) => form.Text = "default chess pieces: " + pos);
-
       TestFastBitmap();
+
       TestAlphaMask();
 
-      //var bitmap = new FastBitmap(MainForm.DefaultChessPieces);
+      TestSubPixel();
     }
   }
 }
