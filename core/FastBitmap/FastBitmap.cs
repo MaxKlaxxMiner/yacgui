@@ -15,6 +15,15 @@ namespace YacGui
   public partial class FastBitmap
   {
     /// <summary>
+    /// Maximum width in pixels
+    /// </summary>
+    public const int MaxWidth = 10000000;
+    /// <summary>
+    /// Maximum height int pixels
+    /// </summary>
+    public const int MaxHeight = 10000000;
+
+    /// <summary>
     /// Width of the image in pixels
     /// </summary>
     public readonly int width;
@@ -34,8 +43,8 @@ namespace YacGui
     /// <param name="height">Height in pixels</param>
     public FastBitmap(int width, int height)
     {
-      if (width < 1 || width > 10000000) throw new ArgumentOutOfRangeException("width");
-      if (height < 1 || height > 10000000) throw new ArgumentOutOfRangeException("height");
+      if (width < 1 || width > MaxWidth) throw new ArgumentOutOfRangeException("width");
+      if (height < 1 || height > MaxHeight) throw new ArgumentOutOfRangeException("height");
       this.width = width;
       this.height = height;
       pixels = new uint[width * height];

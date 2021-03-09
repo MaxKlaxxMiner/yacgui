@@ -52,6 +52,7 @@
     <Compile Include="core\FastBitmap\FastBitmap.Extras.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.GDIBitmap.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.cs" />
+    <Compile Include="core\FastBitmap\LinearPixel.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
