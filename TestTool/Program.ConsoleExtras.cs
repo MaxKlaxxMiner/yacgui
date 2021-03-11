@@ -61,6 +61,11 @@ namespace TestTool
         BackColor = backgroundColor
       };
 
+      form.KeyDown += (sender, e) =>
+      {
+        if (e.KeyCode == Keys.Escape) Application.Exit();
+      };
+
       form.Controls.Add(pic);
 
       if (mouseMove != null)
