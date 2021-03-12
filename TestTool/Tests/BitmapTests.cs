@@ -187,6 +187,30 @@ namespace TestTool
       ShowPicture(tmpBitmap);
     }
 
+    static void TestPixelDistance2()
+    {
+      int width = 512;
+      int height = 200;
+      var testBytes = new byte[width * height];
+      for (int y = 0; y < 2; y++)
+      {
+        for (int x = 0; x < width; x++)
+        {
+          testBytes[x + y * width] = 255;
+        }
+      }
+      for (int x = 0; x < 256; x++)
+      {
+        testBytes[x + 2 * width] = (byte)x;
+        testBytes[x + 256 + 2 * width] = 255;
+        testBytes[x + 256 + 3 * width] = (byte)x;
+      }
+
+      var distances = DistanceTransform.GenerateMap(testBytes, width, height);
+
+      for (int i = 1024; i < 1024 + 256; i++) Console.Write(distances[i] + ","); // 256-0
+    }
+
     /// <summary>
     /// Run Bitmap-Tests
     /// </summary>
@@ -198,7 +222,8 @@ namespace TestTool
 
       //TestSubPixel();
 
-      TestPixelDistance();
+      //TestPixelDistance();
+      TestPixelDistance2();
     }
   }
 }

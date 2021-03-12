@@ -109,7 +109,7 @@ namespace YacGui
       {
         for (int i = 0; i < distances.Length; i++)
         {
-          ((float*)tmpData)[i] = bits[i] > 0 ? 255 - bits[i] : INF;
+          ((float*)tmpData)[i] = bits[i] > 0 ? (255 - bits[i]) * (255 - bits[i]) * (1f / (255f * 255f)) : INF;
         }
 
         TransformField((float*)tmpData, width, height);
