@@ -22,7 +22,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 10;
+    const int SubVersion = 11;
 
     /// <summary>
     /// get title name
@@ -66,29 +66,18 @@ namespace YacGui
     /// </summary>
     void MainForm_Load(object sender, EventArgs e)
     {
-      pictureBoxMain.Image = DefaultChessPieces;
-    }
+      var fastBitmap = new FastBitmap(DefaultChessPieces);
+      fastBitmap.ConvertGreenPixelsToAlpha();
 
-    /// <summary>
-    /// "click"
-    /// </summary>
-    void pictureBoxMain_Click(object sender, EventArgs e)
-    {
-      if (pictureBoxMain.Image == DefaultChessPieces)
+      var distMap = DistanceTransform.GenerateMap(fastBitmap.pixels.Select(x => (byte)(x >> 24)).ToArray(), fastBitmap.width, fastBitmap.height);
+      for (int i = 0; i < distMap.Length; i++)
       {
-        // draw alpha version
-        var fastBitmap = new FastBitmap(DefaultChessPieces);
-        fastBitmap.ConvertGreenPixelsToAlpha();
-        pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
-        Text = FullName + ": alpha on";
+        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
+        if (opacity == 0) continue; // too far
+        fastBitmap.pixels[i] = FastBitmap.ColorBlend(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
-      else
-      {
-        // draw original image
-        pictureBoxMain.Image = DefaultChessPieces;
-        Text = FullName + ": alpha off";
-      }
-      pictureBoxMain.Refresh();
+
+      pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
     }
   }
 }

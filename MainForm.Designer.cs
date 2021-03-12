@@ -40,8 +40,6 @@
       this.pictureBoxMain.Size = new System.Drawing.Size(1350, 450);
       this.pictureBoxMain.TabIndex = 0;
       this.pictureBoxMain.TabStop = false;
-      this.pictureBoxMain.Click += new System.EventHandler(this.pictureBoxMain_Click);
-      this.pictureBoxMain.DoubleClick += new System.EventHandler(this.pictureBoxMain_Click);
       // 
       // MainForm
       // 

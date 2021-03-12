@@ -47,5 +47,21 @@ namespace YacGui
 
       return count;
     }
+
+    /// <summary>
+    /// Blend two colors
+    /// </summary>
+    /// <param name="firstColor">First color</param>
+    /// <param name="secondColor">Second color</param>
+    /// <param name="amountSecond">Amount of second color (0-256)</param>
+    /// <returns>new color</returns>
+    public static uint ColorBlend(uint firstColor, uint secondColor, uint amountSecond)
+    {
+      uint amountFirst = 256u - amountSecond;
+      return (((firstColor & 0xff0000) * amountFirst | (secondColor & 0xff0000) * amountSecond) & 0xff000000 // red
+            | ((firstColor & 0xff00) * amountFirst | (secondColor & 0xff00) * amountSecond) & 0xff0000       // green
+             | (firstColor & 0xff) * amountFirst | (secondColor & 0xff) * amountSecond                       // blue
+             ) >> 8 | 0xff000000;
+    }
   }
 }
