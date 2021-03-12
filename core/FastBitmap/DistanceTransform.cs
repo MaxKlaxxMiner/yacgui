@@ -98,6 +98,31 @@ namespace YacGui
       return distances;
     }
 
+    public static unsafe int[] GenerateMap(byte[] bits, int width, int height)
+    {
+      if (bits == null) throw new NullReferenceException("bits");
+      if (bits.Length != width * height) throw new ArgumentException();
+
+      int[] distances = new int[bits.Length];
+
+      fixed (int* tmpData = distances)
+      {
+        for (int i = 0; i < distances.Length; i++)
+        {
+          ((float*)tmpData)[i] = bits[i] > 0 ? 255 - bits[i] : INF;
+        }
+
+        TransformField((float*)tmpData, width, height);
+
+        for (int i = 0; i < distances.Length; i++)
+        {
+          distances[i] = (int)(Math.Sqrt(((float*)tmpData)[i]) * 256);
+        }
+      }
+
+      return distances;
+    }
+
     public static int[] GenerateMapSlowReference(bool[] bits, int width, int height)
     {
       int[] distances = new int[bits.Length];
