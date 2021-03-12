@@ -22,7 +22,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 11;
+    const int SubVersion = 12;
 
     /// <summary>
     /// get title name
@@ -78,6 +78,25 @@ namespace YacGui
       }
 
       pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
+    }
+
+    void timer1_Tick(object sender, EventArgs e)
+    {
+      uint l = (uint)Color.Black.ToArgb();
+      uint r = (uint)Color.DarkRed.ToArgb();
+      uint g = (uint)Color.Green.ToArgb();
+      uint b = (uint)Color.DarkBlue.ToArgb();
+      uint c;
+
+      const int Slow = 100;
+
+      uint time = (uint)(Environment.TickCount % (100 * Slow)) * 256 / (25 * Slow);
+      if (time < 256) c = FastBitmap.ColorBlend(l, r, time);
+      else if (time < 512) c = FastBitmap.ColorBlend(r, g, time - 256);
+      else if (time < 768) c = FastBitmap.ColorBlend(g, b, time - 512);
+      else c = FastBitmap.ColorBlend(b, l, time - 768);
+
+      BackColor = Color.FromArgb((int)c);
     }
   }
 }

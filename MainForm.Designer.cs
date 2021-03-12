@@ -28,7 +28,9 @@
     /// </summary>
     private void InitializeComponent()
     {
+      this.components = new System.ComponentModel.Container();
       this.pictureBoxMain = new System.Windows.Forms.PictureBox();
+      this.timer1 = new System.Windows.Forms.Timer(this.components);
       ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
       this.SuspendLayout();
       // 
@@ -40,6 +42,12 @@
       this.pictureBoxMain.Size = new System.Drawing.Size(1350, 450);
       this.pictureBoxMain.TabIndex = 0;
       this.pictureBoxMain.TabStop = false;
+      // 
+      // timer1
+      // 
+      this.timer1.Enabled = true;
+      this.timer1.Interval = 10;
+      this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
       // 
       // MainForm
       // 
@@ -59,6 +67,7 @@
     #endregion
 
     private System.Windows.Forms.PictureBox pictureBoxMain;
+    private System.Windows.Forms.Timer timer1;
   }
 }
 
