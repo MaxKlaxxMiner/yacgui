@@ -76,7 +76,7 @@ namespace YacGui
     public static unsafe int[] GenerateMap(bool[] bits, int width, int height)
     {
       if (bits == null) throw new NullReferenceException("bits");
-      if (bits.Length != width * height) throw new ArgumentException();
+      if (bits.Length < width * height) throw new ArgumentException();
 
       int[] distances = new int[bits.Length];
 
@@ -101,7 +101,7 @@ namespace YacGui
     public static unsafe int[] GenerateMap(byte[] bits, int width, int height)
     {
       if (bits == null) throw new NullReferenceException("bits");
-      if (bits.Length != width * height) throw new ArgumentException();
+      if (bits.Length < width * height) throw new ArgumentException();
 
       int[] distances = new int[bits.Length];
 

@@ -30,7 +30,7 @@ namespace YacGui
       var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 
       // Copy raw pixels (cast uint[] to int[] ist possible, see: https://www.c-sharpcorner.com/uploadfile/b942f9/how-to-convert-unsigned-integer-arrays-to-signed-arrays-and-vice-versa/)
-      Marshal.Copy(bits.Scan0, (object)pixels as int[], 0, pixels.Length);
+      Marshal.Copy(bits.Scan0, (object)pixels as int[], 0, width * height);
 
       // Release the lock
       srcBitmap.UnlockBits(bits);
@@ -49,7 +49,7 @@ namespace YacGui
       var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
       // Copy raw pixels
-      Marshal.Copy((object)pixels as int[], 0, bits.Scan0, pixels.Length);
+      Marshal.Copy((object)pixels as int[], 0, bits.Scan0, width * height);
 
       // Release the lock
       destBitmap.UnlockBits(bits);

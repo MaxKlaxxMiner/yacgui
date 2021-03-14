@@ -41,13 +41,15 @@ namespace YacGui
     /// </summary>
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
-    public FastBitmap(int width, int height)
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public FastBitmap(int width, int height, uint backgroundColor = 0x00000000)
     {
       if (width < 1 || width > MaxWidth) throw new ArgumentOutOfRangeException("width");
       if (height < 1 || height > MaxHeight) throw new ArgumentOutOfRangeException("height");
       this.width = width;
       this.height = height;
-      pixels = new uint[width * height];
+      pixels = new uint[(width * height + 1) / 2 * 2];
+      if (backgroundColor != 0x00000000) Clear(backgroundColor);
     }
 
     /// <summary>
@@ -58,7 +60,7 @@ namespace YacGui
     {
       width = bitmap.Width;
       height = bitmap.Height;
-      pixels = new uint[width * height];
+      pixels = new uint[(width * height + 1) / 2 * 2];
 
       CopyFromGDIBitmap(bitmap);
     }
@@ -87,6 +89,34 @@ namespace YacGui
       if ((uint)x >= width || (uint)y >= height) throw new ArgumentOutOfRangeException();
 
       pixels[x + y * width] = argbColor;
+    }
+
+    /// <summary>
+    /// Clear the bitmap
+    /// </summary>
+    /// <param name="color">Fillcolor</param>
+    public unsafe void Clear(uint color = 0xff000000)
+    {
+      if (x64)
+      {
+        ulong colorPair = (ulong)color << 32 | color;
+
+        fixed (uint* pixelsP = pixels)
+        {
+          uint pairCount = (uint)(pixels.Length / 2);
+          for (uint i = 0; i < pairCount; i++)
+          {
+            ((ulong*)pixelsP)[i] = colorPair;
+          }
+        }
+      }
+      else
+      {
+        for (int i = 0; i < pixels.Length; i++)
+        {
+          pixels[i] = color;
+        }
+      }
     }
 
     /// <summary>
