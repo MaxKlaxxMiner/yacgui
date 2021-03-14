@@ -28,7 +28,7 @@ namespace TestTool
       {
         uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
         if (opacity == 0) continue; // too far
-        fastBitmap.pixels[i] = FastBitmap.ColorBlend(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
+        fastBitmap.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
 
       ShowPicture(fastBitmap.ToGDIBitmap(), "Shiny Pieces", backgroundColor: Color.Black);

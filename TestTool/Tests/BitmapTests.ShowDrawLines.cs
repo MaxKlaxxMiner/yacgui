@@ -24,11 +24,11 @@ namespace TestTool
 
       for (int x = 0; x < fastBitmap.width; x += 8)
       {
-        fastBitmap.DrawLine(x, 0, 0, fastBitmap.height - 1, FastBitmap.ColorBlend(0xff0000, 0x00ff00, (uint)(x * 256 / fastBitmap.width)));
+        fastBitmap.DrawLine(x, 0, 0, fastBitmap.height - 1, FastBitmap.ColorBlend(0xff0000, 0x00ff00, x * 256 / fastBitmap.width));
       }
       for (int y = 0; y < fastBitmap.height; y += 5)
       {
-        fastBitmap.DrawLine(fastBitmap.width - 1, y, 0, fastBitmap.height - 1, FastBitmap.ColorBlend(0x00ff00, 0x0000ff, (uint)(y * 256 / fastBitmap.height)));
+        fastBitmap.DrawLine(fastBitmap.width - 1, y, 0, fastBitmap.height - 1, FastBitmap.ColorBlend(0x00ff00, 0x0000ff, y * 256 / fastBitmap.height));
       }
 
       ShowPicture(fastBitmap.ToGDIBitmap(), "Draw lines");

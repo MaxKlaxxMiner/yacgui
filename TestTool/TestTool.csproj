@@ -50,6 +50,7 @@
     <Compile Include="Program.ConsoleExtras.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\BitmapTests.ShowDrawCircles.cs" />
     <Compile Include="Tests\BitmapTests.ShowDrawLines.cs" />
     <Compile Include="Tests\BitmapTests.ShowShinyPieces.cs" />
     <Compile Include="Tests\BitmapTests.TestPixelDistances.cs" />

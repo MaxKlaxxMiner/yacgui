@@ -22,7 +22,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 14;
+    const int SubVersion = 15;
 
     /// <summary>
     /// get title name
@@ -74,7 +74,7 @@ namespace YacGui
       {
         uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
         if (opacity == 0) continue; // too far
-        fastBitmap.pixels[i] = FastBitmap.ColorBlend(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
+        fastBitmap.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
 
       pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
@@ -90,7 +90,7 @@ namespace YacGui
 
       const int Slow = 100;
 
-      uint time = (uint)(Environment.TickCount % (100 * Slow)) * 256 / (25 * Slow);
+      int time = Environment.TickCount % (100 * Slow) * 256 / (25 * Slow);
       if (time < 256) c = FastBitmap.ColorBlend(l, r, time);
       else if (time < 512) c = FastBitmap.ColorBlend(r, g, time - 256);
       else if (time < 768) c = FastBitmap.ColorBlend(g, b, time - 512);
