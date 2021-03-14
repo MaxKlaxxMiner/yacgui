@@ -63,7 +63,7 @@ namespace TestTool
 
       form.KeyDown += (sender, e) =>
       {
-        if (e.KeyCode == Keys.Escape) Application.Exit();
+        if (e.KeyCode == Keys.Escape) form.Close();
       };
 
       form.Controls.Add(pic);

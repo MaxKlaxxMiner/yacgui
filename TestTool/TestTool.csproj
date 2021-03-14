@@ -50,6 +50,12 @@
     <Compile Include="Program.ConsoleExtras.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\BitmapTests.ShowShinyPieces.cs" />
+    <Compile Include="Tests\BitmapTests.TestPixelDistances.cs" />
+    <Compile Include="Tests\BitmapTests.ShowPixelDistanceTest.cs" />
+    <Compile Include="Tests\BitmapTests.ShowSubPixelTest.cs" />
+    <Compile Include="Tests\BitmapTests.TestAlphaMask.cs" />
+    <Compile Include="Tests\BitmapTests.TestFastBitmap.cs" />
     <Compile Include="Tests\BitmapTests.cs" />
   </ItemGroup>
   <ItemGroup>
