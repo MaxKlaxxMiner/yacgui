@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="core\FastBitmap\DistanceTransform.cs" />
+    <Compile Include="core\FastBitmap\FastBitmap.MappedPolygons.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.FillTriangle.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.DrawCircle.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.DrawLine.cs" />

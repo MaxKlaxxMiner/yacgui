@@ -41,6 +41,8 @@ namespace TestTool
       ShowDrawCircles();
 
       ShowDrawTriangles();
+
+      ShowTextureMappedSimple();
     }
 
     /// <summary>
@@ -52,7 +54,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowDrawTriangles();
+      ShowTextureMappedSimple();
     }
   }
 }

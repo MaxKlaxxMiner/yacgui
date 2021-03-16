@@ -165,6 +165,15 @@ namespace YacGui
         Clear(ptr, scanlines.Length);
       }
     }
+
+    /// <summary>
+    /// Returns the properties as a readable string.
+    /// </summary>
+    /// <returns>Readable string</returns>
+    public override string ToString()
+    {
+      return new { startX, endX }.ToString();
+    }
   }
 
   /// <summary>
@@ -392,6 +401,15 @@ namespace YacGui
       {
         Clear(ptr, scanlines.Length);
       }
+    }
+
+    /// <summary>
+    /// Returns the properties as a readable string.
+    /// </summary>
+    /// <returns>Readable string</returns>
+    public override string ToString()
+    {
+      return new { startX, endX, startU, endU, startV, endV }.ToString();
     }
   }
 }
