@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using YacGui;
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 #endregion
 
 namespace TestTool
@@ -34,6 +35,12 @@ namespace TestTool
       ShowPixelDistanceTest();
 
       ShowShinyPieces();
+
+      ShowDrawLines();
+
+      ShowDrawCircles();
+
+      ShowDrawTriangles();
     }
 
     /// <summary>
@@ -45,7 +52,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowDrawCircles();
+      ShowDrawTriangles();
     }
   }
 }
