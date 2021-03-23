@@ -18,18 +18,25 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
-    public static void ShowShinyPieces()
+    static FastBitmap GetDemoTexture()
     {
-      var fastBitmap = new FastBitmap(MainForm.DefaultChessPieces);
-      fastBitmap.ConvertGreenPixelsToAlpha();
+      var texture = new FastBitmap(MainForm.DefaultChessPieces);
+      texture.ConvertGreenPixelsToAlpha();
 
-      var distMap = DistanceTransform.GenerateMap(fastBitmap.pixels.Select(x => (byte)(x >> 24)).ToArray(), fastBitmap.width, fastBitmap.height);
+      var distMap = DistanceTransform.GenerateMap(texture.pixels.Select(x => (byte)(x >> 24)).ToArray(), texture.width, texture.height);
       for (int i = 0; i < distMap.Length; i++)
       {
         uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
         if (opacity == 0) continue; // too far
-        fastBitmap.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
+        texture.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, texture.pixels[i], texture.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
+
+      return texture;
+    }
+
+    public static void ShowShinyPieces()
+    {
+      var fastBitmap = GetDemoTexture();
 
       ShowPicture(fastBitmap.ToGDIBitmap(), "Shiny Pieces", backgroundColor: Color.Black);
     }

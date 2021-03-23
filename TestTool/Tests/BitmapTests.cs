@@ -37,9 +37,7 @@ namespace TestTool
       ShowShinyPieces();
 
       ShowDrawLines();
-
       ShowDrawCircles();
-
       ShowDrawTriangles();
 
       ShowTextureMappedSimple();
@@ -47,6 +45,10 @@ namespace TestTool
       ShowTextureMappedTextured();
 
       ShowTextureMappedTexturedPerspective();
+
+      ShowDrawBitmap();
+
+      ShowAlphaBitmap();
     }
 
     /// <summary>
@@ -58,7 +60,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowTextureMappedTexturedPerspective();
+      ShowAlphaBitmap();
     }
   }
 }

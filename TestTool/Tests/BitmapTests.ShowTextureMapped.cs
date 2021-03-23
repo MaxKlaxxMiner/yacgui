@@ -39,23 +39,11 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
 
-      #region # // --- create texture ---
-      var texture = new FastBitmap(MainForm.DefaultChessPieces);
-      texture.ConvertGreenPixelsToAlpha();
-
-      var distMap = DistanceTransform.GenerateMap(texture.pixels.Select(x => (byte)(x >> 24)).ToArray(), texture.width, texture.height);
-      for (int i = 0; i < distMap.Length; i++)
-      {
-        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
-        if (opacity == 0) continue; // too far
-        texture.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, texture.pixels[i], texture.pixels[i] >> 24) & 0xffffff | opacity << 24;
-      }
-
+      var texture = GetDemoTexture();
       double mulX = texture.width / 6;
       double ofsX = texture.width / 6 * 3;
       double mulY = texture.height / 2;
       double ofsY = texture.height / 2;
-      #endregion
 
       Func<double, double, uint, uint> mapNearest = (u, v, dstColor) =>
       {
@@ -109,23 +97,11 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
 
-      #region # // --- create texture ---
-      var texture = new FastBitmap(MainForm.DefaultChessPieces);
-      texture.ConvertGreenPixelsToAlpha();
-
-      var distMap = DistanceTransform.GenerateMap(texture.pixels.Select(x => (byte)(x >> 24)).ToArray(), texture.width, texture.height);
-      for (int i = 0; i < distMap.Length; i++)
-      {
-        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
-        if (opacity == 0) continue; // too far
-        texture.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, texture.pixels[i], texture.pixels[i] >> 24) & 0xffffff | opacity << 24;
-      }
-
+      var texture = GetDemoTexture();
       double mulX = texture.width / 6;
       double ofsX = texture.width / 6 * 3;
       double mulY = texture.height / 2;
       double ofsY = texture.height / 2;
-      #endregion
 
       Func<double, double, uint, uint> mapLinear = (u, v, dstColor) =>
       {
