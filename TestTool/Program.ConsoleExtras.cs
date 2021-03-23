@@ -2,7 +2,10 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
+using Timer = System.Windows.Forms.Timer;
+
 // ReSharper disable UnusedMember.Local
 #endregion
 
@@ -45,7 +48,8 @@ namespace TestTool
     /// <param name="title">Optional: Window-title</param>
     /// <param name="mouseMove">Optional: Callback mouse move event</param>
     /// <param name="backgroundColor">Optional: set the background-color (Only visible with transparent images)</param>
-    public static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null, Color backgroundColor = default(Color))
+    /// <param name="runLoop">Optional: endless loop function</param>
+    public static void ShowPicture(Image image, string title = "", Action<Form, Point> mouseMove = null, Color backgroundColor = default(Color), Action<Form, PictureBox> runLoop = null)
     {
       var pic = new PictureBox
       {
@@ -73,7 +77,23 @@ namespace TestTool
         pic.MouseMove += (sender, e) => mouseMove(form, new Point(e.X, e.Y));
       }
 
-      form.ShowDialog();
+      if (runLoop != null)
+      {
+        bool formActive = true;
+        form.FormClosed += (sender, e) => formActive = false;
+        form.Show();
+
+        while (formActive)
+        {
+          Thread.Sleep(0);
+          runLoop(form, pic);
+          Application.DoEvents();
+        }
+      }
+      else
+      {
+        form.ShowDialog();
+      }
     }
   }
 }

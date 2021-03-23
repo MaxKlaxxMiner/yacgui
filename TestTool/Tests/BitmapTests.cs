@@ -41,14 +41,12 @@ namespace TestTool
       ShowDrawTriangles();
 
       ShowTextureMappedSimple();
-
       ShowTextureMappedTextured();
-
       ShowTextureMappedTexturedPerspective();
 
       ShowDrawBitmap();
-
       ShowAlphaBitmap();
+      ShowDrawPerformanceNaive();
     }
 
     /// <summary>
@@ -60,7 +58,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowAlphaBitmap();
+      ShowDrawPerformanceNaive();
     }
   }
 }
