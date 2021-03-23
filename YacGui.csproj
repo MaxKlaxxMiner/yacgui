@@ -59,6 +59,7 @@
     <Compile Include="core\FastBitmap\FastBitmap.cs" />
     <Compile Include="core\FastBitmap\LinearPixel.cs" />
     <Compile Include="core\FastBitmap\LinearScanline.cs" />
+    <Compile Include="core\FastBitmap\Mapping3D.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

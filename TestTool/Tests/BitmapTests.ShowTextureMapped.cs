@@ -102,7 +102,62 @@ namespace TestTool
 
       fastBitmap.MappedQuad(350, -50, 1150, 50, 1000, 750, 600, 800, 0, 0, 1, 0, 1, 1, 0, 1, mapLinear);
 
-      ShowPicture(fastBitmap.ToGDIBitmap(), "Nearest Textured");
+      ShowPicture(fastBitmap.ToGDIBitmap(), "Nearest/Linear Textured");
+    }
+
+    public static void ShowTextureMappedTexturedPerspective()
+    {
+      var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
+
+      #region # // --- create texture ---
+      var texture = new FastBitmap(MainForm.DefaultChessPieces);
+      texture.ConvertGreenPixelsToAlpha();
+
+      var distMap = DistanceTransform.GenerateMap(texture.pixels.Select(x => (byte)(x >> 24)).ToArray(), texture.width, texture.height);
+      for (int i = 0; i < distMap.Length; i++)
+      {
+        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
+        if (opacity == 0) continue; // too far
+        texture.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, texture.pixels[i], texture.pixels[i] >> 24) & 0xffffff | opacity << 24;
+      }
+
+      double mulX = texture.width / 6;
+      double ofsX = texture.width / 6 * 3;
+      double mulY = texture.height / 2;
+      double ofsY = texture.height / 2;
+      #endregion
+
+      Func<double, double, uint, uint> mapLinear = (u, v, dstColor) =>
+      {
+        int sx = (int)((u * mulX + ofsX) * 256);
+        int sy = (int)((v * mulY + ofsY) * 256);
+        int fractX = sx & 0xff;
+        int fractY = sy & 0xff;
+        sx /= 256;
+        sy /= 256;
+
+        if (sx < 0) sx = 0;
+        if (sx >= texture.width - 1) sx = texture.width - 2;
+        if (sy < 0) sy = 0;
+        if (sy >= texture.height - 1) sy = texture.height - 2;
+
+        uint txColor1 = texture.pixels[sx + sy * texture.width];
+        uint txColor2 = texture.pixels[sx + 1 + sy * texture.width];
+        uint txColor3 = texture.pixels[sx + (sy + 1) * texture.width];
+        uint txColor4 = texture.pixels[sx + 1 + (sy + 1) * texture.width];
+
+        uint txColorTop = FastBitmap.ColorBlendAlphaFast(txColor1, txColor2, (uint)fractX);
+        uint txColorBottom = FastBitmap.ColorBlendAlphaFast(txColor3, txColor4, (uint)fractX);
+        uint txColor = FastBitmap.ColorBlendAlphaFast(txColorTop, txColorBottom, (uint)fractY);
+
+        return FastBitmap.ColorBlendFast(dstColor, txColor, txColor >> 24);
+      };
+
+      fastBitmap.MappedQuad(-150, -50, 650, 50, 500, 750, 100, 800, 0, 0, 1, 0, 1, 1, 0, 1, mapLinear);
+
+      fastBitmap.MappedQuadPerspective(350, -50, 1150, 50, 1000, 750, 600, 800, 0, 0, 1, 0, 1, 1, 0, 1, mapLinear);
+
+      ShowPicture(fastBitmap.ToGDIBitmap(), "Perspective corrected textured");
     }
   }
 }

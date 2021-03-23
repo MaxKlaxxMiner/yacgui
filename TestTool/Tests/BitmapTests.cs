@@ -45,6 +45,8 @@ namespace TestTool
       ShowTextureMappedSimple();
 
       ShowTextureMappedTextured();
+
+      ShowTextureMappedTexturedPerspective();
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowTextureMappedTextured();
+      ShowTextureMappedTexturedPerspective();
     }
   }
 }
