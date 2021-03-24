@@ -56,6 +56,44 @@ namespace YacGui
     }
 
     /// <summary>
+    /// Copies the pixel data to a GDI bitmap of the same size
+    /// </summary>
+    /// <param name="destBitmap">Image where the pixel data is written to</param>
+    /// <param name="viewPort">Draw-Viewport</param>
+    public unsafe Rectangle CopyToGDIBitmap(Bitmap destBitmap, DrawViewPort viewPort)
+    {
+      if (destBitmap == null) throw new NullReferenceException("destBitmap");
+      if (destBitmap.Width != width || destBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
+
+      int vx = Math.Max(0, viewPort.startX);
+      int vy = Math.Max(0, viewPort.startY);
+      int vw = viewPort.endX - vx + 1;
+      int vh = viewPort.endY - vy + 1;
+      if (vx + vw > width) vw = width - vx;
+      if (vy + vh > height) vh = height - vy;
+      if (vw < 1 || vh < 1) return new Rectangle(0, 0, 0, 0);
+      var rect = new Rectangle(vx, vy, vw, vh);
+
+      // Lock Bitmap-data for fast write
+      var bits = destBitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+      fixed (uint* pixelsPtr = pixels)
+      {
+        var pPtr = pixelsPtr + vx + vy * width;
+        for (int line = 0; line < vh; line++, pPtr += width)
+        {
+          // Copy line of raw pixels
+          CopyScanLine((uint*)(bits.Scan0.ToInt64() + line * bits.Stride), pPtr, vw);
+        }
+      }
+
+      // Release the lock
+      destBitmap.UnlockBits(bits);
+
+      return rect;
+    }
+
+    /// <summary>
     /// returns the entire image as a GDI bitmap
     /// </summary>
     /// <returns>GDI bitmap</returns>

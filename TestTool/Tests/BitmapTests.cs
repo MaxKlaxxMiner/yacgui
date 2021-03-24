@@ -47,6 +47,7 @@ namespace TestTool
       ShowDrawBitmap();
       ShowAlphaBitmap();
       ShowDrawPerformanceNaive();
+      ShowDrawPerformanceOptimized();
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowDrawPerformanceNaive();
+      ShowDrawPerformanceOptimized();
     }
   }
 }
