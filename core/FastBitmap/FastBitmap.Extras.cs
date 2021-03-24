@@ -15,13 +15,8 @@ namespace YacGui
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public partial class FastBitmap
+  public unsafe partial class FastBitmap
   {
-    /// <summary>
-    /// Is 64-Bit Process?
-    /// </summary>
-    static readonly bool x64 = Environment.Is64BitProcess;
-
     /// <summary>
     /// Convert all green pixels to black with transparency (depending on the green value)
     /// </summary>
@@ -135,6 +130,44 @@ namespace YacGui
     public static uint ColorBlendAlpha(uint firstColor, uint secondColor, double amountSecond)
     {
       return ColorBlendAlpha(firstColor, secondColor, (int)(amountSecond * 256.0));
+    }
+
+    static void CopyScanLine(uint* dst, uint* src, int count)
+    {
+      count--;
+      for (int i = 0; i < count; i += 2)
+      {
+        *(ulong*)(dst + i) = *(ulong*)(src + i); // copy two pixels at once
+      }
+      if ((count & 1) == 0)
+      {
+        dst[count] = src[count]; // copy last pixel if necessary
+      }
+    }
+
+    static void CopyScanLineAlpha(uint* dst, uint* src, int count)
+    {
+      for (int i = 0; i < count; i++)
+      {
+        uint dstColor = dst[i];
+        uint srcColor = src[i];
+        dstColor = ColorBlendAlphaFast(dstColor, srcColor, srcColor >> 24);
+        dst[i] = dstColor;
+      }
+    }
+
+    static void FillScanline(uint* ptr, int count, uint color)
+    {
+      count--;
+      ulong color64 = color | (ulong)color << 32;
+      for (int i = 0; i < count; i += 2)
+      {
+        *(ulong*)(ptr + i) = color64; // two pixels at once
+      }
+      if ((count & 1) == 0)
+      {
+        ptr[count] = color; // last pixel if necessary
+      }
     }
   }
 }

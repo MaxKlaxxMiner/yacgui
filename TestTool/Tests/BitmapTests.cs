@@ -48,6 +48,8 @@ namespace TestTool
       ShowAlphaBitmap();
       ShowDrawPerformanceNaive();
       ShowDrawPerformanceOptimized();
+      ShowCheckerPerformanceNaive();
+      ShowCheckerPerformanceOptimized();
     }
 
     /// <summary>
@@ -59,7 +61,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowDrawPerformanceOptimized();
+      ShowCheckerPerformanceOptimized();
     }
   }
 }

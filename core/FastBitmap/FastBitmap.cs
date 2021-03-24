@@ -48,7 +48,7 @@ namespace YacGui
       if (height < 1 || height > MaxHeight) throw new ArgumentOutOfRangeException("height");
       this.width = width;
       this.height = height;
-      pixels = new uint[(width * height + 1) / 2 * 2];
+      pixels = new uint[width * height];
       if (backgroundColor != 0x00000000) Clear(backgroundColor);
     }
 
@@ -60,7 +60,7 @@ namespace YacGui
     {
       width = bitmap.Width;
       height = bitmap.Height;
-      pixels = new uint[(width * height + 1) / 2 * 2];
+      pixels = new uint[width * height];
 
       CopyFromGDIBitmap(bitmap);
     }
@@ -97,25 +97,9 @@ namespace YacGui
     /// <param name="color">Fillcolor</param>
     public unsafe void Clear(uint color = 0xff000000)
     {
-      if (x64)
+      fixed (uint* pixelsPtr = pixels)
       {
-        ulong colorPair = (ulong)color << 32 | color;
-
-        fixed (uint* pixelsP = pixels)
-        {
-          uint pairCount = (uint)(pixels.Length / 2);
-          for (uint i = 0; i < pairCount; i++)
-          {
-            ((ulong*)pixelsP)[i] = colorPair;
-          }
-        }
-      }
-      else
-      {
-        for (int i = 0; i < pixels.Length; i++)
-        {
-          pixels[i] = color;
-        }
+        FillScanline(pixelsPtr, pixels.Length, color);
       }
     }
 

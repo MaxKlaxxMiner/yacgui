@@ -20,19 +20,6 @@ namespace YacGui
   /// </summary>
   public unsafe partial class FastBitmap
   {
-    static void CopyScanLine(uint* dst, uint* src, int count)
-    {
-      count--;
-      for (int i = 0; i < count; i += 2)
-      {
-        *(ulong*)(dst + i) = *(ulong*)(src + i); // copy two pixels at once
-      }
-      if ((count & 1) == 0)
-      {
-        dst[count] = src[count]; // copy last pixel if necessary
-      }
-    }
-
     public void DrawBitmap(FastBitmap spriteBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
     {
       if (spriteBitmap == null) throw new NullReferenceException("spriteBitmap");
@@ -78,17 +65,6 @@ namespace YacGui
           dstP += width;
           srcP += spriteBitmap.width;
         }
-      }
-    }
-
-    static void CopyScanLineAlpha(uint* dst, uint* src, int count)
-    {
-      for (int i = 0; i < count; i++)
-      {
-        uint dstColor = dst[i];
-        uint srcColor = src[i];
-        dstColor = ColorBlendAlphaFast(dstColor, srcColor, srcColor >> 24);
-        dst[i] = dstColor;
       }
     }
 
