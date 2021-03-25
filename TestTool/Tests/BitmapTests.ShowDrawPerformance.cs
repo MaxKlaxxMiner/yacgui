@@ -18,6 +18,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Performance test with fps counter: Full bitmap update
+    /// </summary>
     public static void ShowDrawPerformanceNaive()
     {
       var fastBitmap = new FastBitmap(1900, 1000, 0xff252525);
@@ -54,6 +57,9 @@ namespace TestTool
       });
     }
 
+    /// <summary>
+    /// Performance test with fps counter: Viewport optimized update
+    /// </summary>
     public static void ShowDrawPerformanceOptimized()
     {
       var fastBitmap = new FastBitmap(1900, 1000, 0xff252525);
@@ -114,6 +120,9 @@ namespace TestTool
       });
     }
 
+    /// <summary>
+    /// Performance test with fps counter and checkered background: Full bitmap update
+    /// </summary>
     public static void ShowCheckerPerformanceNaive()
     {
       var fastBitmap = new FastBitmap(1000, 1000, 0xff252525);
@@ -156,6 +165,9 @@ namespace TestTool
       });
     }
 
+    /// <summary>
+    /// Performance test with fps counter and checkered background: Viewport optimized update
+    /// </summary>
     public static void ShowCheckerPerformanceOptimized()
     {
       var fastBitmap = new FastBitmap(1000, 1000, 0xff252525);

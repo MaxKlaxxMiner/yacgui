@@ -14,8 +14,16 @@ namespace YacGui
 {
   public static class DistanceTransform
   {
+    /// <summary>
+    /// "infinity" value
+    /// </summary>
     const float INF = 1e20f;
 
+    /// <summary>
+    /// Calculate (squared) distances for a single line
+    /// </summary>
+    /// <param name="f">Pointer to the line</param>
+    /// <param name="n">Pixelcount</param>
     static unsafe void TransformLine(float* f, int n)
     {
       float* d = &f[n];
@@ -49,6 +57,12 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Calculate (squared) distances for a complete picture
+    /// </summary>
+    /// <param name="distanceValues">Pointer to the entire picture</param>
+    /// <param name="width">Width of the picture</param>
+    /// <param name="height">Height of the picture</param>
     static unsafe void TransformField(float* distanceValues, int width, int height)
     {
       float[] tmpBuffer = new float[Math.Max(width, height) * 4 + 1];
@@ -73,6 +87,13 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Generate the pixel distances (multiplied by 256)
+    /// </summary>
+    /// <param name="bits">Bits of the picture (True = solid, False = empty)</param>
+    /// <param name="width">Width of the picture</param>
+    /// <param name="height">Height of the picture</param>
+    /// <returns>Calculated pixel distances</returns>
     public static unsafe int[] GenerateMap(bool[] bits, int width, int height)
     {
       if (bits == null) throw new NullReferenceException("bits");
@@ -98,18 +119,25 @@ namespace YacGui
       return distances;
     }
 
-    public static unsafe int[] GenerateMap(byte[] bits, int width, int height)
+    /// <summary>
+    /// Generate the pixel distances (multiplied by 256)
+    /// </summary>
+    /// <param name="values">Values of the picture (255 = solid, 0 = empty, 128 = half filled etc.)</param>
+    /// <param name="width">Width of the picture</param>
+    /// <param name="height">Height of the picture</param>
+    /// <returns>Calculated pixel distances</returns>
+    public static unsafe int[] GenerateMap(byte[] values, int width, int height)
     {
-      if (bits == null) throw new NullReferenceException("bits");
-      if (bits.Length < width * height) throw new ArgumentException();
+      if (values == null) throw new NullReferenceException("values");
+      if (values.Length < width * height) throw new ArgumentException();
 
-      int[] distances = new int[bits.Length];
+      int[] distances = new int[values.Length];
 
       fixed (int* tmpData = distances)
       {
         for (int i = 0; i < distances.Length; i++)
         {
-          ((float*)tmpData)[i] = bits[i] > 0 ? (255 - bits[i]) * (255 - bits[i]) * (1f / (255f * 255f)) : INF;
+          ((float*)tmpData)[i] = values[i] > 0 ? (255 - values[i]) * (255 - values[i]) * (1f / (255f * 255f)) : INF;
         }
 
         TransformField((float*)tmpData, width, height);
@@ -123,6 +151,13 @@ namespace YacGui
       return distances;
     }
 
+    /// <summary>
+    /// very slow reference version of GenerateMap
+    /// </summary>
+    /// <param name="bits">Bits of the picture (True = solid, False = empty)</param>
+    /// <param name="width">Width of the picture</param>
+    /// <param name="height">Height of the picture</param>
+    /// <returns>Calculated pixel distances</returns>
     public static int[] GenerateMapSlowReference(bool[] bits, int width, int height)
     {
       int[] distances = new int[bits.Length];

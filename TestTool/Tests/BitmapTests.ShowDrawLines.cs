@@ -18,6 +18,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Draw colored lines
+    /// </summary>
     public static void ShowDrawLines()
     {
       var fastBitmap = new FastBitmap(1024 + 1, 576, 0xff252525);

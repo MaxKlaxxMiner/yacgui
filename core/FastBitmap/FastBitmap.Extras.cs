@@ -132,6 +132,12 @@ namespace YacGui
       return ColorBlendAlpha(firstColor, secondColor, (int)(amountSecond * 256.0));
     }
 
+    /// <summary>
+    /// Copy a pixel line from array to array
+    /// </summary>
+    /// <param name="dst">Pointer to the dest array</param>
+    /// <param name="src">Pointer to the source array</param>
+    /// <param name="count">Number of pixels to copy</param>
     static void CopyScanLine(uint* dst, uint* src, int count)
     {
       count--;
@@ -145,6 +151,12 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Copy a pixel line from array to array and use alpha channel
+    /// </summary>
+    /// <param name="dst">Pointer to the dest array</param>
+    /// <param name="src">Pointer to the source array</param>
+    /// <param name="count">Number of pixels to copy</param>
     static void CopyScanLineAlpha(uint* dst, uint* src, int count)
     {
       for (int i = 0; i < count; i++)
@@ -156,6 +168,12 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill a pixel line with a color
+    /// </summary>
+    /// <param name="ptr">Pointer to the dest array</param>
+    /// <param name="count">Number of pixels to fill</param>
+    /// <param name="color">Fill color</param>
     static void FillScanline(uint* ptr, int count, uint color)
     {
       count--;

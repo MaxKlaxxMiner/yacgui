@@ -18,6 +18,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Draw colored circles
+    /// </summary>
     public static void ShowDrawCircles()
     {
       var fastBitmap = new FastBitmap(1024, 576, 0xff252525);

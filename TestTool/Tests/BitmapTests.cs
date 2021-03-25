@@ -19,6 +19,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests : ConsoleExtras
   {
+    /// <summary>
+    /// Run all basic tests
+    /// </summary>
     public static void TestAllValues()
     {
       TestFastBitmap();
@@ -28,6 +31,9 @@ namespace TestTool
       TestPixelDistances();
     }
 
+    /// <summary>
+    /// Run all visible tests
+    /// </summary>
     public static void ShowAllTestPictures()
     {
       ShowSubPixelTest();

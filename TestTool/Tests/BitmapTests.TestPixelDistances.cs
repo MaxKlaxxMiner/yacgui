@@ -18,7 +18,10 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
-    static void TestPixelDistances()
+    /// <summary>
+    /// Test pixel distance calculation
+    /// </summary>
+    public static void TestPixelDistances()
     {
       int width = 512;
       int height = 200;

@@ -13,7 +13,10 @@ namespace TestTool
 {
   class Program: ConsoleExtras
   {
-    static void Main(string[] args)
+    /// <summary>
+    /// TestTool program entry
+    /// </summary>
+    static void Main()
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 

@@ -19,6 +19,12 @@ namespace YacGui
   /// </summary>
   public partial class FastBitmap
   {
+    /// <summary>
+    /// Create a resized bitmap (simple nearest pixel)
+    /// </summary>
+    /// <param name="newWidth">Width of the new picture</param>
+    /// <param name="newHeight">Height of the nw picture</param>
+    /// <returns>Resized bitmap</returns>
     public FastBitmap GetResizedSimple(int newWidth, int newHeight)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();
@@ -41,6 +47,12 @@ namespace YacGui
       return result;
     }
 
+    /// <summary>
+    /// Create a resized bitmap (bilinear interpolation)
+    /// </summary>
+    /// <param name="newWidth">Width of the new picture</param>
+    /// <param name="newHeight">Height of the nw picture</param>
+    /// <returns>Resized bitmap</returns>
     public FastBitmap GetResizedHigh(int newWidth, int newHeight)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();
@@ -136,6 +148,13 @@ namespace YacGui
       return result;
     }
 
+    /// <summary>
+    /// Create a resized bitmap with Cleartype sub-pixel reduction (only useful when downsizing images)
+    /// </summary>
+    /// <param name="newWidth">Width of the new picture</param>
+    /// <param name="newHeight">Height of the nw picture</param>
+    /// <param name="clearLevel">Cleartype-Level (0 = low, 5 = high)</param>
+    /// <returns>Resized bitmap</returns>
     public FastBitmap GetResizedClear(int newWidth, int newHeight, int clearLevel)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();

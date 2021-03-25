@@ -20,14 +20,24 @@ namespace YacGui
   /// </summary>
   public unsafe partial class FastBitmap
   {
-    public void DrawBitmap(FastBitmap spriteBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
+    /// <summary>
+    /// Draw a bitmap
+    /// </summary>
+    /// <param name="srcBitmap">Source bitmap to be drawn</param>
+    /// <param name="x">Optional: x-position to draw (default: 0)</param>
+    /// <param name="y">Optional: y-position to draw (default: 0)</param>
+    /// <param name="spriteX">Optional: x-position for part of srcBitmap (default: 0)</param>
+    /// <param name="spriteY">Optional: y-position for part of srcBitmap (default: 0)</param>
+    /// <param name="spriteWidth">Optional: width for part of srcBitmap (default: full with)</param>
+    /// <param name="spriteHeight">Optional: height for part of srcBitmap (default: full height)</param>
+    public void DrawBitmap(FastBitmap srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
     {
-      if (spriteBitmap == null) throw new NullReferenceException("spriteBitmap");
+      if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
 
-      if ((uint)spriteX >= spriteBitmap.width) throw new ArgumentOutOfRangeException("spriteX");
-      if ((uint)spriteY >= spriteBitmap.height) throw new ArgumentOutOfRangeException("spriteY");
-      if ((uint)(spriteX + spriteWidth) >= spriteBitmap.width) spriteWidth = spriteBitmap.width - spriteX;
-      if ((uint)(spriteY + spriteHeight) >= spriteBitmap.height) spriteHeight = spriteBitmap.height - spriteY;
+      if ((uint)spriteX >= srcBitmap.width) throw new ArgumentOutOfRangeException("spriteX");
+      if ((uint)spriteY >= srcBitmap.height) throw new ArgumentOutOfRangeException("spriteY");
+      if ((uint)(spriteX + spriteWidth) >= srcBitmap.width) spriteWidth = srcBitmap.width - spriteX;
+      if ((uint)(spriteY + spriteHeight) >= srcBitmap.height) spriteHeight = srcBitmap.height - spriteY;
 
       if (x < 0) // cut left
       {
@@ -55,7 +65,7 @@ namespace YacGui
       }
 
       fixed (uint* dstPtr = &pixels[x + y * width])
-      fixed (uint* srcPtr = &spriteBitmap.pixels[spriteX + spriteY * spriteBitmap.width])
+      fixed (uint* srcPtr = &srcBitmap.pixels[spriteX + spriteY * srcBitmap.width])
       {
         var dstP = dstPtr;
         var srcP = srcPtr;
@@ -63,19 +73,29 @@ namespace YacGui
         {
           CopyScanLine(dstP, srcP, spriteWidth);
           dstP += width;
-          srcP += spriteBitmap.width;
+          srcP += srcBitmap.width;
         }
       }
     }
 
-    public void DrawBitmapAlpha(FastBitmap spriteBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
+    /// <summary>
+    /// Draw a bitmap with alpha channel
+    /// </summary>
+    /// <param name="srcBitmap">Source bitmap to be drawn</param>
+    /// <param name="x">Optional: x-position to draw (default: 0)</param>
+    /// <param name="y">Optional: y-position to draw (default: 0)</param>
+    /// <param name="spriteX">Optional: x-position for part of srcBitmap (default: 0)</param>
+    /// <param name="spriteY">Optional: y-position for part of srcBitmap (default: 0)</param>
+    /// <param name="spriteWidth">Optional: width for part of srcBitmap (default: full with)</param>
+    /// <param name="spriteHeight">Optional: height for part of srcBitmap (default: full height)</param>
+    public void DrawBitmapAlpha(FastBitmap srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
     {
-      if (spriteBitmap == null) throw new NullReferenceException("spriteBitmap");
+      if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
 
-      if ((uint)spriteX >= spriteBitmap.width) throw new ArgumentOutOfRangeException("spriteX");
-      if ((uint)spriteY >= spriteBitmap.height) throw new ArgumentOutOfRangeException("spriteY");
-      if ((uint)(spriteX + spriteWidth) >= spriteBitmap.width) spriteWidth = spriteBitmap.width - spriteX;
-      if ((uint)(spriteY + spriteHeight) >= spriteBitmap.height) spriteHeight = spriteBitmap.height - spriteY;
+      if ((uint)spriteX >= srcBitmap.width) throw new ArgumentOutOfRangeException("spriteX");
+      if ((uint)spriteY >= srcBitmap.height) throw new ArgumentOutOfRangeException("spriteY");
+      if ((uint)(spriteX + spriteWidth) >= srcBitmap.width) spriteWidth = srcBitmap.width - spriteX;
+      if ((uint)(spriteY + spriteHeight) >= srcBitmap.height) spriteHeight = srcBitmap.height - spriteY;
 
       if (x < 0) // cut left
       {
@@ -103,7 +123,7 @@ namespace YacGui
       }
 
       fixed (uint* dstPtr = &pixels[x + y * width])
-      fixed (uint* srcPtr = &spriteBitmap.pixels[spriteX + spriteY * spriteBitmap.width])
+      fixed (uint* srcPtr = &srcBitmap.pixels[spriteX + spriteY * srcBitmap.width])
       {
         var dstP = dstPtr;
         var srcP = srcPtr;
@@ -111,7 +131,7 @@ namespace YacGui
         {
           CopyScanLineAlpha(dstP, srcP, spriteWidth);
           dstP += width;
-          srcP += spriteBitmap.width;
+          srcP += srcBitmap.width;
         }
       }
     }

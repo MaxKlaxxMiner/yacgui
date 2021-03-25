@@ -18,6 +18,38 @@ namespace YacGui
   public partial class FastBitmap
   {
     /// <summary>
+    /// map the Pixelformat to their 32-Bit Version
+    /// </summary>
+    /// <param name="pixelFormat">selected PixelFormat</param>
+    /// <returns>new Pixelformat</returns>
+    static PixelFormat MapPixelFormat32(PixelFormat pixelFormat)
+    {
+      switch (pixelFormat)
+      {
+        case PixelFormat.Format1bppIndexed:
+        case PixelFormat.Format4bppIndexed:
+        case PixelFormat.Format8bppIndexed:
+        case PixelFormat.Format16bppRgb555:
+        case PixelFormat.Format16bppRgb565:
+        case PixelFormat.Format24bppRgb:
+        case PixelFormat.Format32bppRgb:
+        case PixelFormat.Format48bppRgb: return PixelFormat.Format32bppRgb;
+
+        default: return PixelFormat.Format32bppArgb;
+      }
+    }
+
+    /// <summary>
+    /// map the Pixelformat to their 32-Bit Version
+    /// </summary>
+    /// <param name="bitmap">selected PixelFormat from Bitmap</param>
+    /// <returns>new Pixelformat</returns>
+    static PixelFormat MapPixelFormat32(Bitmap bitmap)
+    {
+      return MapPixelFormat32(bitmap.PixelFormat);
+    }
+
+    /// <summary>
     /// Copies the pixel data from a GDI bitmap of the same size
     /// </summary>
     /// <param name="srcBitmap">Image from where to read the pixel data</param>
@@ -27,7 +59,7 @@ namespace YacGui
       if (srcBitmap.Width != width || srcBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
       // Lock Bitmap-data for fast copy
-      var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+      var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, MapPixelFormat32(srcBitmap));
 
       // Copy raw pixels (cast uint[] to int[] ist possible, see: https://www.c-sharpcorner.com/uploadfile/b942f9/how-to-convert-unsigned-integer-arrays-to-signed-arrays-and-vice-versa/)
       Marshal.Copy(bits.Scan0, (object)pixels as int[], 0, width * height);
@@ -46,7 +78,7 @@ namespace YacGui
       if (destBitmap.Width != width || destBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
       // Lock Bitmap-data for fast write
-      var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+      var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, MapPixelFormat32(destBitmap));
 
       // Copy raw pixels
       Marshal.Copy((object)pixels as int[], 0, bits.Scan0, width * height);
@@ -75,7 +107,7 @@ namespace YacGui
       var rect = new Rectangle(vx, vy, vw, vh);
 
       // Lock Bitmap-data for fast write
-      var bits = destBitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+      var bits = destBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat32(destBitmap));
 
       fixed (uint* pixelsPtr = pixels)
       {
@@ -96,14 +128,24 @@ namespace YacGui
     /// <summary>
     /// returns the entire image as a GDI bitmap
     /// </summary>
+    /// <param name="pixelFormat">Optional: select pixelformat (default: Format32bppRgb)</param>
     /// <returns>GDI bitmap</returns>
-    public Bitmap ToGDIBitmap()
+    public Bitmap ToGDIBitmap(PixelFormat pixelFormat = PixelFormat.Format32bppRgb)
     {
-      var resultBitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+      var resultBitmap = new Bitmap(width, height, pixelFormat);
 
       CopyToGDIBitmap(resultBitmap);
 
       return resultBitmap;
+    }
+
+    /// <summary>
+    /// returns the entire image as a GDI bitmap with alpha channel
+    /// </summary>
+    /// <returns>GDI bitmap</returns>
+    public Bitmap ToGDIBitmapAlpha()
+    {
+      return ToGDIBitmap(PixelFormat.Format32bppArgb);
     }
   }
 }

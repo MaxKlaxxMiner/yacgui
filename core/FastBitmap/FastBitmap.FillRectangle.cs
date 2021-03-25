@@ -19,6 +19,14 @@ namespace YacGui
   /// </summary>
   public unsafe partial class FastBitmap
   {
+    /// <summary>
+    /// Draw a filled rectangle
+    /// </summary>
+    /// <param name="x">x-position (left side)</param>
+    /// <param name="y">y-position (top edge)</param>
+    /// <param name="width">Width of the rectangle</param>
+    /// <param name="height">Height of the rectangle</param>
+    /// <param name="color">Fill color</param>
     public void FillRectangle(int x, int y, int width, int height, uint color)
     {
       if (x < 0) { width += x; x = 0; }

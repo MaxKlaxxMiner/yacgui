@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 23;
+    const int SubVersion = 24;
 
     /// <summary>
     /// get title name
@@ -77,9 +78,12 @@ namespace YacGui
         fastBitmap.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
 
-      pictureBoxMain.Image = fastBitmap.ToGDIBitmap();
+      pictureBoxMain.Image = fastBitmap.ToGDIBitmap(PixelFormat.Format32bppArgb);
     }
 
+    /// <summary>
+    /// timer for background updates
+    /// </summary>
     void timer1_Tick(object sender, EventArgs e)
     {
       uint l = (uint)Color.Black.ToArgb();

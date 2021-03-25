@@ -18,6 +18,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Draw bitmaps (as sprites) on a bitmap, ignore alpha channel
+    /// </summary>
     public static void ShowDrawBitmap()
     {
       var fastBitmap = new FastBitmap(1024, 576, 0xff252525);
@@ -26,7 +29,7 @@ namespace TestTool
 
       fastBitmap.DrawBitmap(texture, -10, -10);
 
-      var resultBitmap = fastBitmap.ToGDIBitmap();
+      var resultBitmap = fastBitmap.ToGDIBitmapAlpha();
 
       ShowPicture(resultBitmap, "Sprite Draw", (form, mousePos) =>
       {
@@ -42,6 +45,9 @@ namespace TestTool
       });
     }
 
+    /// <summary>
+    /// Draw bitmaps (as sprites) on a bitmap, use bitmap alpha
+    /// </summary>
     public static void ShowAlphaBitmap()
     {
       var fastBitmap = new FastBitmap(1024, 576, 0xff252525);

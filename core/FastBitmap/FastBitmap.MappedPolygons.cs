@@ -19,6 +19,13 @@ namespace YacGui
   /// </summary>
   public unsafe partial class FastBitmap
   {
+    /// <summary>
+    /// Fill scanlines with a custom uvMap function (without boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v)</param>
     void FillScanlinesUnsafe(int x, int y, LinearScanLineUV[] scanlines, Func<double, double, uint> uvMap)
     {
       fixed (uint* pixelPtr = pixels)
@@ -48,6 +55,13 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill scanlines with a custom uvMap function (without boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     void FillScanlinesUnsafe(int x, int y, LinearScanLineUV[] scanlines, Func<double, double, uint, uint> uvMap)
     {
       fixed (uint* pixelPtr = pixels)
@@ -77,6 +91,13 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill scanlines with a custom uvMap function (inclusive boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v)</param>
     void FillScanlinesSafe(int x, int y, LinearScanLineUV[] scanlines, Func<double, double, uint> uvMap)
     {
       fixed (uint* pixelPtr = pixels)
@@ -113,6 +134,13 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill scanlines with a custom uvMap function (inclusive boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     void FillScanlinesSafe(int x, int y, LinearScanLineUV[] scanlines, Func<double, double, uint, uint> uvMap)
     {
       fixed (uint* pixelPtr = pixels)
@@ -149,6 +177,14 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill scanlines with a custom uvMap function and use a 3D tranformation matrix
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="transformMatrix">3D-Matrix for the perspective correction</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     void FillScanlinesMatrix(int x, int y, LinearScanLineUV[] scanlines, Mapping3D.Matrix33 transformMatrix, Func<double, double, uint, uint> uvMap)
     {
       fixed (uint* pixelPtr = pixels)
@@ -184,6 +220,22 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Draw a linear filled triangle with a custom uvMap function
+    /// </summary>
+    /// <param name="x1">First x-position</param>
+    /// <param name="y1">First y-position</param>
+    /// <param name="x2">Second x-position</param>
+    /// <param name="y2">Second y-position</param>
+    /// <param name="x3">Third x-position</param>
+    /// <param name="y3">Third y-position</param>
+    /// <param name="u1">First u-coordinate (x-pos of texture)</param>
+    /// <param name="v1">First v-coordinate (y-pos of texture)</param>
+    /// <param name="u2">Second u-coordinate (x-pos of texture)</param>
+    /// <param name="v2">Second v-coordinate (y-pos of texture)</param>
+    /// <param name="u3">Third u-coordinate (x-pos of texture)</param>
+    /// <param name="v3">Third v-coordinate (y-pos of texture)</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v)</param>
     public void MappedTriangle(int x1, int y1, int x2, int y2, int x3, int y3, double u1, double v1, double u2, double v2, double u3, double v3, Func<double, double, uint> uvMap)
     {
       // --- sort by y ---
@@ -229,6 +281,22 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Draw a linear filled triangle with a custom uvMap function (inclusive source color for alpha blend etc.)
+    /// </summary>
+    /// <param name="x1">First x-position</param>
+    /// <param name="y1">First y-position</param>
+    /// <param name="x2">Second x-position</param>
+    /// <param name="y2">Second y-position</param>
+    /// <param name="x3">Third x-position</param>
+    /// <param name="y3">Third y-position</param>
+    /// <param name="u1">First u-coordinate (x-pos of texture)</param>
+    /// <param name="v1">First v-coordinate (y-pos of texture)</param>
+    /// <param name="u2">Second u-coordinate (x-pos of texture)</param>
+    /// <param name="v2">Second v-coordinate (y-pos of texture)</param>
+    /// <param name="u3">Third u-coordinate (x-pos of texture)</param>
+    /// <param name="v3">Third v-coordinate (y-pos of texture)</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     public void MappedTriangle(int x1, int y1, int x2, int y2, int x3, int y3, double u1, double v1, double u2, double v2, double u3, double v3, Func<double, double, uint, uint> uvMap)
     {
       // --- sort by y ---
@@ -274,6 +342,26 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Draw a linear filled quad with a custom uvMap function
+    /// </summary>
+    /// <param name="x1">First x-position (e.g. from top left)</param>
+    /// <param name="y1">First y-position (e.g. from top left)</param>
+    /// <param name="x2">Second x-position (e.g. from top right)</param>
+    /// <param name="y2">Second y-position (e.g. from top right)</param>
+    /// <param name="x3">Third x-position (e.g. from bottom left)</param>
+    /// <param name="y3">Third y-position (e.g. from bottom left)</param>
+    /// <param name="x4">Fourth x-position (e.g. from bottom right)</param>
+    /// <param name="y4">Fourth y-position (e.g. from bottom right)</param>
+    /// <param name="u1">First u-coordinate (x-pos of texture)</param>
+    /// <param name="v1">First v-coordinate (y-pos of texture)</param>
+    /// <param name="u2">Second u-coordinate (x-pos of texture)</param>
+    /// <param name="v2">Second v-coordinate (y-pos of texture)</param>
+    /// <param name="u3">Third u-coordinate (x-pos of texture)</param>
+    /// <param name="v3">Third v-coordinate (y-pos of texture)</param>
+    /// <param name="u4">Fourth u-coordinate (x-pos of texture)</param>
+    /// <param name="v4">Fourth v-coordinate (y-pos of texture)</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v)</param>
     public void MappedQuad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, double u1, double v1, double u2, double v2, double u3, double v3, double u4, double v4, Func<double, double, uint> uvMap)
     {
       // --- sort by y ---
@@ -315,6 +403,26 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Draw a linear filled quad with a custom uvMap function (inclusive source color for alpha blend etc.)
+    /// </summary>
+    /// <param name="x1">First x-position (e.g. from top left)</param>
+    /// <param name="y1">First y-position (e.g. from top left)</param>
+    /// <param name="x2">Second x-position (e.g. from top right)</param>
+    /// <param name="y2">Second y-position (e.g. from top right)</param>
+    /// <param name="x3">Third x-position (e.g. from bottom left)</param>
+    /// <param name="y3">Third y-position (e.g. from bottom left)</param>
+    /// <param name="x4">Fourth x-position (e.g. from bottom right)</param>
+    /// <param name="y4">Fourth y-position (e.g. from bottom right)</param>
+    /// <param name="u1">First u-coordinate (x-pos of texture)</param>
+    /// <param name="v1">First v-coordinate (y-pos of texture)</param>
+    /// <param name="u2">Second u-coordinate (x-pos of texture)</param>
+    /// <param name="v2">Second v-coordinate (y-pos of texture)</param>
+    /// <param name="u3">Third u-coordinate (x-pos of texture)</param>
+    /// <param name="v3">Third v-coordinate (y-pos of texture)</param>
+    /// <param name="u4">Fourth u-coordinate (x-pos of texture)</param>
+    /// <param name="v4">Fourth v-coordinate (y-pos of texture)</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     public void MappedQuad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, double u1, double v1, double u2, double v2, double u3, double v3, double u4, double v4, Func<double, double, uint, uint> uvMap)
     {
       // --- sort by y ---
@@ -356,6 +464,26 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Draw a perspective corrected quad with a custom uvMap function (inclusive source color for alpha blend etc.)
+    /// </summary>
+    /// <param name="x1">First x-position (e.g. from top left)</param>
+    /// <param name="y1">First y-position (e.g. from top left)</param>
+    /// <param name="x2">Second x-position (e.g. from top right)</param>
+    /// <param name="y2">Second y-position (e.g. from top right)</param>
+    /// <param name="x3">Third x-position (e.g. from bottom left)</param>
+    /// <param name="y3">Third y-position (e.g. from bottom left)</param>
+    /// <param name="x4">Fourth x-position (e.g. from bottom right)</param>
+    /// <param name="y4">Fourth y-position (e.g. from bottom right)</param>
+    /// <param name="u1">First u-coordinate (x-pos of texture)</param>
+    /// <param name="v1">First v-coordinate (y-pos of texture)</param>
+    /// <param name="u2">Second u-coordinate (x-pos of texture)</param>
+    /// <param name="v2">Second v-coordinate (y-pos of texture)</param>
+    /// <param name="u3">Third u-coordinate (x-pos of texture)</param>
+    /// <param name="v3">Third v-coordinate (y-pos of texture)</param>
+    /// <param name="u4">Fourth u-coordinate (x-pos of texture)</param>
+    /// <param name="v4">Fourth v-coordinate (y-pos of texture)</param>
+    /// <param name="uvMap">Map-function which returns the color value (params: double u, double v, uint sourceColor)</param>
     public void MappedQuadPerspective(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, double u1, double v1, double u2, double v2, double u3, double v3, double u4, double v4, Func<double, double, uint, uint> uvMap)
     {
       // --- sort by y ---

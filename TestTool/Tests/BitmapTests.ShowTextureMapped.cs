@@ -18,6 +18,9 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Draw surfaces with gradient colors
+    /// </summary>
     public static void ShowTextureMappedSimple()
     {
       var fastBitmap = new FastBitmap(1024, 576, 0xff252525);
@@ -35,6 +38,9 @@ namespace TestTool
       ShowPicture(fastBitmap.ToGDIBitmap(), "Simple Textured");
     }
 
+    /// <summary>
+    /// Draw textures with nearest and biliniear filters
+    /// </summary>
     public static void ShowTextureMappedTextured()
     {
       var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
@@ -93,6 +99,9 @@ namespace TestTool
       ShowPicture(fastBitmap.ToGDIBitmap(), "Nearest/Linear Textured");
     }
 
+    /// <summary>
+    /// Compare default (linear affine) and perspective corrected texture mapping
+    /// </summary>
     public static void ShowTextureMappedTexturedPerspective()
     {
       var fastBitmap = new FastBitmap(1024, 768, 0xff252525);

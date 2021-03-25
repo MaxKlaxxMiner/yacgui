@@ -19,6 +19,13 @@ namespace YacGui
   /// </summary>
   public unsafe partial class FastBitmap
   {
+    /// <summary>
+    /// Fill the scanlines with a solid color (without boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="color">Fill color</param>
     void FillScanlinesUnsafe(int x, int y, LinearScanLine[] scanlines, uint color)
     {
       fixed (uint* pixelPtr = pixels)
@@ -34,6 +41,13 @@ namespace YacGui
       }
     }
 
+    /// <summary>
+    /// Fill the scanlines with a solid color (inclusive boundary checks)
+    /// </summary>
+    /// <param name="x">x-position (left offset)</param>
+    /// <param name="y">y-position (top offset)</param>
+    /// <param name="scanlines">Scanlines to be draw</param>
+    /// <param name="color">Fill color</param>
     void FillScanlinesSafe(int x, int y, LinearScanLine[] scanlines, uint color)
     {
       fixed (uint* pixelPtr = pixels)

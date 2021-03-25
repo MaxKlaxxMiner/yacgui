@@ -18,6 +18,10 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
+    /// <summary>
+    /// Create a demo picture with shiny pieces (with alpha channel)
+    /// </summary>
+    /// <returns>Demo picture as FastBitmap</returns>
     static FastBitmap GetDemoTexture()
     {
       var texture = new FastBitmap(MainForm.DefaultChessPieces);
@@ -34,11 +38,14 @@ namespace TestTool
       return texture;
     }
 
+    /// <summary>
+    /// Draw shiny pieces with alpha channel
+    /// </summary>
     public static void ShowShinyPieces()
     {
       var fastBitmap = GetDemoTexture();
 
-      ShowPicture(fastBitmap.ToGDIBitmap(), "Shiny Pieces", backgroundColor: Color.Black);
+      ShowPicture(fastBitmap.ToGDIBitmapAlpha(), "Shiny Pieces", backgroundColor: Color.Black);
     }
   }
 }

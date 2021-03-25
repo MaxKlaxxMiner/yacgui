@@ -18,7 +18,10 @@ namespace TestTool
   /// </summary>
   public partial class BitmapTests
   {
-    static void ShowPixelDistanceTest()
+    /// <summary>
+    /// Draw a testpicture with calculated pixel distances (to simulate a shadow)
+    /// </summary>
+    public static void ShowPixelDistanceTest()
     {
       var tmpBitmap = new Bitmap(480, 360, PixelFormat.Format32bppRgb);
       var g = Graphics.FromImage(tmpBitmap);
@@ -30,18 +33,11 @@ namespace TestTool
       g.FillEllipse(new SolidBrush(Color.White), 140, 120, 40, 40);
       g.FillEllipse(new SolidBrush(Color.White), 300, 120, 40, 40);
 
-      //g.FillPolygon(new SolidBrush(Color.White), new[] { new Point(100, 20), new Point(103, 340), new Point(53, 340), new Point(50, 20) });
-
       var fastBitmap = new FastBitmap(tmpBitmap);
-
-      //bool[] bits = new bool[fastBitmap.width * fastBitmap.height];
-      //for (int i = 0; i < bits.Length; i++) bits[i] = (fastBitmap.pixels[i] & 0xffffff) > 0x333333;
 
       var bits = new byte[fastBitmap.width * fastBitmap.height];
       for (int i = 0; i < bits.Length; i++) bits[i] = (byte)fastBitmap.pixels[i];
-      //for (int i = 0; i < bits.Length; i++) bits[i] = (byte)fastBitmap.pixels[i] == 255 ? byte.MaxValue : byte.MinValue;
 
-      //var distances = DistanceTransform.GenerateMapSlowReference(bits, fastBitmap.width, fastBitmap.height);
       var distances = DistanceTransform.GenerateMap(bits, fastBitmap.width, fastBitmap.height);
 
       for (int y = 0; y < fastBitmap.height; y++)

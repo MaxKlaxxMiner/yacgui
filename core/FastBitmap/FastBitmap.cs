@@ -1,6 +1,8 @@
 ﻿#region # using *.*
 using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable ClassCanBeSealed.Global
 // ReSharper disable UnusedMember.Global
