@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="core\FastBitmap\DrawViewPort.cs" />
     <Compile Include="core\FastBitmap\DistanceTransform.cs" />
+    <Compile Include="core\FastBitmap\Easing.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.DrawBitmap.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.FillRectangle.cs" />
     <Compile Include="core\FastBitmap\FastBitmap.MappedPolygons.cs" />

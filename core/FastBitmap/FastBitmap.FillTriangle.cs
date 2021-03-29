@@ -120,5 +120,58 @@ namespace YacGui
         }
       }
     }
+
+    /// <summary>
+    /// Draw a filled triangle (safe-mode with boundary check)
+    /// </summary>
+    /// <param name="x1">First x-position (e.g. from top left)</param>
+    /// <param name="y1">First y-position (e.g. from top left)</param>
+    /// <param name="x2">Second x-position (e.g. from top right)</param>
+    /// <param name="y2">Second y-position (e.g. from top right)</param>
+    /// <param name="x3">Third x-position (e.g. from bottom right)</param>
+    /// <param name="y3">Third y-position (e.g. from bottom right)</param>
+    /// <param name="x4">Fourth x-position (e.g. from bottom left)</param>
+    /// <param name="y4">Fourth y-position (e.g. from bottom left)</param>
+    /// <param name="color">Fill color</param>
+    public void FillQuad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, uint color)
+    {
+      // --- sort by y ---
+      int topY = y1;
+      int bottomY = y1;
+      if (y2 < topY) topY = y2;
+      if (y2 > bottomY) bottomY = y2;
+      if (y3 < topY) topY = y3;
+      if (y3 > bottomY) bottomY = y3;
+      if (y4 < topY) topY = y4;
+      if (y4 > bottomY) bottomY = y4;
+
+      // --- calculate offsets ---
+      y1 -= topY;
+      y2 -= topY;
+      y3 -= topY;
+      y4 -= topY;
+
+      if (topY >= height) return; // below picture
+      if (bottomY < 0) return; // above picture
+
+      var scanlines = new LinearScanLine[bottomY - topY + 1];
+      fixed (LinearScanLine* ptr = scanlines)
+      {
+        LinearScanLine.Clear(ptr, scanlines.Length);
+        LinearScanLine.AddLine(ptr, x1, y1, x2, y2);
+        LinearScanLine.AddLine(ptr, x2, y2, x3, y3);
+        LinearScanLine.AddLine(ptr, x3, y3, x4, y4);
+        LinearScanLine.AddLine(ptr, x4, y4, x1, y1);
+
+        if ((uint)x1 < width && (uint)x2 < width && (uint)x3 < width && (uint)x4 < width && topY >= 0 && bottomY < height)
+        {
+          FillScanlinesUnsafe(0, topY, scanlines, color);
+        }
+        else
+        {
+          FillScanlinesSafe(0, topY, scanlines, color);
+        }
+      }
+    }
   }
 }

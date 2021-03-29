@@ -56,6 +56,8 @@ namespace TestTool
       ShowDrawPerformanceOptimized();
       ShowCheckerPerformanceNaive();
       ShowCheckerPerformanceOptimized();
+
+      ShowCheckerRotate();
     }
 
     /// <summary>
@@ -67,7 +69,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowCheckerPerformanceOptimized();
+      ShowCheckerRotate();
     }
   }
 }
