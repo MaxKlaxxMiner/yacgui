@@ -1,18 +1,7 @@
-﻿#region # using *.*
-
-using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable ClassCanBeSealed.Global
+﻿using System;
 // ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedMethodReturnValue.Global
-// ReSharper disable JoinDeclarationAndInitializer
-#endregion
 
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Fast class to create and draw pictures
@@ -31,7 +20,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y + x;
+        var ptr = pixelPtr + w * y + x;
         for (int line = 0; line < scanlines.Length; line++)
         {
           int endX = scanlines[line].endX;
@@ -67,7 +56,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y + x;
+        var ptr = pixelPtr + w * y + x;
         for (int line = 0; line < scanlines.Length; line++)
         {
           int endX = scanlines[line].endX;
@@ -103,7 +92,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y;
+        var ptr = pixelPtr + w * y;
         for (int line = 0; line < scanlines.Length; line++)
         {
           if (y + line >= 0 && y + line < height)
@@ -146,7 +135,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y;
+        var ptr = pixelPtr + w * y;
         for (int line = 0; line < scanlines.Length; line++)
         {
           if (y + line >= 0 && y + line < height)
@@ -190,7 +179,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y;
+        var ptr = pixelPtr + w * y;
         for (int line = 0; line < scanlines.Length; line++)
         {
           if (y + line >= 0 && y + line < height)
@@ -518,7 +507,7 @@ namespace YacGui
           new Mapping3D.Vertex { u = u1, v = v1, x = x1, y = y1 },
           new Mapping3D.Vertex { u = u2, v = v2, x = x2, y = y2 },
           new Mapping3D.Vertex { u = u4, v = v4, x = x4, y = y4 },
-          new Mapping3D.Vertex { u = u3, v = v3, x = x3, y = y3 },
+          new Mapping3D.Vertex { u = u3, v = v3, x = x3, y = y3 }
         };
 
         Mapping3D.Matrix33 mappingMatrix;

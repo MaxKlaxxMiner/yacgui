@@ -8,9 +8,9 @@
  */
 
 using System;
-// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 
-namespace YacGui
+namespace FastBitmapLib
 {
   public static class DistanceTransform
   {
@@ -26,9 +26,9 @@ namespace YacGui
     /// <param name="n">Pixelcount</param>
     static unsafe void TransformLine(float* f, int n)
     {
-      float* d = &f[n];
-      float* z = &d[n];
-      int* v = (int*)&z[n + 1];
+      var d = &f[n];
+      var z = &d[n];
+      var v = (int*)&z[n + 1];
 
       int k = 0;
       v[0] = 0;
@@ -65,7 +65,7 @@ namespace YacGui
     /// <param name="height">Height of the picture</param>
     static unsafe void TransformField(float* distanceValues, int width, int height)
     {
-      float[] tmpBuffer = new float[Math.Max(width, height) * 4 + 1];
+      var tmpBuffer = new float[Math.Max(width, height) * 4 + 1];
       fixed (float* f = tmpBuffer)
       {
         // transform along columns
@@ -79,7 +79,7 @@ namespace YacGui
         // transform along rows
         for (int y = 0; y < height; y++)
         {
-          float* imf = &distanceValues[y * width];
+          var imf = &distanceValues[y * width];
           for (int x = 0; x < width; x++) f[x] = imf[x];
           TransformLine(f, width);
           for (int x = 0; x < width; x++) imf[x] = f[width + x];
@@ -99,7 +99,7 @@ namespace YacGui
       if (bits == null) throw new NullReferenceException("bits");
       if (bits.Length < width * height) throw new ArgumentException();
 
-      int[] distances = new int[bits.Length];
+      var distances = new int[bits.Length];
 
       fixed (int* tmpData = distances)
       {
@@ -131,7 +131,7 @@ namespace YacGui
       if (values == null) throw new NullReferenceException("values");
       if (values.Length < width * height) throw new ArgumentException();
 
-      int[] distances = new int[values.Length];
+      var distances = new int[values.Length];
 
       fixed (int* tmpData = distances)
       {
@@ -160,7 +160,7 @@ namespace YacGui
     /// <returns>Calculated pixel distances</returns>
     public static int[] GenerateMapSlowReference(bool[] bits, int width, int height)
     {
-      int[] distances = new int[bits.Length];
+      var distances = new int[bits.Length];
       for (int y = 0; y < height; y++)
       {
         for (int x = 0; x < width; x++)

@@ -4,8 +4,6 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
-using Timer = System.Windows.Forms.Timer;
-
 // ReSharper disable UnusedMember.Local
 #endregion
 

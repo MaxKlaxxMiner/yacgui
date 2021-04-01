@@ -1,16 +1,8 @@
-﻿#region # using *.*
-
-using System;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
+﻿// ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable ClassCanBeSealed.Global
-// ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMethodReturnValue.Global
-#endregion
 
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Fast class to create and draw pictures

@@ -1,8 +1,8 @@
-﻿// ReSharper disable MemberCanBePrivate.Global
+﻿using System.Drawing;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
-using System.Drawing;
-
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Helper class to calculate a viewport

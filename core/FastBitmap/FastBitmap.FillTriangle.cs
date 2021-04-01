@@ -1,18 +1,6 @@
-﻿#region # using *.*
+﻿// ReSharper disable UnusedMember.Global
 
-using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable ClassCanBeSealed.Global
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedMethodReturnValue.Global
-// ReSharper disable JoinDeclarationAndInitializer
-#endregion
-
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Fast class to create and draw pictures
@@ -31,7 +19,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y + x;
+        var ptr = pixelPtr + w * y + x;
         for (int line = 0; line < scanlines.Length; line++)
         {
           int endX = scanlines[line].endX;
@@ -53,7 +41,7 @@ namespace YacGui
       fixed (uint* pixelPtr = pixels)
       {
         int w = width;
-        uint* ptr = pixelPtr + w * y;
+        var ptr = pixelPtr + w * y;
         for (int line = 0; line < scanlines.Length; line++)
         {
           if (y + line >= 0 && y + line < height)

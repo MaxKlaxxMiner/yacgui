@@ -1,18 +1,8 @@
-﻿#region # using *.*
-
-using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable ClassCanBeSealed.Global
+﻿using System;
 // ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedMethodReturnValue.Global
 // ReSharper disable JoinDeclarationAndInitializer
-#endregion
 
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Fast class to create and draw pictures
@@ -168,7 +158,7 @@ namespace YacGui
       var xMap = LinearPixel.GenerateMapping(width, newWidth);
       var yMap = LinearPixel.GenerateMapping(height, newHeight);
 
-      uint[] clearPixels = new uint[3];
+      var clearPixels = new uint[3];
 
       uint clearFull, clearHalf;
       const int clearShift = 5; // div 32

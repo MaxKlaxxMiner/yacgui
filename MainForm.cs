@@ -10,6 +10,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using FastBitmapLib;
+
 #endregion
 
 namespace YacGui
@@ -23,7 +25,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 26;
+    const int SubVersion = 27;
 
     /// <summary>
     /// get title name

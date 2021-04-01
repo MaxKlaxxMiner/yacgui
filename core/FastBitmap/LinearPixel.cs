@@ -1,9 +1,7 @@
 ﻿using System;
 // ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
 
-namespace YacGui
+namespace FastBitmapLib
 {
   public struct LinearPixel
   {

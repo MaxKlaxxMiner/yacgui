@@ -1,10 +1,8 @@
 ﻿using System;
-// ReSharper disable UnusedType.Global
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
-// ReSharper disable NotAccessedField.Global
 
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Struct of a scanline with helper methods

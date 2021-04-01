@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace YacGui
+namespace FastBitmapLib
 {
   public class Mapping3D
   {

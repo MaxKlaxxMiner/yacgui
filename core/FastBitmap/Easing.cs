@@ -3,13 +3,10 @@
  *
  */
 
-#region # using *.*
 using System;
 // ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
-#endregion
 
-namespace YacGui
+namespace FastBitmapLib
 {
   /// <summary>
   /// Easing functions
