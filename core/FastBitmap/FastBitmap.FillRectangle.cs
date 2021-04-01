@@ -33,6 +33,7 @@ namespace YacGui
       if (y < 0) { height += y; y = 0; }
       if (x + width > this.width) { width = this.width - x; }
       if (y + height > this.height) { height = this.height - y; }
+      if (width < 1) return;
 
       fixed (uint* pixelsPtr = &pixels[x + y * this.width])
       {

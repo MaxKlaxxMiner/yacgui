@@ -52,6 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\BitmapTests.ShowDrawPerformance.cs" />
     <Compile Include="Tests\BitmapTests.ShowBitmap.cs" />
+    <Compile Include="Tests\BitmapTests.ShowShadow.cs" />
     <Compile Include="Tests\BitmapTests.ShowTextureMapped.cs" />
     <Compile Include="Tests\BitmapTests.ShowDrawTriangles.cs" />
     <Compile Include="Tests\BitmapTests.ShowDrawCircles.cs" />

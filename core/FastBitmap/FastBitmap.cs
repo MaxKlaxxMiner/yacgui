@@ -60,11 +60,39 @@ namespace YacGui
     /// <param name="bitmap">Bitmap to be used</param>
     public FastBitmap(Bitmap bitmap)
     {
+      if (bitmap == null) throw new NullReferenceException("bitmap");
       width = bitmap.Width;
       height = bitmap.Height;
       pixels = new uint[width * height];
 
       CopyFromGDIBitmap(bitmap);
+    }
+
+    /// <summary>
+    /// Constructor: Create a bitmap from bitmap
+    /// </summary>
+    /// <param name="fastBitmap">Bitmap to be used</param>
+    /// <param name="startX">Optional: X-Start from source bitmap (default: 0)</param>
+    /// <param name="startY">Optional: Y-Start from source bitmap (default: 0)</param>
+    /// <param name="width">Optional: width from source bitmap (default: max)</param>
+    /// <param name="height">Optional: height from source bitmap (default: max)</param>
+    public FastBitmap(FastBitmap fastBitmap, int startX = 0, int startY = 0, int width = int.MaxValue, int height = int.MaxValue)
+    {
+      if (fastBitmap == null) throw new NullReferenceException("fastBitmap");
+      if (width > fastBitmap.width) width = fastBitmap.width;
+      if (height > fastBitmap.height) height = fastBitmap.height;
+      if (startX < 0) startX = 0;
+      if (startY < 0) startY = 0;
+      if (startX >= fastBitmap.width) startX = fastBitmap.width - 1;
+      if (startY >= fastBitmap.height) startY = fastBitmap.height - 1;
+      if (startX + width > fastBitmap.width) width = fastBitmap.width - startX;
+      if (startY + height > fastBitmap.height) height = fastBitmap.height - startY;
+
+      this.width = width;
+      this.height = height;
+      pixels = new uint[width * height];
+
+      DrawBitmap(fastBitmap, 0, 0, startX, startY, width, height);
     }
 
     /// <summary>
