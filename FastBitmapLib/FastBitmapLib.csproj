@@ -42,20 +42,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extras\Color32.cs" />
+    <Compile Include="Extras\Color64.cs" />
     <Compile Include="Extras\DistanceTransform.cs" />
     <Compile Include="Extras\DrawViewPort.cs" />
     <Compile Include="Extras\Easing.cs" />
-    <Compile Include="Old\FastBitmap.cs" />
-    <Compile Include="Old\FastBitmap.DrawBitmap.cs" />
-    <Compile Include="Old\FastBitmap.DrawCircle.cs" />
-    <Compile Include="Old\FastBitmap.DrawLine.cs" />
-    <Compile Include="Old\FastBitmap.Extras.cs" />
-    <Compile Include="Old\FastBitmap.FillRectangle.cs" />
-    <Compile Include="Old\FastBitmap.FillTriangle.cs" />
-    <Compile Include="Old\FastBitmap.GDIBitmap.cs" />
-    <Compile Include="Old\FastBitmap.MappedPolygons.cs" />
-    <Compile Include="Old\FastBitmap.Resize.cs" />
-    <Compile Include="Old\FastBitmap.ResizeCanvas.cs" />
+    <Compile Include="Old\FastBitmapOld.cs" />
+    <Compile Include="Old\FastBitmapOld.DrawBitmap.cs" />
+    <Compile Include="Old\FastBitmapOld.DrawCircle.cs" />
+    <Compile Include="Old\FastBitmapOld.DrawLine.cs" />
+    <Compile Include="Old\FastBitmapOld.Extras.cs" />
+    <Compile Include="Old\FastBitmapOld.FillRectangle.cs" />
+    <Compile Include="Old\FastBitmapOld.FillTriangle.cs" />
+    <Compile Include="Old\FastBitmapOld.GDIBitmap.cs" />
+    <Compile Include="Old\FastBitmapOld.MappedPolygons.cs" />
+    <Compile Include="Old\FastBitmapOld.Resize.cs" />
+    <Compile Include="Old\FastBitmapOld.ResizeCanvas.cs" />
     <Compile Include="Extras\LinearPixel.cs" />
     <Compile Include="Extras\LinearScanline.cs" />
     <Compile Include="Extras\Mapping3D.cs" />

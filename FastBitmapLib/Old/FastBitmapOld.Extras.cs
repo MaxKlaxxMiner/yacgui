@@ -2,6 +2,8 @@
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMethodReturnValue.Global
 
+using FastBitmapLib.Extras;
+
 namespace FastBitmapLib
 {
   /// <summary>
