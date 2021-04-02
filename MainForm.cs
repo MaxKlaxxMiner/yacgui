@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using FastBitmapLib;
+using FastBitmapLib.Extras;
 
 #endregion
 
@@ -25,7 +26,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 27;
+    const int SubVersion = 28;
 
     /// <summary>
     /// get title name
@@ -69,7 +70,7 @@ namespace YacGui
     /// </summary>
     void MainForm_Load(object sender, EventArgs e)
     {
-      var fastBitmap = new FastBitmap(DefaultChessPieces);
+      var fastBitmap = new FastBitmapOld(DefaultChessPieces);
       fastBitmap.ConvertGreenPixelsToAlpha();
 
       var distMap = DistanceTransform.GenerateMap(fastBitmap.pixels.Select(x => (byte)(x >> 24)).ToArray(), fastBitmap.width, fastBitmap.height);
@@ -77,7 +78,7 @@ namespace YacGui
       {
         uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
         if (opacity == 0) continue; // too far
-        fastBitmap.pixels[i] = FastBitmap.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
+        fastBitmap.pixels[i] = FastBitmapOld.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
       }
 
       pictureBoxMain.Image = fastBitmap.ToGDIBitmap(PixelFormat.Format32bppArgb);
@@ -97,10 +98,10 @@ namespace YacGui
       const int Slow = 100;
 
       int time = Environment.TickCount % (100 * Slow) * 256 / (25 * Slow);
-      if (time < 256) c = FastBitmap.ColorBlend(l, r, time);
-      else if (time < 512) c = FastBitmap.ColorBlend(r, g, time - 256);
-      else if (time < 768) c = FastBitmap.ColorBlend(g, b, time - 512);
-      else c = FastBitmap.ColorBlend(b, l, time - 768);
+      if (time < 256) c = FastBitmapOld.ColorBlend(l, r, time);
+      else if (time < 512) c = FastBitmapOld.ColorBlend(r, g, time - 256);
+      else if (time < 768) c = FastBitmapOld.ColorBlend(g, b, time - 512);
+      else c = FastBitmapOld.ColorBlend(b, l, time - 768);
 
       BackColor = Color.FromArgb((int)c);
     }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FastBitmapLib
+namespace FastBitmapLib.Extras
 {
   public class Mapping3D
   {

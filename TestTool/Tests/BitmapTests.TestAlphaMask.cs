@@ -28,7 +28,7 @@ namespace TestTool
       var bitmapPieces = MainForm.DefaultChessPieces;
       Debug.Assert((uint)bitmapPieces.GetPixel(0, 0).ToArgb() == 0xff00ff00); // A green pixel is expected at the top left
 
-      var fastBitmap = new FastBitmap(bitmapPieces);
+      var fastBitmap = new FastBitmapOld(bitmapPieces);
       fastBitmap.ConvertGreenPixelsToAlpha();
 
       var newBitmap = fastBitmap.ToGDIBitmap();

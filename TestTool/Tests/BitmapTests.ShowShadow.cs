@@ -8,6 +8,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using FastBitmapLib;
+using FastBitmapLib.Extras;
 using YacGui;
 // ReSharper disable MemberCanBePrivate.Global
 #endregion
@@ -23,15 +24,15 @@ namespace TestTool
     {
       int checkerSize = 125;
 
-      var fastBitmap = new FastBitmap(checkerSize * 8, checkerSize * 8, 0xff252525);
+      var fastBitmap = new FastBitmapOld(checkerSize * 8, checkerSize * 8, 0xff252525);
 
-      var texture = new FastBitmap(MainForm.DefaultChessPieces);
+      var texture = new FastBitmapOld(MainForm.DefaultChessPieces);
       texture.ConvertGreenPixelsToAlpha();
-      texture = new FastBitmap(texture, texture.width / 6 * 3, texture.height / 2 * 1, texture.width / 6, texture.height / 2);
+      texture = new FastBitmapOld(texture, texture.width / 6 * 3, texture.height / 2 * 1, texture.width / 6, texture.height / 2);
       texture = texture.GetResizedCanvas(64, 64, 64, 64);
 
       var distMap = DistanceTransform.GenerateMap(texture.pixels.Select(x => (byte)(x >> 24)).ToArray(), texture.width, texture.height);
-      var shadow = new FastBitmap(texture.width, texture.height);
+      var shadow = new FastBitmapOld(texture.width, texture.height);
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
       int countFpsTick = Environment.TickCount + 1000;

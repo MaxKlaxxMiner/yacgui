@@ -8,6 +8,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using FastBitmapLib;
+using FastBitmapLib.Extras;
 using YacGui;
 // ReSharper disable MemberCanBePrivate.Global
 #endregion
@@ -24,7 +25,7 @@ namespace TestTool
     /// </summary>
     public static void ShowDrawPerformanceNaive()
     {
-      var fastBitmap = new FastBitmap(1900, 1000, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1900, 1000, 0xff252525);
 
       var texture = GetDemoTexture();
 
@@ -63,7 +64,7 @@ namespace TestTool
     /// </summary>
     public static void ShowDrawPerformanceOptimized()
     {
-      var fastBitmap = new FastBitmap(1900, 1000, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1900, 1000, 0xff252525);
 
       var texture = GetDemoTexture();
 
@@ -126,7 +127,7 @@ namespace TestTool
     /// </summary>
     public static void ShowCheckerPerformanceNaive()
     {
-      var fastBitmap = new FastBitmap(1000, 1000, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1000, 1000, 0xff252525);
 
       var texture = GetDemoTexture();
 
@@ -171,7 +172,7 @@ namespace TestTool
     /// </summary>
     public static void ShowCheckerPerformanceOptimized()
     {
-      var fastBitmap = new FastBitmap(1000, 1000, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1000, 1000, 0xff252525);
 
       var texture = GetDemoTexture();
 
@@ -230,7 +231,7 @@ namespace TestTool
       });
     }
 
-    static void DrawCheckerRotate(FastBitmap fastBitmap, double rad)
+    static void DrawCheckerRotate(FastBitmapOld fastBitmap, double rad)
     {
       double sinR = Math.Sin(rad);
       double cosR = Math.Cos(rad);
@@ -272,7 +273,7 @@ namespace TestTool
     /// </summary>
     public static void ShowCheckerRotate()
     {
-      var fastBitmap = new FastBitmap(1000, 1000, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1000, 1000, 0xff252525);
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
 

@@ -7,7 +7,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public unsafe partial class FastBitmap
+  public sealed unsafe partial class FastBitmapOld
   {
     /// <summary>
     /// Draw a bitmap
@@ -19,7 +19,7 @@ namespace FastBitmapLib
     /// <param name="spriteY">Optional: y-position for part of srcBitmap (default: 0)</param>
     /// <param name="spriteWidth">Optional: width for part of srcBitmap (default: full with)</param>
     /// <param name="spriteHeight">Optional: height for part of srcBitmap (default: full height)</param>
-    public void DrawBitmap(FastBitmap srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
+    public void DrawBitmap(FastBitmapOld srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
     {
       if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
 
@@ -77,7 +77,7 @@ namespace FastBitmapLib
     /// <param name="spriteY">Optional: y-position for part of srcBitmap (default: 0)</param>
     /// <param name="spriteWidth">Optional: width for part of srcBitmap (default: full with)</param>
     /// <param name="spriteHeight">Optional: height for part of srcBitmap (default: full height)</param>
-    public void DrawBitmapAlpha(FastBitmap srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
+    public void DrawBitmapAlpha(FastBitmapOld srcBitmap, int x = 0, int y = 0, int spriteX = 0, int spriteY = 0, int spriteWidth = int.MaxValue, int spriteHeight = int.MaxValue)
     {
       if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
 

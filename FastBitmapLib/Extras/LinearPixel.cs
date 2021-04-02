@@ -1,7 +1,7 @@
 ﻿using System;
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace FastBitmapLib
+namespace FastBitmapLib.Extras
 {
   public struct LinearPixel
   {

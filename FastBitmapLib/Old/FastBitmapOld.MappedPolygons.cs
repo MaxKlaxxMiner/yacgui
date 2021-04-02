@@ -1,4 +1,6 @@
 ﻿using System;
+using FastBitmapLib.Extras;
+
 // ReSharper disable UnusedMember.Global
 
 namespace FastBitmapLib
@@ -6,7 +8,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public unsafe partial class FastBitmap
+  public sealed unsafe partial class FastBitmapOld
   {
     /// <summary>
     /// Fill scanlines with a custom uvMap function (without boundary checks)

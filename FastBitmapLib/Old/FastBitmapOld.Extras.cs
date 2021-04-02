@@ -7,7 +7,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public unsafe partial class FastBitmap
+  public sealed unsafe partial class FastBitmapOld
   {
     /// <summary>
     /// Convert all green pixels to black with transparency (depending on the green value)

@@ -2,7 +2,7 @@
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
-namespace FastBitmapLib
+namespace FastBitmapLib.Extras
 {
   /// <summary>
   /// Struct of a scanline with helper methods

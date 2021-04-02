@@ -24,7 +24,7 @@ namespace TestTool
     /// </summary>
     public static void ShowDrawTriangles()
     {
-      var fastBitmap = new FastBitmap(1024, 576, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1024, 576, 0xff252525);
 
       fastBitmap.FillTriangle(200, 100, 350, 450, 100, 250, 0xff0088ff);
 
@@ -42,7 +42,7 @@ namespace TestTool
 
       for (int r = 0; r < 360; r += rStep)
       {
-        uint color = FastBitmap.ColorBlend(colors[r / degPerColor % colors.Length], colors[(r / degPerColor + 1) % colors.Length], r * 256 / degPerColor % 256);
+        uint color = FastBitmapOld.ColorBlend(colors[r / degPerColor % colors.Length], colors[(r / degPerColor + 1) % colors.Length], r * 256 / degPerColor % 256);
 
         fastBitmap.FillTriangle((int)(Math.Sin(r / 180.0 * Math.PI) * radius) + ofsX, (int)(-Math.Cos(r / 180.0 * Math.PI) * radius) + ofsY,
           (int)(Math.Sin((r + rStep) / 180.0 * Math.PI) * radius) + ofsX, (int)(-Math.Cos((r + rStep) / 180.0 * Math.PI) * radius) + ofsY,

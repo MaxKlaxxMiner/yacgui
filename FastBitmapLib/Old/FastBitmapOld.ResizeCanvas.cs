@@ -6,7 +6,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public partial class FastBitmap
+  public sealed partial class FastBitmapOld
   {
     /// <summary>
     /// Create a resized bitmap without stretching (add/remove pixels)
@@ -17,13 +17,13 @@ namespace FastBitmapLib
     /// <param name="addBottom">Add/Remove pixels on bottom</param>
     /// <param name="fillColor">Fillcolor (if add pixels, default: transparency)</param>
     /// <returns>Resized bitmap</returns>
-    public FastBitmap GetResizedCanvas(int addLeft = 0, int addRight = 0, int addTop = 0, int addBottom = 0, uint fillColor = 0x00000000)
+    public FastBitmapOld GetResizedCanvas(int addLeft = 0, int addRight = 0, int addTop = 0, int addBottom = 0, uint fillColor = 0x00000000)
     {
       int newWidth = addLeft + width + addRight;
       int newHeight = addTop + height + addBottom;
       if (newWidth < 1 || newHeight < 1) throw new ArgumentOutOfRangeException();
 
-      var result = new FastBitmap(newWidth, newHeight);
+      var result = new FastBitmapOld(newWidth, newHeight);
       result.DrawBitmap(this, addLeft, addTop);
       if (addLeft > 0) result.FillRectangle(0, 0, addLeft, newHeight, fillColor);
       if (addRight > 0) result.FillRectangle(newWidth - addRight, 0, addRight, newHeight, fillColor);

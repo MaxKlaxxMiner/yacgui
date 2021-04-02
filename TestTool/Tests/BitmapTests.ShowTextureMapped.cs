@@ -24,9 +24,9 @@ namespace TestTool
     /// </summary>
     public static void ShowTextureMappedSimple()
     {
-      var fastBitmap = new FastBitmap(1024, 576, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1024, 576, 0xff252525);
 
-      Func<double, double, uint> map = (u, v) => FastBitmap.ColorBlend(FastBitmap.ColorBlend(0xff0000, 0x00ff00, u), FastBitmap.ColorBlend(0x0000ff, 0x000000, u), v);
+      Func<double, double, uint> map = (u, v) => FastBitmapOld.ColorBlend(FastBitmapOld.ColorBlend(0xff0000, 0x00ff00, u), FastBitmapOld.ColorBlend(0x0000ff, 0x000000, u), v);
 
       fastBitmap.MappedTriangle(50, 50, 100, 400, 150, 500, 0, 0, 0, 1, 1, 1, map);
       fastBitmap.MappedTriangle(50, 50, 300, 100, 150, 500, 0, 0, 1, 0, 1, 1, map);
@@ -44,7 +44,7 @@ namespace TestTool
     /// </summary>
     public static void ShowTextureMappedTextured()
     {
-      var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1024, 768, 0xff252525);
 
       var texture = GetDemoTexture();
       double mulX = texture.width / 6;
@@ -64,7 +64,7 @@ namespace TestTool
 
         uint txColor = texture.pixels[sx + sy * texture.width];
 
-        return FastBitmap.ColorBlendFast(dstColor, txColor, txColor >> 24);
+        return FastBitmapOld.ColorBlendFast(dstColor, txColor, txColor >> 24);
       };
 
       Func<double, double, uint, uint> mapLinear = (u, v, dstColor) =>
@@ -86,11 +86,11 @@ namespace TestTool
         uint txColor3 = texture.pixels[sx + (sy + 1) * texture.width];
         uint txColor4 = texture.pixels[sx + 1 + (sy + 1) * texture.width];
 
-        uint txColorTop = FastBitmap.ColorBlendAlphaFast(txColor1, txColor2, (uint)fractX);
-        uint txColorBottom = FastBitmap.ColorBlendAlphaFast(txColor3, txColor4, (uint)fractX);
-        uint txColor = FastBitmap.ColorBlendAlphaFast(txColorTop, txColorBottom, (uint)fractY);
+        uint txColorTop = FastBitmapOld.ColorBlendAlphaFast(txColor1, txColor2, (uint)fractX);
+        uint txColorBottom = FastBitmapOld.ColorBlendAlphaFast(txColor3, txColor4, (uint)fractX);
+        uint txColor = FastBitmapOld.ColorBlendAlphaFast(txColorTop, txColorBottom, (uint)fractY);
 
-        return FastBitmap.ColorBlendFast(dstColor, txColor, txColor >> 24);
+        return FastBitmapOld.ColorBlendFast(dstColor, txColor, txColor >> 24);
       };
 
       fastBitmap.MappedQuad(-150, -50, 650, 50, 500, 750, 100, 800, 0, 0, 1, 0, 1, 1, 0, 1, mapNearest);
@@ -105,7 +105,7 @@ namespace TestTool
     /// </summary>
     public static void ShowTextureMappedTexturedPerspective()
     {
-      var fastBitmap = new FastBitmap(1024, 768, 0xff252525);
+      var fastBitmap = new FastBitmapOld(1024, 768, 0xff252525);
 
       var texture = GetDemoTexture();
       double mulX = texture.width / 6;
@@ -132,11 +132,11 @@ namespace TestTool
         uint txColor3 = texture.pixels[sx + (sy + 1) * texture.width];
         uint txColor4 = texture.pixels[sx + 1 + (sy + 1) * texture.width];
 
-        uint txColorTop = FastBitmap.ColorBlendAlphaFast(txColor1, txColor2, (uint)fractX);
-        uint txColorBottom = FastBitmap.ColorBlendAlphaFast(txColor3, txColor4, (uint)fractX);
-        uint txColor = FastBitmap.ColorBlendAlphaFast(txColorTop, txColorBottom, (uint)fractY);
+        uint txColorTop = FastBitmapOld.ColorBlendAlphaFast(txColor1, txColor2, (uint)fractX);
+        uint txColorBottom = FastBitmapOld.ColorBlendAlphaFast(txColor3, txColor4, (uint)fractX);
+        uint txColor = FastBitmapOld.ColorBlendAlphaFast(txColorTop, txColorBottom, (uint)fractY);
 
-        return FastBitmap.ColorBlendFast(dstColor, txColor, txColor >> 24);
+        return FastBitmapOld.ColorBlendFast(dstColor, txColor, txColor >> 24);
       };
 
       fastBitmap.MappedQuad(-150, -50, 650, 50, 500, 750, 100, 800, 0, 0, 1, 0, 1, 1, 0, 1, mapLinear);

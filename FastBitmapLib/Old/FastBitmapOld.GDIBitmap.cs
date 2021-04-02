@@ -2,6 +2,8 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using FastBitmapLib.Extras;
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -10,7 +12,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public partial class FastBitmap
+  public sealed partial class FastBitmapOld
   {
     /// <summary>
     /// map the Pixelformat to their 32-Bit Version

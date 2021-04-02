@@ -1,11 +1,13 @@
 ﻿// ReSharper disable UnusedMember.Global
 
+using FastBitmapLib.Extras;
+
 namespace FastBitmapLib
 {
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public unsafe partial class FastBitmap
+  public sealed unsafe partial class FastBitmapOld
   {
     /// <summary>
     /// Fill the scanlines with a solid color (without boundary checks)

@@ -20,7 +20,7 @@ namespace TestTool
   public partial class BitmapTests
   {
     /// <summary>
-    /// Check the basics of the <see cref="FastBitmap"/> class
+    /// Check the basics of the <see cref="FastBitmapOld"/> class
     /// </summary>
     public static void TestFastBitmap()
     {
@@ -29,7 +29,7 @@ namespace TestTool
       bitmap.SetPixel(1, 0, Color.Green); // set green pixel (0xff00ff00) in the next column
       bitmap.SetPixel(0, 1, Color.Red);   // set red pixel (0xffff0000) at the beginning of the next line
 
-      var fastBitmap = new FastBitmap(bitmap);
+      var fastBitmap = new FastBitmapOld(bitmap);
       Debug.Assert(fastBitmap.width == 10 && fastBitmap.height == 5);
       Debug.Assert(fastBitmap.GetPixel(0, 0) == (uint)Color.Blue.ToArgb());
       Debug.Assert(fastBitmap.GetPixel(1, 0) == (uint)Color.Green.ToArgb());

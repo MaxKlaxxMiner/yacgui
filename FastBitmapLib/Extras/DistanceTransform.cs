@@ -10,7 +10,7 @@
 using System;
 // ReSharper disable UnusedMember.Global
 
-namespace FastBitmapLib
+namespace FastBitmapLib.Extras
 {
   public static class DistanceTransform
   {

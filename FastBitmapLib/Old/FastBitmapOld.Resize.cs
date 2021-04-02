@@ -1,4 +1,6 @@
 ﻿using System;
+using FastBitmapLib.Extras;
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable JoinDeclarationAndInitializer
 
@@ -7,7 +9,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public partial class FastBitmap
+  public sealed partial class FastBitmapOld
   {
     /// <summary>
     /// Create a resized bitmap (simple nearest pixel)
@@ -15,14 +17,14 @@ namespace FastBitmapLib
     /// <param name="newWidth">Width of the new picture</param>
     /// <param name="newHeight">Height of the nw picture</param>
     /// <returns>Resized bitmap</returns>
-    public FastBitmap GetResizedSimple(int newWidth, int newHeight)
+    public FastBitmapOld GetResizedSimple(int newWidth, int newHeight)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();
 
       if (newWidth <= 0) newWidth = newHeight * width / height;
       if (newHeight <= 0) newHeight = newWidth * height / width;
 
-      var result = new FastBitmap(newWidth, newHeight);
+      var result = new FastBitmapOld(newWidth, newHeight);
 
       int cxStep = 256 * width / newWidth;
       for (int y = 0; y < newHeight; y++)
@@ -43,14 +45,14 @@ namespace FastBitmapLib
     /// <param name="newWidth">Width of the new picture</param>
     /// <param name="newHeight">Height of the nw picture</param>
     /// <returns>Resized bitmap</returns>
-    public FastBitmap GetResizedHigh(int newWidth, int newHeight)
+    public FastBitmapOld GetResizedHigh(int newWidth, int newHeight)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();
 
       if (newWidth <= 0) newWidth = newHeight * width / height;
       if (newHeight <= 0) newHeight = newWidth * height / width;
 
-      var result = new FastBitmap(newWidth, newHeight);
+      var result = new FastBitmapOld(newWidth, newHeight);
 
       var xMap = LinearPixel.GenerateMapping(width, newWidth);
       var yMap = LinearPixel.GenerateMapping(height, newHeight);
@@ -145,14 +147,14 @@ namespace FastBitmapLib
     /// <param name="newHeight">Height of the nw picture</param>
     /// <param name="clearLevel">Cleartype-Level (0 = low, 5 = high)</param>
     /// <returns>Resized bitmap</returns>
-    public FastBitmap GetResizedClear(int newWidth, int newHeight, int clearLevel)
+    public FastBitmapOld GetResizedClear(int newWidth, int newHeight, int clearLevel)
     {
       if (newWidth <= 0 && newHeight <= 0) throw new ArgumentException();
 
       if (newWidth <= 0) newWidth = newHeight * width / height;
       if (newHeight <= 0) newHeight = newWidth * height / width;
 
-      var result = new FastBitmap(newWidth, newHeight);
+      var result = new FastBitmapOld(newWidth, newHeight);
 
       newWidth *= 3;
       var xMap = LinearPixel.GenerateMapping(width, newWidth);

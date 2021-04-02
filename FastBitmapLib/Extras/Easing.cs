@@ -4,9 +4,9 @@
  */
 
 using System;
-// ReSharper disable UnusedMember.Global
 
-namespace FastBitmapLib
+// ReSharper disable UnusedMember.Global
+namespace FastBitmapLib.Extras
 {
   /// <summary>
   /// Easing functions

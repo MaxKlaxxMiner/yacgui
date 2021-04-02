@@ -2,7 +2,7 @@
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
-namespace FastBitmapLib
+namespace FastBitmapLib.Extras
 {
   /// <summary>
   /// Helper class to calculate a viewport

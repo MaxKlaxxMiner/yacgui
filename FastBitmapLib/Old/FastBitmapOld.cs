@@ -8,7 +8,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Fast class to create and draw pictures
   /// </summary>
-  public partial class FastBitmap
+  public sealed partial class FastBitmapOld
   {
     /// <summary>
     /// Maximum width in pixels
@@ -38,7 +38,7 @@ namespace FastBitmapLib
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public FastBitmap(int width, int height, uint backgroundColor = 0x00000000)
+    public FastBitmapOld(int width, int height, uint backgroundColor = 0x00000000)
     {
       if (width < 1 || width > MaxWidth) throw new ArgumentOutOfRangeException("width");
       if (height < 1 || height > MaxHeight) throw new ArgumentOutOfRangeException("height");
@@ -52,7 +52,7 @@ namespace FastBitmapLib
     /// Constructor: Create a bitmap from GDI-Bitmap
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
-    public FastBitmap(Bitmap bitmap)
+    public FastBitmapOld(Bitmap bitmap)
     {
       if (bitmap == null) throw new NullReferenceException("bitmap");
       width = bitmap.Width;
@@ -65,28 +65,28 @@ namespace FastBitmapLib
     /// <summary>
     /// Constructor: Create a bitmap from bitmap
     /// </summary>
-    /// <param name="fastBitmap">Bitmap to be used</param>
+    /// <param name="FastBitmapOld">Bitmap to be used</param>
     /// <param name="startX">Optional: X-Start from source bitmap (default: 0)</param>
     /// <param name="startY">Optional: Y-Start from source bitmap (default: 0)</param>
     /// <param name="width">Optional: width from source bitmap (default: max)</param>
     /// <param name="height">Optional: height from source bitmap (default: max)</param>
-    public FastBitmap(FastBitmap fastBitmap, int startX = 0, int startY = 0, int width = int.MaxValue, int height = int.MaxValue)
+    public FastBitmapOld(FastBitmapOld FastBitmapOld, int startX = 0, int startY = 0, int width = int.MaxValue, int height = int.MaxValue)
     {
-      if (fastBitmap == null) throw new NullReferenceException("fastBitmap");
-      if (width > fastBitmap.width) width = fastBitmap.width;
-      if (height > fastBitmap.height) height = fastBitmap.height;
+      if (FastBitmapOld == null) throw new NullReferenceException("FastBitmapOld");
+      if (width > FastBitmapOld.width) width = FastBitmapOld.width;
+      if (height > FastBitmapOld.height) height = FastBitmapOld.height;
       if (startX < 0) startX = 0;
       if (startY < 0) startY = 0;
-      if (startX >= fastBitmap.width) startX = fastBitmap.width - 1;
-      if (startY >= fastBitmap.height) startY = fastBitmap.height - 1;
-      if (startX + width > fastBitmap.width) width = fastBitmap.width - startX;
-      if (startY + height > fastBitmap.height) height = fastBitmap.height - startY;
+      if (startX >= FastBitmapOld.width) startX = FastBitmapOld.width - 1;
+      if (startY >= FastBitmapOld.height) startY = FastBitmapOld.height - 1;
+      if (startX + width > FastBitmapOld.width) width = FastBitmapOld.width - startX;
+      if (startY + height > FastBitmapOld.height) height = FastBitmapOld.height - startY;
 
       this.width = width;
       this.height = height;
       pixels = new uint[width * height];
 
-      DrawBitmap(fastBitmap, 0, 0, startX, startY, width, height);
+      DrawBitmap(FastBitmapOld, 0, 0, startX, startY, width, height);
     }
 
     /// <summary>

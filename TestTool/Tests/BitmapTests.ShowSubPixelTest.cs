@@ -24,7 +24,7 @@ namespace TestTool
     /// </summary>
     public static void ShowSubPixelTest()
     {
-      var fastBitmap = new FastBitmap(MainForm.DefaultChessPieces);
+      var fastBitmap = new FastBitmapOld(MainForm.DefaultChessPieces);
       fastBitmap.ConvertGreenPixelsToAlpha();
 
       int width = fastBitmap.width;
@@ -79,19 +79,19 @@ namespace TestTool
       InfoText("clear - default");
       gOut.DrawImage(testBaseBitmap, 0, 0, outWidth, outHeight);
       InfoText("clear - fastest");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedSimple(outWidth, outHeight).ToGDIBitmapAlpha(), outWidth, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedSimple(outWidth, outHeight).ToGDIBitmapAlpha(), outWidth, 0);
       InfoText("clear - high");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedHigh(outWidth, outHeight).ToGDIBitmapAlpha(), outWidth * 2, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedHigh(outWidth, outHeight).ToGDIBitmapAlpha(), outWidth * 2, 0);
       InfoText("clear - clear 1");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedClear(outWidth, outHeight, 1).ToGDIBitmapAlpha(), outWidth * 3, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedClear(outWidth, outHeight, 1).ToGDIBitmapAlpha(), outWidth * 3, 0);
       InfoText("clear - clear 2");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedClear(outWidth, outHeight, 2).ToGDIBitmapAlpha(), outWidth * 4, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedClear(outWidth, outHeight, 2).ToGDIBitmapAlpha(), outWidth * 4, 0);
       InfoText("clear - clear 3");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedClear(outWidth, outHeight, 3).ToGDIBitmapAlpha(), outWidth * 5, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedClear(outWidth, outHeight, 3).ToGDIBitmapAlpha(), outWidth * 5, 0);
       InfoText("clear - clear 4");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedClear(outWidth, outHeight, 4).ToGDIBitmapAlpha(), outWidth * 6, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedClear(outWidth, outHeight, 4).ToGDIBitmapAlpha(), outWidth * 6, 0);
       InfoText("clear - clear 5");
-      gOut.DrawImageUnscaled(new FastBitmap(testBaseBitmap).GetResizedClear(outWidth, outHeight, 5).ToGDIBitmapAlpha(), outWidth * 7, 0);
+      gOut.DrawImageUnscaled(new FastBitmapOld(testBaseBitmap).GetResizedClear(outWidth, outHeight, 5).ToGDIBitmapAlpha(), outWidth * 7, 0);
 
       ShowPicture(outputBitmap, "SubPixel-Test");
     }
