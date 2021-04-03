@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
 using System.Runtime.CompilerServices;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace FastBitmapLib.Extras
 {
@@ -8,6 +10,7 @@ namespace FastBitmapLib.Extras
   /// </summary>
   public static class Color64
   {
+    #region # // --- internals ---
     /// <summary>
     /// Unpack a 32-Bit Value
     /// </summary>
@@ -21,43 +24,166 @@ namespace FastBitmapLib.Extras
       t = (t | t << 8) & 0x00ff00ff00ff00ff;  // ..aa..rr ..gg..bb
       return t | t << 8;                      // aaaarrrr ggggbbbb
     }
+    #endregion
 
+    #region # // --- From(int32) ---
     /// <summary>
-    /// Pack a 64-Bit value to 32-Bit, with byte interleaving (truncate lower bits)
+    /// Get the 64-Bit Color-Code from a <see cref="uint"/> value
     /// </summary>
-    /// <param name="value64">64-Bit value to pack</param>
-    /// <returns>packet 32-Bit value</returns>
+    /// <param name="color32">selected color</param>
+    /// <param name="useAlpha">Optional: use alpha channel from color (default: true, if false = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static uint Pack32(ulong value64)
+    public static ulong From(uint color32, bool useAlpha = true)
     {
-      ulong t = value64;                      // aaaarrrrggggbbbb
-      t = t >> 8 & 0xff00ff00ff00ff00;        // ..aa..rr..gg..bb
-      t = (t | t >> 8) & 0x0000ffff0000ffff;  // ....aarr....ggbb
-      return (uint)(t | t >> 16);             // ........aarrggbb
+      return From(Unpack32(color32), useAlpha);
     }
 
     /// <summary>
     /// Get the 64-Bit Color-Code from a <see cref="int"/> value
     /// </summary>
-    /// <param name="color">selected color</param>
-    /// <param name="useAlpha">Optional: use alpha channel from color (default: false = 100% opacity)</param>
-    /// <returns>32-Bit Color-Code</returns>
+    /// <param name="color32">selected color</param>
+    /// <param name="useAlpha">Optional: use alpha channel from color (default: true, if false = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong From(int color, bool useAlpha = false)
+    public static ulong From(int color32, bool useAlpha = true)
     {
-      return Unpack32(Color32.From(color, useAlpha));
+      return From((uint)color32, useAlpha);
     }
 
+    /// <summary>
+    /// Get the 64-Bit Color-Code from a <see cref="uint"/> value
+    /// </summary>
+    /// <param name="color32">selected color</param>
+    /// <param name="setAlpha">set alpha (0 = transparency, 65535 = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(uint color32, ushort setAlpha)
+    {
+      return From(Unpack32(color32), setAlpha);
+    }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from a <see cref="int"/> value
+    /// </summary>
+    /// <param name="color32">selected color</param>
+    /// <param name="setAlpha">set alpha (0 = transparency, 65535 = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(int color32, ushort setAlpha)
+    {
+      return From((uint)color32, setAlpha);
+    }
+    #endregion
+
+    #region # // --- From(int64) ---
+    /// <summary>
+    /// Get the 64-Bit Color-Code from a <see cref="ulong"/> value
+    /// </summary>
+    /// <param name="color64">selected color</param>
+    /// <param name="useAlpha">Optional: use alpha channel from color (default: true, if false = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(ulong color64, bool useAlpha = true)
+    {
+      return useAlpha
+        ? color64                          // use entire value
+        : color64 | 0xffff000000000000UL;  // overwrite alpha channel -> 100% opacity
+    }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from a <see cref="ulong"/> value
+    /// </summary>
+    /// <param name="color64">selected color</param>
+    /// <param name="setAlpha">set alpha (0 = transparency, 65535 = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(ulong color64, ushort setAlpha)
+    {
+      return color64 & 0xffffffffffff | (ulong)setAlpha << 48;
+    }
+    #endregion
+
+    #region # // --- From(Drawing.Color) ---
     /// <summary>
     /// Get the 64-Bit Color-Code from a <see cref="System.Drawing.Color"/> value
     /// </summary>
     /// <param name="color">selected color</param>
-    /// <param name="useAlpha">Optional: use alpha channel from color (default: true)</param>
+    /// <param name="useAlpha">Optional: use alpha channel from color (default: true, if false = 100% opacity)</param>
     /// <returns>32-Bit Color-Code</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong From(Color color, bool useAlpha = true)
     {
       return From(color.ToArgb(), useAlpha);
     }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from a <see cref="System.Drawing.Color"/> value
+    /// </summary>
+    /// <param name="color">selected color</param>
+    /// <param name="setAlpha">set alpha (0 = transparency, 65535 = 100% opacity)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(Color color, ushort setAlpha)
+    {
+      return From(color.ToArgb(), setAlpha);
+    }
+    #endregion
+
+    #region # // --- From(a, r, g, b) ---
+    /// <summary>
+    /// Get the 64-Bit Color-Code from three color components and alpha channel
+    /// </summary>
+    /// <param name="a">byte alpha value (0-255)</param>
+    /// <param name="r">byte red value (0-255)</param>
+    /// <param name="g">byte green value (0-255)</param>
+    /// <param name="b">byte blue value (0-255)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(byte a, byte r, byte g, byte b)
+    {
+      return Unpack32((uint)a << 24 | (uint)r << 16 | (uint)g << 8 | b);
+    }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from three color components and alpha channel
+    /// </summary>
+    /// <param name="a">ushort alpha value (0-65535)</param>
+    /// <param name="r">ushort red value (0-65535)</param>
+    /// <param name="g">ushort green value (0-65535)</param>
+    /// <param name="b">ushort blue value (0-65535)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(ushort a, ushort r, ushort g, ushort b)
+    {
+      return (ulong)a << 48 | (ulong)r << 32 | (ulong)g << 16 | b;
+    }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from three color components
+    /// </summary>
+    /// <param name="r">byte red value (0-255)</param>
+    /// <param name="g">byte green value (0-255)</param>
+    /// <param name="b">byte blue value (0-255)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(byte r, byte g, byte b)
+    {
+      return From(byte.MaxValue, r, g, b);
+    }
+
+    /// <summary>
+    /// Get the 64-Bit Color-Code from three color components
+    /// </summary>
+    /// <param name="r">ushort red value (0-65535)</param>
+    /// <param name="g">ushort green value (0-65535)</param>
+    /// <param name="b">ushort blue value (0-65535)</param>
+    /// <returns>64-Bit Color-Code</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong From(ushort r, ushort g, ushort b)
+    {
+      return From(ushort.MaxValue, r, g, b);
+    }
+    #endregion
   }
 }
