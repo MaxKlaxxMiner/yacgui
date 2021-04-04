@@ -31,28 +31,24 @@ namespace FastBitmapLib
 
     #region # // --- SetPixel() / GetPixel() ---
     /// <summary>
-    /// Set the pixel <see cref="Color32"/> at a specific position
+    /// Set the pixel <see cref="Color32"/> at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public override void SetPixel(int x, int y, uint color32)
+    public override void SetPixelUnsafe(int x, int y, uint color32)
     {
-      if (x < 0 || x >= width || y < 0 || y >= height) return;
-
       pixels[x, y] = color32;
     }
 
     /// <summary>
-    /// Get the pixel <see cref="Color32"/> from a specific position
+    /// Get the pixel <see cref="Color32"/> from a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel <see cref="Color32"/></returns>
-    public override uint GetPixel32(int x, int y)
+    public override uint GetPixelUnsafe32(int x, int y)
     {
-      if (x < 0 || x >= width || y < 0 || y >= height) return backgroundColor;
-
       return pixels[x, y];
     }
     #endregion

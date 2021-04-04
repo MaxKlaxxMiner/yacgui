@@ -31,28 +31,24 @@ namespace FastBitmapLib
 
     #region # // --- SetPixel() / GetPixel() ---
     /// <summary>
-    /// Set the pixel <see cref="Color64"/> at a specific position
+    /// Set the pixel <see cref="Color64"/> at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color64">Pixel <see cref="Color64"/></param>
-    public override void SetPixel(int x, int y, ulong color64)
+    public override void SetPixelUnsafe(int x, int y, ulong color64)
     {
-      if (x < 0 || x >= width || y < 0 || y >= height) return;
-
       pixels[x, y] = color64;
     }
 
     /// <summary>
-    /// Get the pixel <see cref="Color64"/> from a specific position
+    /// Get the pixel <see cref="Color64"/> from a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel <see cref="Color64"/></returns>
-    public override ulong GetPixel64(int x, int y)
+    public override ulong GetPixelUnsafe64(int x, int y)
     {
-      if (x < 0 || x >= width || y < 0 || y >= height) return backgroundColor;
-
       return pixels[x, y];
     }
     #endregion

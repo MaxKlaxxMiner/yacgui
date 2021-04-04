@@ -44,36 +44,36 @@ namespace FastBitmapLib
 
     #region # // --- basic methods ---
     /// <summary>
-    /// Set the pixel <see cref="Color32"/> at a specific position
+    /// Set the pixel <see cref="Color32"/> at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public abstract void SetPixel(int x, int y, uint color32);
+    public abstract void SetPixelUnsafe(int x, int y, uint color32);
 
     /// <summary>
-    /// Set the pixel <see cref="Color64"/> at a specific position
+    /// Set the pixel <see cref="Color64"/> at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color64">Pixel <see cref="Color64"/></param>
-    public abstract void SetPixel(int x, int y, ulong color64);
+    public abstract void SetPixelUnsafe(int x, int y, ulong color64);
 
     /// <summary>
-    /// Get the pixel <see cref="Color32"/> from a specific position
+    /// Get the pixel <see cref="Color32"/> from a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel <see cref="Color32"/></returns>
-    public abstract uint GetPixel32(int x, int y);
+    public abstract uint GetPixelUnsafe32(int x, int y);
 
     /// <summary>
-    /// Get the pixel <see cref="Color64"/> from a specific position
+    /// Get the pixel <see cref="Color64"/> from a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel <see cref="Color64"/></returns>
-    public abstract ulong GetPixel64(int x, int y);
+    public abstract ulong GetPixelUnsafe64(int x, int y);
 
     /// <summary>
     /// Fill the Scanline with a specific <see cref="Color32"/>

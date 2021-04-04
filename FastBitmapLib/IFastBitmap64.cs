@@ -6,6 +6,7 @@ using FastBitmapLib.Extras;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable NotAccessedField.Global
 // ReSharper disable FieldCanBeMadeReadOnly.Global
+// ReSharper disable VirtualMemberNeverOverriden.Global
 
 namespace FastBitmapLib
 {
@@ -37,9 +38,45 @@ namespace FastBitmapLib
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public override void SetPixel(int x, int y, uint color32)
+    public virtual void SetPixel(int x, int y, uint color32)
     {
-      SetPixel(x, y, Color64.From(color32));
+      if ((uint)x < width || (uint)y < height) return;
+      SetPixelUnsafe(x, y, color32);
+    }
+
+    /// <summary>
+    /// Set the pixel <see cref="Color64"/> at a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color64">Pixel <see cref="Color64"/></param>
+    public virtual void SetPixel(int x, int y, ulong color64)
+    {
+      if ((uint)x < width || (uint)y < height) return;
+      SetPixelUnsafe(x, y, color64);
+    }
+
+    /// <summary>
+    /// Set the pixel <see cref="Color32"/> at a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color32">Pixel <see cref="Color32"/></param>
+    public override void SetPixelUnsafe(int x, int y, uint color32)
+    {
+      SetPixelUnsafe(x, y, Color64.From(color32));
+    }
+
+    /// <summary>
+    /// Get the pixel <see cref="Color64"/> from a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel <see cref="Color64"/></returns>
+    public virtual ulong GetPixel64(int x, int y)
+    {
+      if ((uint)x < width || (uint)y < height) return backgroundColor;
+      return GetPixelUnsafe64(x, y);
     }
 
     /// <summary>
@@ -48,9 +85,21 @@ namespace FastBitmapLib
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel <see cref="Color32"/></returns>
-    public override uint GetPixel32(int x, int y)
+    public virtual uint GetPixel32(int x, int y)
     {
-      return Color32.From(GetPixel64(x, y));
+      if ((uint)x < width || (uint)y < height) return Color32.From(backgroundColor);
+      return GetPixelUnsafe32(x, y);
+    }
+
+    /// <summary>
+    /// Get the pixel <see cref="Color32"/> from a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel <see cref="Color32"/></returns>
+    public override uint GetPixelUnsafe32(int x, int y)
+    {
+      return Color32.From(GetPixelUnsafe64(x, y));
     }
 
     /// <summary>
@@ -72,9 +121,20 @@ namespace FastBitmapLib
     /// <param name="color64">fill-<see cref="Color64"/></param>
     public override void FillScanline(int x, int y, int w, ulong color64)
     {
+      if (x < 0)
+      {
+        w += x;
+        x = 0;
+      }
+
+      if (x + w > width)
+      {
+        w = width - x;
+      }
+
       for (int i = 0; i < w; i++)
       {
-        SetPixel(x + i, y, color64);
+        SetPixelUnsafe(x + i, y, color64);
       }
     }
 
@@ -155,9 +215,21 @@ namespace FastBitmapLib
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
     public override void WriteScanLine(int x, int y, int w, ulong* srcPixels)
     {
+      if (x < 0)
+      {
+        w += x;
+        srcPixels -= x;
+        x = 0;
+      }
+
+      if (x + w > width)
+      {
+        w = width - x;
+      }
+
       for (int i = 0; i < w; i++)
       {
-        SetPixel(x + i, y, srcPixels[i]);
+        SetPixelUnsafe(x + i, y, srcPixels[i]);
       }
     }
 
@@ -279,9 +351,23 @@ namespace FastBitmapLib
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public override void ReadScanLine(int x, int y, int w, ulong* destPixels)
     {
+      if (x < 0)
+      {
+        for (int i = 0; i < -x; i++) destPixels[i] = backgroundColor;
+        w += x;
+        destPixels -= x;
+        x = 0;
+      }
+
+      if (x + w > width)
+      {
+        for (int i = width; i < w; i++) destPixels[i] = backgroundColor;
+        w = width - x;
+      }
+
       for (int i = 0; i < w; i++)
       {
-        destPixels[x] = GetPixel64(x + i, y);
+        destPixels[x] = GetPixelUnsafe64(x + i, y);
       }
     }
 
@@ -339,9 +425,23 @@ namespace FastBitmapLib
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public override void ReadScanLine(int x, int y, int w, uint* destPixels)
     {
+      if (x < 0)
+      {
+        for (int i = 0; i < -x; i++) destPixels[i] = Color32.From(backgroundColor);
+        w += x;
+        destPixels -= x;
+        x = 0;
+      }
+
+      if (x + w > width)
+      {
+        for (int i = width; i < w; i++) destPixels[i] = Color32.From(backgroundColor);
+        w = width - x;
+      }
+
       for (int i = 0; i < w; i++)
       {
-        destPixels[x] = GetPixel32(x + i, y);
+        destPixels[x] = GetPixelUnsafe32(x + i, y);
       }
     }
 
