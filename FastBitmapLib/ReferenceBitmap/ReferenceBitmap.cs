@@ -1,12 +1,13 @@
 ﻿using FastBitmapLib.Extras;
 // ReSharper disable UnusedMember.Global
+// ReSharper disable DoNotCallOverridableMethodsInConstructor
 
 namespace FastBitmapLib
 {
   /// <summary>
   /// Slow minimum Reference-Version of FastBitmap
   /// </summary>
-  public class ReferenceBitmap : IFastBitmap32
+  public class ReferenceBitmap : IFastBitmapSimple32
   {
     /// <summary>
     /// pixel-data

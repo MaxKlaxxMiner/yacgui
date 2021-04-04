@@ -25,12 +25,92 @@ namespace FastBitmapLib
 {
 #if C32
   /// <summary>
-  /// abstract Main class for FastBitmap for 32-Bit Pixels: <see cref="Color32"/>
+  /// simple version of abstract Main class for FastBitmap with 32-Bit Pixels: <see cref="Color32"/>
+  /// </summary>
+  public unsafe abstract class IFastBitmapSimple32 : IFastBitmap32
+#else
+  /// <summary>
+  /// simple version of abstract Main class for FastBitmap with 64-Bit Pixels: <see cref="Color64"/>
+  /// </summary>
+  public unsafe abstract class IFastBitmapSimple64 : IFastBitmap64
+#endif
+  {
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="width">Width in pixels</param>
+    /// <param name="height">Height in pixels</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+#if C32
+    protected IFastBitmapSimple32(int width, int height, ColorType backgroundColor = 0x00000000) : base(width, height, backgroundColor) { }
+#else
+    protected IFastBitmapSimple64(int width, int height, ColorType backgroundColor = 0x0000000000000000) : base(width, height, backgroundColor) { }
+#endif
+
+    #region # // --- basic methods ---
+
+    #region # // --- ColorType (primary color type) ---
+    /// <summary>
+    /// Fill the Scanline with a specific color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanlineUnsafe(int x, int y, int w, ColorType color)
+    {
+      for (int i = 0; i < w; i++)
+      {
+        SetPixelUnsafe(x + i, y, color);
+      }
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLineUnsafe(int x, int y, int w, ColorType* srcPixels)
+    {
+      for (int i = 0; i < w; i++)
+      {
+        SetPixelUnsafe(x + i, y, srcPixels[i]);
+      }
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public override void ReadScanLineUnsafe(int x, int y, int w, ColorType* destPixels)
+    {
+      for (int i = 0; i < w; i++)
+      {
+#if C32
+        destPixels[x] = GetPixelUnsafe32(x + i, y);
+#else
+        destPixels[x] = GetPixelUnsafe64(x + i, y);
+#endif
+      }
+    }
+    #endregion
+
+    #endregion
+  }
+
+#if C32
+  /// <summary>
+  /// abstract Main class for FastBitmap with 32-Bit Pixels: <see cref="Color32"/>
   /// </summary>
   public unsafe abstract class IFastBitmap32 : IFastBitmap
 #else
   /// <summary>
-  /// abstract Main class for FastBitmap for 64-Bit Pixels: <see cref="Color64"/>
+  /// abstract Main class for FastBitmap with 64-Bit Pixels: <see cref="Color64"/>
   /// </summary>
   public unsafe abstract class IFastBitmap64 : IFastBitmap
 #endif
@@ -93,21 +173,6 @@ namespace FastBitmapLib
 #endif
 
     /// <summary>
-    /// Fill the Scanline with a specific color (without boundary check)
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="color">fill-color</param>
-    public override void FillScanlineUnsafe(int x, int y, int w, ColorType color)
-    {
-      for (int i = 0; i < w; i++)
-      {
-        SetPixelUnsafe(x + i, y, color);
-      }
-    }
-
-    /// <summary>
     /// Fill the Scanline with a specific color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
@@ -143,21 +208,6 @@ namespace FastBitmapLib
     {
       if ((uint)y < height) return;
       FillScanlineUnsafe(0, y, width, color);
-    }
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific colors. (without boundary check)
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLineUnsafe(int x, int y, int w, ColorType* srcPixels)
-    {
-      for (int i = 0; i < w; i++)
-      {
-        SetPixelUnsafe(x + i, y, srcPixels[i]);
-      }
     }
 
     /// <summary>
@@ -232,25 +282,6 @@ namespace FastBitmapLib
       fixed (ColorType* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLineUnsafe(0, y, width, ptr);
-      }
-    }
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: color (without boundary check)
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLineUnsafe(int x, int y, int w, ColorType* destPixels)
-    {
-      for (int i = 0; i < w; i++)
-      {
-#if C32
-        destPixels[x] = GetPixelUnsafe32(x + i, y);
-#else
-        destPixels[x] = GetPixelUnsafe64(x + i, y);
-#endif
       }
     }
 
