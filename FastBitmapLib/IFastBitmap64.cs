@@ -1,4 +1,7 @@
-﻿using System;
+﻿//#define C32
+
+#region # using *.*
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using FastBitmapLib.Extras;
@@ -7,18 +10,35 @@ using FastBitmapLib.Extras;
 // ReSharper disable NotAccessedField.Global
 // ReSharper disable FieldCanBeMadeReadOnly.Global
 // ReSharper disable VirtualMemberNeverOverriden.Global
+// ReSharper disable BuiltInTypeReferenceStyle
+#endregion
+
+#if C32
+using ColorType = System.UInt32;
+using ColorTypeB = System.UInt64;
+#else
+using ColorType = System.UInt64;
+using ColorTypeB = System.UInt32;
+#endif
 
 namespace FastBitmapLib
 {
+#if C32
+  /// <summary>
+  /// abstract Main class for FastBitmap for 32-Bit Pixels: <see cref="Color32"/>
+  /// </summary>
+  public unsafe abstract class IFastBitmap32 : IFastBitmap
+#else
   /// <summary>
   /// abstract Main class for FastBitmap for 64-Bit Pixels: <see cref="Color64"/>
   /// </summary>
-  public abstract unsafe class IFastBitmap64 : IFastBitmap
+  public unsafe abstract class IFastBitmap64 : IFastBitmap
+#endif
   {
     /// <summary>
-    /// <see cref="Color64"/> of the background
+    /// <see cref="ColorType"/> of the background
     /// </summary>
-    public ulong backgroundColor;
+    public ColorType backgroundColor;
 
     /// <summary>
     /// Constructor
@@ -26,101 +46,78 @@ namespace FastBitmapLib
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    protected IFastBitmap64(int width, int height, ulong backgroundColor = 0x0000000000000000)
+#if C32
+    protected IFastBitmap32(int width, int height, ColorType backgroundColor = 0x00000000)
       : base(width, height)
+#else
+    protected IFastBitmap64(int width, int height, ColorType backgroundColor = 0x0000000000000000)
+      : base(width, height)
+#endif
     {
       this.backgroundColor = backgroundColor;
     }
 
+    #region # // --- basic methods ---
+
+    #region # // --- ColorType (primary color type) ---
     /// <summary>
-    /// Set the pixel <see cref="Color32"/> at a specific position
+    /// Set the pixel color at a specific position
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public virtual void SetPixel(int x, int y, uint color32)
+    /// <param name="color">Pixel color</param>
+    public override void SetPixel(int x, int y, ColorType color)
     {
       if ((uint)x < width || (uint)y < height) return;
-      SetPixelUnsafe(x, y, color32);
+      SetPixelUnsafe(x, y, color);
     }
 
     /// <summary>
-    /// Set the pixel <see cref="Color64"/> at a specific position
+    /// Get the pixel color from a specific position
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color64">Pixel <see cref="Color64"/></param>
-    public virtual void SetPixel(int x, int y, ulong color64)
+    /// <returns>Pixel color</returns>
+#if C32
+    public override ColorType GetPixel32(int x, int y)
     {
-      if ((uint)x < width || (uint)y < height) return;
-      SetPixelUnsafe(x, y, color64);
+      if ((uint)x < width || (uint)y < height) return backgroundColor;
+      return GetPixelUnsafe32(x, y);
     }
-
-    /// <summary>
-    /// Set the pixel <see cref="Color32"/> at a specific position (without boundary check)
-    /// </summary>
-    /// <param name="x">X-Pos (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public override void SetPixelUnsafe(int x, int y, uint color32)
-    {
-      SetPixelUnsafe(x, y, Color64.From(color32));
-    }
-
-    /// <summary>
-    /// Get the pixel <see cref="Color64"/> from a specific position
-    /// </summary>
-    /// <param name="x">X-Pos (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <returns>Pixel <see cref="Color64"/></returns>
-    public virtual ulong GetPixel64(int x, int y)
+#else
+    public override ColorType GetPixel64(int x, int y)
     {
       if ((uint)x < width || (uint)y < height) return backgroundColor;
       return GetPixelUnsafe64(x, y);
     }
+#endif
 
     /// <summary>
-    /// Get the pixel <see cref="Color32"/> from a specific position
-    /// </summary>
-    /// <param name="x">X-Pos (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <returns>Pixel <see cref="Color32"/></returns>
-    public virtual uint GetPixel32(int x, int y)
-    {
-      if ((uint)x < width || (uint)y < height) return Color32.From(backgroundColor);
-      return GetPixelUnsafe32(x, y);
-    }
-
-    /// <summary>
-    /// Get the pixel <see cref="Color32"/> from a specific position (without boundary check)
-    /// </summary>
-    /// <param name="x">X-Pos (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <returns>Pixel <see cref="Color32"/></returns>
-    public override uint GetPixelUnsafe32(int x, int y)
-    {
-      return Color32.From(GetPixelUnsafe64(x, y));
-    }
-
-    /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color64"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color64">fill-<see cref="Color64"/></param>
-    public override void FillScanline(int y, ulong color64)
-    {
-      FillScanline(0, y, width, color64);
-    }
-
-    /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color64"/>
+    /// Fill the Scanline with a specific color (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="color64">fill-<see cref="Color64"/></param>
-    public override void FillScanline(int x, int y, int w, ulong color64)
+    /// <param name="color">fill-color</param>
+    public override void FillScanlineUnsafe(int x, int y, int w, ColorType color)
     {
+      for (int i = 0; i < w; i++)
+      {
+        SetPixelUnsafe(x + i, y, color);
+      }
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanline(int x, int y, int w, ColorType color)
+    {
+      if ((uint)y < height) return;
+
       if (x < 0)
       {
         w += x;
@@ -132,89 +129,48 @@ namespace FastBitmapLib
         w = width - x;
       }
 
+      if (w < 1) return;
+
+      FillScanlineUnsafe(x, y, w, color);
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanline(int y, ColorType color)
+    {
+      if ((uint)y < height) return;
+      FillScanlineUnsafe(0, y, width, color);
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLineUnsafe(int x, int y, int w, ColorType* srcPixels)
+    {
       for (int i = 0; i < w; i++)
       {
-        SetPixelUnsafe(x + i, y, color64);
+        SetPixelUnsafe(x + i, y, srcPixels[i]);
       }
     }
 
     /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color32"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color32">fill-<see cref="Color32"/></param>
-    public override void FillScanline(int y, uint color32)
-    {
-      FillScanline(0, y, width, color32);
-    }
-
-    /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color32"/>
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="color32">fill-<see cref="Color32"/></param>
-    public override void FillScanline(int x, int y, int w, uint color32)
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLine(int x, int y, int w, ColorType* srcPixels)
     {
-      FillScanline(x, y, w, Color64.From(color32));
-    }
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color64"/>)</param>
-    public override void WriteScanLine(int y, ulong[] srcPixels, int srcPixelOffset = 0)
-    {
-      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
-      if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
       if ((uint)y < height) return;
-      fixed (ulong* ptr = &srcPixels[srcPixelOffset])
-      {
-        WriteScanLine(y, ptr);
-      }
-    }
 
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color64"/>)</param>
-    public override void WriteScanLine(int x, int y, int w, ulong[] srcPixels, int srcPixelOffset = 0)
-    {
-      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
-      if (srcPixelOffset < 0 || srcPixelOffset + w > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if (w < 1 | (uint)y < height) return;
-      fixed (ulong* ptr = &srcPixels[srcPixelOffset])
-      {
-        WriteScanLine(x, y, w, ptr);
-      }
-    }
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLine(int y, ulong* srcPixels)
-    {
-      WriteScanLine(0, y, width, srcPixels);
-    }
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLine(int x, int y, int w, ulong* srcPixels)
-    {
       if (x < 0)
       {
         w += x;
@@ -227,130 +183,92 @@ namespace FastBitmapLib
         w = width - x;
       }
 
-      for (int i = 0; i < w; i++)
-      {
-        SetPixelUnsafe(x + i, y, srcPixels[i]);
-      }
+      if (w < 1) return;
+
+      WriteScanLineUnsafe(x, y, w, srcPixels);
     }
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color32"/>)</param>
-    public override void WriteScanLine(int y, uint[] srcPixels, int srcPixelOffset = 0)
-    {
-      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
-      if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if ((uint)y < height) return;
-      fixed (uint* ptr = &srcPixels[srcPixelOffset])
-      {
-        WriteScanLine(0, y, width, ptr);
-      }
-    }
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color32"/>)</param>
-    public override void WriteScanLine(int x, int y, int w, uint[] srcPixels, int srcPixelOffset = 0)
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public override void WriteScanLine(int x, int y, int w, ColorType[] srcPixels, int srcPixelOffset = 0)
     {
       if (srcPixels == null) throw new ArgumentNullException("srcPixels");
       if (srcPixelOffset < 0 || srcPixelOffset + w > srcPixels.Length) throw new ArgumentOutOfRangeException();
       if (w < 1 || (uint)y < height) return;
-      fixed (uint* ptr = &srcPixels[srcPixelOffset])
+      fixed (ColorType* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLine(x, y, w, ptr);
       }
     }
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLine(int y, uint* srcPixels)
+    public override void WriteScanLine(int y, ColorType* srcPixels)
     {
-      WriteScanLine(0, y, width, srcPixels);
+      if ((uint)y < height) return;
+      WriteScanLineUnsafe(0, y, width, srcPixels);
     }
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
-    /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLine(int x, int y, int w, uint* srcPixels)
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public override void WriteScanLine(int y, ColorType[] srcPixels, int srcPixelOffset = 0)
     {
-      if (w < 1 || (uint)y < height) return;
-      var tmp = new ulong[w];
-      for (int i = 0; i < tmp.Length; i++)
+      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
+      if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
+      if ((uint)y < height) return;
+      fixed (ColorType* ptr = &srcPixels[srcPixelOffset])
       {
-        tmp[i] = Color64.From(srcPixels[i]);
-      }
-      WriteScanLine(x, y, w, tmp);
-    }
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color64"/>)</param>
-    public override void ReadScanLine(int y, ulong[] destPixels, int destPixelOffset = 0)
-    {
-      if (destPixels == null) throw new ArgumentNullException("destPixels");
-      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
-      fixed (ulong* ptr = &destPixels[destPixelOffset])
-      {
-        ReadScanLine(y, ptr);
+        WriteScanLineUnsafe(0, y, width, ptr);
       }
     }
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color64"/>)</param>
-    public override void ReadScanLine(int x, int y, int w, ulong[] destPixels, int destPixelOffset = 0)
-    {
-      if (destPixels == null) throw new ArgumentNullException("destPixels");
-      if (destPixelOffset < 0 || destPixelOffset + w > destPixels.Length) throw new ArgumentOutOfRangeException();
-      if (w < 0) return;
-      fixed (ulong* ptr = &destPixels[destPixelOffset])
-      {
-        ReadScanLine(x, y, w, ptr);
-      }
-    }
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLine(int y, ulong* destPixels)
-    {
-      ReadScanLine(0, y, width, destPixels);
-    }
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
+    /// Read a Scanline array of pixels type: color (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLine(int x, int y, int w, ulong* destPixels)
+    public override void ReadScanLineUnsafe(int x, int y, int w, ColorType* destPixels)
     {
+      for (int i = 0; i < w; i++)
+      {
+#if C32
+        destPixels[x] = GetPixelUnsafe32(x + i, y);
+#else
+        destPixels[x] = GetPixelUnsafe64(x + i, y);
+#endif
+      }
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public override void ReadScanLine(int x, int y, int w, ColorType* destPixels)
+    {
+      if ((uint)y < height)
+      {
+        for (int i = 0; i < w; i++) destPixels[i] = backgroundColor;
+        return;
+      }
+
       if (x < 0)
       {
         for (int i = 0; i < -x; i++) destPixels[i] = backgroundColor;
@@ -365,69 +283,287 @@ namespace FastBitmapLib
         w = width - x;
       }
 
-      for (int i = 0; i < w; i++)
-      {
-        destPixels[x] = GetPixelUnsafe64(x + i, y);
-      }
+      if (w < 1) return;
+
+      ReadScanLineUnsafe(x, y, w, destPixels);
     }
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color32"/>)</param>
-    public override void ReadScanLine(int y, uint[] destPixels, int destPixelOffset = 0)
-    {
-      if (destPixels == null) throw new ArgumentNullException("destPixels");
-      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
-      fixed (uint* ptr = &destPixels[destPixelOffset])
-      {
-        ReadScanLine(y, ptr);
-      }
-    }
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color32"/>)</param>
-    public override void ReadScanLine(int x, int y, int w, uint[] destPixels, int destPixelOffset = 0)
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public override void ReadScanLine(int x, int y, int w, ColorType[] destPixels, int destPixelOffset = 0)
     {
       if (destPixels == null) throw new ArgumentNullException("destPixels");
       if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
       if (w < 1) return;
-      fixed (uint* ptr = &destPixels[destPixelOffset])
+      fixed (ColorType* ptr = &destPixels[destPixelOffset])
       {
-        ReadScanLine(0, y, w, ptr);
+        ReadScanLine(x, y, w, ptr);
       }
     }
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLine(int y, uint* destPixels)
+    public override void ReadScanLine(int y, ColorType* destPixels)
     {
       ReadScanLine(0, y, width, destPixels);
     }
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public override void ReadScanLine(int y, ColorType[] destPixels, int destPixelOffset = 0)
+    {
+      if (destPixels == null) throw new ArgumentNullException("destPixels");
+      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
+      fixed (ColorType* ptr = &destPixels[destPixelOffset])
+      {
+        ReadScanLine(y, ptr);
+      }
+    }
+    #endregion
+
+    #region # // --- ColorTypeB (secondary compatibility color type) ---
+    /// <summary>
+    /// Set the pixel color at a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">Pixel color</param>
+    public override void SetPixelUnsafe(int x, int y, ColorTypeB color)
+    {
+      SetPixelUnsafe(x, y, Conv(color));
+    }
+
+    /// <summary>
+    /// Set the pixel color at a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">Pixel color</param>
+    public override void SetPixel(int x, int y, ColorTypeB color)
+    {
+      SetPixel(x, y, Conv(color));
+    }
+
+    /// <summary>
+    /// Get the pixel color from a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel color</returns>
+#if C32
+    public override ColorTypeB GetPixelUnsafe64(int x, int y)
+    {
+      return Conv(GetPixelUnsafe32(x, y));
+    }
+#else
+    public override ColorTypeB GetPixelUnsafe32(int x, int y)
+    {
+      return Conv(GetPixelUnsafe64(x, y));
+    }
+#endif
+
+    /// <summary>
+    /// Get the pixel color from a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel color</returns>
+#if C32
+    public override ColorTypeB GetPixel64(int x, int y)
+    {
+      if ((uint)x < width || (uint)y < height) return Conv(backgroundColor);
+      return GetPixelUnsafe64(x, y);
+    }
+#else
+    public override ColorTypeB GetPixel32(int x, int y)
+    {
+      if ((uint)x < width || (uint)y < height) return Conv(backgroundColor);
+      return GetPixelUnsafe32(x, y);
+    }
+#endif
+
+    /// <summary>
+    /// Fill the Scanline with a specific color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanlineUnsafe(int x, int y, int w, ColorTypeB color)
+    {
+      FillScanlineUnsafe(x, y, w, Conv(color));
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanline(int x, int y, int w, ColorTypeB color)
+    {
+      FillScanline(x, y, w, Conv(color));
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanline(int y, ColorTypeB color)
+    {
+      FillScanline(y, Conv(color));
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLineUnsafe(int x, int y, int w, ColorTypeB* srcPixels)
+    {
+      var tmp = new ColorType[w];
+      for (int i = 0; i < tmp.Length; i++)
+      {
+        tmp[i] = Conv(srcPixels[i]);
+      }
+      fixed (ColorType* ptr = tmp)
+      {
+        WriteScanLineUnsafe(x, y, w, ptr);
+      }
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLine(int x, int y, int w, ColorTypeB* srcPixels)
+    {
+      if ((uint)y < height) return;
+
+      if (x < 0)
+      {
+        w += x;
+        srcPixels -= x;
+        x = 0;
+      }
+
+      if (x + w > width)
+      {
+        w = width - x;
+      }
+
+      if (w < 1) return;
+
+      WriteScanLineUnsafe(x, y, w, srcPixels);
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public override void WriteScanLine(int x, int y, int w, ColorTypeB[] srcPixels, int srcPixelOffset = 0)
+    {
+      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
+      if (srcPixelOffset < 0 || srcPixelOffset + w > srcPixels.Length) throw new ArgumentOutOfRangeException();
+      if (w < 1 || (uint)y < height) return;
+      fixed (ColorTypeB* ptr = &srcPixels[srcPixelOffset])
+      {
+        WriteScanLine(x, y, w, ptr);
+      }
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLine(int y, ColorTypeB* srcPixels)
+    {
+      if ((uint)y < height) return;
+      WriteScanLineUnsafe(0, y, width, srcPixels);
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public override void WriteScanLine(int y, ColorTypeB[] srcPixels, int srcPixelOffset = 0)
+    {
+      if (srcPixels == null) throw new ArgumentNullException("srcPixels");
+      if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
+      if ((uint)y < height) return;
+      fixed (ColorTypeB* ptr = &srcPixels[srcPixelOffset])
+      {
+        WriteScanLineUnsafe(0, y, width, ptr);
+      }
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLine(int x, int y, int w, uint* destPixels)
+    public override void ReadScanLineUnsafe(int x, int y, int w, ColorTypeB* destPixels)
     {
+      var tmp = new ColorType[w];
+      fixed (ColorType* ptr = tmp)
+      {
+        ReadScanLineUnsafe(x, y, w, ptr);
+      }
+      for (int i = 0; i < tmp.Length; i++)
+      {
+        destPixels[i] = Conv(tmp[i]);
+      }
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public override void ReadScanLine(int x, int y, int w, ColorTypeB* destPixels)
+    {
+      ColorTypeB bgColor = Conv(backgroundColor);
+
+      if ((uint)y < height)
+      {
+        for (int i = 0; i < w; i++) destPixels[i] = bgColor;
+        return;
+      }
+
       if (x < 0)
       {
-        for (int i = 0; i < -x; i++) destPixels[i] = Color32.From(backgroundColor);
+        for (int i = 0; i < -x; i++) destPixels[i] = bgColor;
         w += x;
         destPixels -= x;
         x = 0;
@@ -435,52 +571,111 @@ namespace FastBitmapLib
 
       if (x + w > width)
       {
-        for (int i = width; i < w; i++) destPixels[i] = Color32.From(backgroundColor);
+        for (int i = width; i < w; i++) destPixels[i] = bgColor;
         w = width - x;
       }
 
-      for (int i = 0; i < w; i++)
+      if (w < 1) return;
+
+      ReadScanLineUnsafe(x, y, w, destPixels);
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public override void ReadScanLine(int x, int y, int w, ColorTypeB[] destPixels, int destPixelOffset = 0)
+    {
+      if (destPixels == null) throw new ArgumentNullException("destPixels");
+      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
+      if (w < 1) return;
+      fixed (ColorTypeB* ptr = &destPixels[destPixelOffset])
       {
-        destPixels[x] = GetPixelUnsafe32(x + i, y);
+        ReadScanLine(x, y, w, ptr);
       }
     }
 
     /// <summary>
-    /// Clear the bitmap with background-color
+    /// Read a Scanline array of pixels type: color
     /// </summary>
-    public void Clear()
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public override void ReadScanLine(int y, ColorTypeB* destPixels)
+    {
+      ReadScanLine(0, y, width, destPixels);
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public override void ReadScanLine(int y, ColorTypeB[] destPixels, int destPixelOffset = 0)
+    {
+      if (destPixels == null) throw new ArgumentNullException("destPixels");
+      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
+      fixed (ColorTypeB* ptr = &destPixels[destPixelOffset])
+      {
+        ReadScanLine(y, ptr);
+      }
+    }
+    #endregion
+
+    #endregion
+
+    #region # // --- additional methods ---
+
+    #region # // --- ColorType (primary color type) ---
+    /// <summary>
+    /// Clear the bitmap
+    /// </summary>
+    /// <param name="color">Fillcolor</param>
+    public override void Clear(ColorType color)
+    {
+      for (int y = 0; y < height; y++)
+      {
+        FillScanline(y, color);
+      }
+    }
+    #endregion
+
+    #region # // --- ColorTypeB (secondary compatibility color type) ---
+    /// <summary>
+    /// Clear the bitmap
+    /// </summary>
+    /// <param name="color">Fillcolor</param>
+    public override void Clear(ColorTypeB color)
+    {
+      ColorType c = Conv(color);
+      for (int y = 0; y < height; y++)
+      {
+        FillScanline(y, c);
+      }
+    }
+    #endregion
+
+    #region # // --- undefined ColorType ---
+    /// <summary>
+    /// Clear the bitmap with background color
+    /// </summary>
+    public override void Clear()
     {
       Clear(backgroundColor);
     }
 
     /// <summary>
-    /// Clear the bitmap
-    /// </summary>
-    /// <param name="color64">Fill<see cref="Color64"/></param>
-    public override void Clear(ulong color64)
-    {
-      for (int y = 0; y < height; y++)
-      {
-        FillScanline(y, color64);
-      }
-    }
-
-    /// <summary>
-    /// Clear the bitmap
-    /// </summary>
-    /// <param name="color32">Fill<see cref="Color32"/></param>
-    public override void Clear(uint color32)
-    {
-      Clear(Color64.From(color32));
-    }
-
-    /// <summary>
-    /// map the Pixelformat to their 32-Bit Version
+    /// map the Pixelformat to their ColorType Version
     /// </summary>
     /// <param name="pixelFormat">selected PixelFormat</param>
     /// <returns>new Pixelformat</returns>
-    static PixelFormat MapPixelFormat64(PixelFormat pixelFormat)
+    static PixelFormat MapPixelFormat(PixelFormat pixelFormat)
     {
+#if C32
       switch (pixelFormat)
       {
         case PixelFormat.Format1bppIndexed:
@@ -490,10 +685,13 @@ namespace FastBitmapLib
         case PixelFormat.Format16bppRgb565:
         case PixelFormat.Format24bppRgb:
         case PixelFormat.Format32bppRgb:
-        case PixelFormat.Format48bppRgb: return PixelFormat.Format48bppRgb;
+        case PixelFormat.Format48bppRgb: return PixelFormat.Format32bppRgb;
 
-        default: return PixelFormat.Format64bppArgb;
+        default: return PixelFormat.Format32bppArgb;
       }
+#else
+      return PixelFormat.Format64bppArgb;
+#endif
     }
 
     /// <summary>
@@ -506,16 +704,13 @@ namespace FastBitmapLib
       if (srcBitmap.Width != width || srcBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
       // Lock Bitmap-data for fast copy
-      var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, MapPixelFormat64(srcBitmap.PixelFormat));
+      var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, MapPixelFormat(srcBitmap.PixelFormat));
 
       // Copy raw pixels
-      bool byte3pixel = bits.PixelFormat == PixelFormat.Format48bppRgb;
-      if (byte3pixel) throw new NotImplementedException("todo");
-
       var ptr = (byte*)bits.Scan0;
       for (int y = 0; y < height; y++)
       {
-        WriteScanLine(y, (ulong*)ptr);
+        WriteScanLineUnsafe(0, y, width, (ColorType*)ptr);
         ptr += bits.Stride;
       }
 
@@ -533,16 +728,13 @@ namespace FastBitmapLib
       if (destBitmap.Width != width || destBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
       // Lock Bitmap-data for fast write
-      var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, MapPixelFormat64(destBitmap.PixelFormat));
+      var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, MapPixelFormat(destBitmap.PixelFormat));
 
       // Copy raw pixels
-      bool byte3pixel = bits.PixelFormat == PixelFormat.Format48bppRgb;
-      if (byte3pixel) throw new NotImplementedException("todo");
-
       var ptr = (byte*)bits.Scan0;
       for (int y = 0; y < height; y++)
       {
-        ReadScanLine(y, (ulong*)ptr);
+        ReadScanLineUnsafe(0, y, width, (ColorType*)ptr);
         ptr += bits.Stride;
       }
 
@@ -561,6 +753,7 @@ namespace FastBitmapLib
       if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
       if (srcBitmap.Width != width || srcBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
+      // Normalize ViewPort values
       int vx = Math.Max(0, viewPort.startX);
       int vy = Math.Max(0, viewPort.startY);
       int vw = viewPort.endX - vx + 1;
@@ -571,15 +764,12 @@ namespace FastBitmapLib
       var rect = new Rectangle(vx, vy, vw, vh);
 
       // Lock Bitmap-data for fast write
-      var bits = srcBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat64(srcBitmap.PixelFormat));
+      var bits = srcBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat(srcBitmap.PixelFormat));
 
       // Copy raw pixels
-      bool byte3pixel = bits.PixelFormat == PixelFormat.Format48bppRgb;
-      if (byte3pixel) throw new NotImplementedException("todo");
-
       for (int line = 0; line < vh; line++)
       {
-        WriteScanLine(vx, vy + line, vw, (ulong*)(bits.Scan0.ToInt64() + line * bits.Stride));
+        WriteScanLineUnsafe(vx, vy + line, vw, (ColorType*)(bits.Scan0.ToInt64() + line * bits.Stride));
       }
 
       // Release the lock
@@ -599,6 +789,7 @@ namespace FastBitmapLib
       if (destBitmap == null) throw new NullReferenceException("destBitmap");
       if (destBitmap.Width != width || destBitmap.Height != height) throw new ArgumentException("Size of the image does not match");
 
+      // Normalize ViewPort values
       int vx = Math.Max(0, viewPort.startX);
       int vy = Math.Max(0, viewPort.startY);
       int vw = viewPort.endX - vx + 1;
@@ -609,15 +800,12 @@ namespace FastBitmapLib
       var rect = new Rectangle(vx, vy, vw, vh);
 
       // Lock Bitmap-data for fast write
-      var bits = destBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat64(destBitmap.PixelFormat));
+      var bits = destBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat(destBitmap.PixelFormat));
 
       // Copy raw pixels
-      bool byte3pixel = bits.PixelFormat == PixelFormat.Format48bppRgb;
-      if (byte3pixel) throw new NotImplementedException("todo");
-
       for (int line = 0; line < vh; line++)
       {
-        ReadScanLine(vx, vy + line, vw, (ulong*)(bits.Scan0.ToInt64() + line * bits.Stride));
+        ReadScanLineUnsafe(vx, vy + line, vw, (ColorType*)(bits.Scan0.ToInt64() + line * bits.Stride));
       }
 
       // Release the lock
@@ -625,5 +813,8 @@ namespace FastBitmapLib
 
       return rect;
     }
+    #endregion
+
+    #endregion
   }
 }

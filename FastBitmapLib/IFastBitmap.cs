@@ -42,98 +42,99 @@ namespace FastBitmapLib
       this.height = height;
     }
 
+    #region # // --- Color convert ---
+    /// <summary>
+    /// Convert color value from 64-Bit to 32-Bit
+    /// </summary>
+    /// <param name="color">Color to Convert</param>
+    /// <returns>Converted color</returns>
+    protected static uint Conv(ulong color)
+    {
+      return Color32.From(color);
+    }
+
+    /// <summary>
+    /// Convert color value from 32-Bit to 64-Bit
+    /// </summary>
+    /// <param name="color">Color to Convert</param>
+    /// <returns>Converted color</returns>
+    protected static ulong Conv(uint color)
+    {
+      return Color64.From(color);
+    }
+    #endregion
+
     #region # // --- basic methods ---
+
+    #region # // --- Color32 ---
     /// <summary>
-    /// Set the pixel <see cref="Color32"/> at a specific position (without boundary check)
+    /// Set the pixel color at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color32">Pixel <see cref="Color32"/></param>
-    public abstract void SetPixelUnsafe(int x, int y, uint color32);
+    /// <param name="color">Pixel color</param>
+    public abstract void SetPixelUnsafe(int x, int y, uint color);
 
     /// <summary>
-    /// Set the pixel <see cref="Color64"/> at a specific position (without boundary check)
+    /// Set the pixel color at a specific position
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color64">Pixel <see cref="Color64"/></param>
-    public abstract void SetPixelUnsafe(int x, int y, ulong color64);
+    /// <param name="color">Pixel color</param>
+    public abstract void SetPixel(int x, int y, uint color);
 
     /// <summary>
-    /// Get the pixel <see cref="Color32"/> from a specific position (without boundary check)
+    /// Get the pixel color from a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <returns>Pixel <see cref="Color32"/></returns>
+    /// <returns>Pixel color</returns>
     public abstract uint GetPixelUnsafe32(int x, int y);
 
     /// <summary>
-    /// Get the pixel <see cref="Color64"/> from a specific position (without boundary check)
+    /// Get the pixel color from a specific position
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
-    /// <returns>Pixel <see cref="Color64"/></returns>
-    public abstract ulong GetPixelUnsafe64(int x, int y);
+    /// <returns>Pixel color</returns>
+    public abstract uint GetPixel32(int x, int y);
 
     /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color32"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color32">fill-<see cref="Color32"/></param>
-    public abstract void FillScanline(int y, uint color32);
-
-    /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color32"/>
+    /// Fill the Scanline with a specific color (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="color32">fill-<see cref="Color32"/></param>
-    public abstract void FillScanline(int x, int y, int w, uint color32);
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanlineUnsafe(int x, int y, int w, uint color);
 
     /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color64"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="color64">fill-<see cref="Color64"/></param>
-    public abstract void FillScanline(int y, ulong color64);
-
-    /// <summary>
-    /// Fill the Scanline with a specific <see cref="Color64"/>
+    /// Fill the Scanline with a specific color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="color64">fill-<see cref="Color64"/></param>
-    public abstract void FillScanline(int x, int y, int w, ulong color64);
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanline(int x, int y, int w, uint color);
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
+    /// Fill the Scanline with a specific color
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color32"/>)</param>
-    public abstract void WriteScanLine(int y, uint[] srcPixels, int srcPixelOffset = 0);
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanline(int y, uint color);
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color32"/>)</param>
-    public abstract void WriteScanLine(int x, int y, int w, uint[] srcPixels, int srcPixelOffset = 0);
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public abstract void WriteScanLine(int y, uint* srcPixels);
+    public abstract void WriteScanLineUnsafe(int x, int y, int w, uint* srcPixels);
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color32"/>s.
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -142,66 +143,41 @@ namespace FastBitmapLib
     public abstract void WriteScanLine(int x, int y, int w, uint* srcPixels);
 
     /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color64"/>)</param>
-    public abstract void WriteScanLine(int y, ulong[] srcPixels, int srcPixelOffset = 0);
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="x">X-Start (column)</param>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="w">width</param>
-    /// <param name="srcPixels">Source array of pixels</param>
-    /// <param name="srcPixelOffset">Offset in srcPixels (<see cref="Color64"/>)</param>
-    public abstract void WriteScanLine(int x, int y, int w, ulong[] srcPixels, int srcPixelOffset = 0);
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public abstract void WriteScanLine(int y, ulong* srcPixels);
-
-    /// <summary>
-    /// Writes a Scanline with a array of specific <see cref="Color64"/>s.
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public abstract void WriteScanLine(int x, int y, int w, ulong* srcPixels);
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public abstract void WriteScanLine(int x, int y, int w, uint[] srcPixels, int srcPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Writes a Scanline with a array of specific colors.
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color32"/>)</param>
-    public abstract void ReadScanLine(int y, uint[] destPixels, int destPixelOffset = 0);
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public abstract void WriteScanLine(int y, uint* srcPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public abstract void WriteScanLine(int y, uint[] srcPixels, int srcPixelOffset = 0);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color32"/>)</param>
-    public abstract void ReadScanLine(int x, int y, int w, uint[] destPixels, int destPixelOffset = 0);
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public abstract void ReadScanLine(int y, uint* destPixels);
+    public abstract void ReadScanLineUnsafe(int x, int y, int w, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color32"/>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -210,52 +186,201 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int x, int y, int w, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
-    /// </summary>
-    /// <param name="y">Y-Pos (line)</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color64"/>)</param>
-    public abstract void ReadScanLine(int y, ulong[] destPixels, int destPixelOffset = 0);
-
-    /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
-    /// <param name="destPixels">Destination array to write pixels</param>
-    /// <param name="destPixelOffset">Offset in destPixels (<see cref="Color64"/>)</param>
-    public abstract void ReadScanLine(int x, int y, int w, ulong[] destPixels, int destPixelOffset = 0);
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public abstract void ReadScanLine(int x, int y, int w, uint[] destPixels, int destPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public abstract void ReadScanLine(int y, ulong* destPixels);
+    public abstract void ReadScanLine(int y, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: <see cref="Color64"/>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public abstract void ReadScanLine(int y, uint[] destPixels, int destPixelOffset = 0);
+    #endregion
+
+    #region # // --- Color64 ---
+    /// <summary>
+    /// Set the pixel color at a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">Pixel color</param>
+    public abstract void SetPixelUnsafe(int x, int y, ulong color);
+
+    /// <summary>
+    /// Set the pixel color at a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">Pixel color</param>
+    public abstract void SetPixel(int x, int y, ulong color);
+
+    /// <summary>
+    /// Get the pixel color from a specific position (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel color</returns>
+    public abstract ulong GetPixelUnsafe64(int x, int y);
+
+    /// <summary>
+    /// Get the pixel color from a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel color</returns>
+    public abstract ulong GetPixel64(int x, int y);
+
+    /// <summary>
+    /// Fill the Scanline with a specific color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanlineUnsafe(int x, int y, int w, ulong color);
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanline(int x, int y, int w, ulong color);
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">fill-color</param>
+    public abstract void FillScanline(int y, ulong color);
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public abstract void WriteScanLineUnsafe(int x, int y, int w, ulong* srcPixels);
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public abstract void WriteScanLine(int x, int y, int w, ulong* srcPixels);
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public abstract void WriteScanLine(int x, int y, int w, ulong[] srcPixels, int srcPixelOffset = 0);
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public abstract void WriteScanLine(int y, ulong* srcPixels);
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors.
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    /// <param name="srcPixelOffset">Offset in srcPixels (color)</param>
+    public abstract void WriteScanLine(int y, ulong[] srcPixels, int srcPixelOffset = 0);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public abstract void ReadScanLineUnsafe(int x, int y, int w, ulong* destPixels);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public abstract void ReadScanLine(int x, int y, int w, ulong* destPixels);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public abstract void ReadScanLine(int x, int y, int w, ulong[] destPixels, int destPixelOffset = 0);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public abstract void ReadScanLine(int y, ulong* destPixels);
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    /// <param name="destPixelOffset">Offset in destPixels (color)</param>
+    public abstract void ReadScanLine(int y, ulong[] destPixels, int destPixelOffset = 0);
     #endregion
 
-    #region # // --- addition methods ---
-    /// <summary>
-    /// Clear the bitmap
-    /// </summary>
-    /// <param name="color32">Fill<see cref="Color32"/></param>
-    public abstract void Clear(uint color32);
+    #endregion
 
+    #region # // --- additional methods ---
+
+    #region # // --- Color32 ---
     /// <summary>
     /// Clear the bitmap
     /// </summary>
-    /// <param name="color64">Fill<see cref="Color64"/></param>
-    public abstract void Clear(ulong color64);
+    /// <param name="color">Fillcolor</param>
+    public abstract void Clear(uint color);
+    #endregion
+
+    #region # // --- Color64 ---
+    /// <summary>
+    /// Clear the bitmap
+    /// </summary>
+    /// <param name="color">Fillcolor</param>
+    public abstract void Clear(ulong color);
+    #endregion
+
+    #region # // --- ColorXX ---
+    /// <summary>
+    /// Clear the bitmap with background color
+    /// </summary>
+    public abstract void Clear();
 
     /// <summary>
     /// Copies the pixel data from a GDI bitmap of the same size
@@ -284,6 +409,8 @@ namespace FastBitmapLib
     /// <param name="viewPort">Draw-Viewport</param>
     /// <returns>Rectangle of copied pixels</returns>
     public abstract Rectangle CopyToGDIBitmap(Bitmap destBitmap, DrawViewPort viewPort);
+    #endregion
+
     #endregion
 
     #region # // --- IDisposable ---
