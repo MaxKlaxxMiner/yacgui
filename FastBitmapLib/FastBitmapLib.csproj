@@ -42,6 +42,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IFastBitmap64.cs" />
+    <Compile Include="IFastBitmap32.cs" />
+    <Compile Include="IFastBitmap.cs" />
     <Compile Include="Extras\Color32.cs" />
     <Compile Include="Extras\Color64.cs" />
     <Compile Include="Extras\DistanceTransform.cs" />
@@ -62,6 +65,13 @@
     <Compile Include="Extras\LinearScanline.cs" />
     <Compile Include="Extras\Mapping3D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReferenceBitmap\ReferenceBitmap64.cs" />
+    <Compile Include="ReferenceBitmap\ReferenceBitmap.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="CompressedBitmap\" />
+    <Folder Include="FastBitmap\" />
+    <Folder Include="FastCompressedBitmap\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
