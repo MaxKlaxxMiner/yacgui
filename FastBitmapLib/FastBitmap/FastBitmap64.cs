@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable RedundantUnsafeContext
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
+// ReSharper disable UnusedType.Global
 #endregion
 
 namespace FastBitmapLib
@@ -31,7 +32,7 @@ namespace FastBitmapLib
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public FastBitmap64(int width, int height, uint backgroundColor = 0x0000000000000000)
+    public FastBitmap64(int width, int height, ulong backgroundColor = 0x0000000000000000)
       : base(width, height, backgroundColor)
     {
 #if DEBUG
@@ -68,7 +69,7 @@ namespace FastBitmapLib
     }
     #endregion
 
-    #region # // --- ---
+    #region # // --- Scanline-Methods ---
     /// <summary>
     /// Fill the Scanline with a specific color (without boundary check)
     /// </summary>

@@ -54,7 +54,10 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BitmapBasics\FastBitmapTester.cs" />
-    <Compile Include="BitmapBasics\ReferenceBitmap_Test.cs" />
+    <Compile Include="BitmapBasics\FastBitmap64_Test.cs" />
+    <Compile Include="BitmapBasics\ReferenceBitmap64_Test.cs" />
+    <Compile Include="BitmapBasics\FastBitmap32_Test.cs" />
+    <Compile Include="BitmapBasics\ReferenceBitmap32_Test.cs" />
     <Compile Include="Colors.cs" />
     <Compile Include="Ex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

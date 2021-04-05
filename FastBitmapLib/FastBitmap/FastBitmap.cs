@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable RedundantUnsafeContext
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
+// ReSharper disable UnusedType.Global
 #endregion
 
 namespace FastBitmapLib
@@ -68,7 +69,7 @@ namespace FastBitmapLib
     }
     #endregion
 
-    #region # // --- ---
+    #region # // --- Scanline-Methods ---
     /// <summary>
     /// Fill the Scanline with a specific color (without boundary check)
     /// </summary>
