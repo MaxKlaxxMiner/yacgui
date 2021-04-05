@@ -6,6 +6,7 @@ using FastBitmapLib.Extras;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable VirtualMemberNeverOverriden.Global
 // ReSharper disable UnusedParameter.Global
+// ReSharper disable VirtualMemberNeverOverridden.Global
 #endregion
 
 namespace FastBitmapLib
@@ -13,7 +14,7 @@ namespace FastBitmapLib
   /// <summary>
   /// abstract Main class for FastBitmap
   /// </summary>
-  public unsafe abstract class IFastBitmap : IDisposable
+  public abstract unsafe class IFastBitmap : IDisposable
   {
     /// <summary>
     /// Width of the image in pixels

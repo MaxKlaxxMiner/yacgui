@@ -27,12 +27,12 @@ namespace FastBitmapLib
   /// <summary>
   /// simple version of abstract Main class for FastBitmap with 32-Bit Pixels: <see cref="Color32"/>
   /// </summary>
-  public unsafe abstract class IFastBitmapSimple32 : IFastBitmap32
+  public abstract unsafe class IFastBitmapSimple32 : IFastBitmap32
 #else
   /// <summary>
   /// simple version of abstract Main class for FastBitmap with 64-Bit Pixels: <see cref="Color64"/>
   /// </summary>
-  public unsafe abstract class IFastBitmapSimple64 : IFastBitmap64
+  public abstract unsafe class IFastBitmapSimple64 : IFastBitmap64
 #endif
   {
     /// <summary>
@@ -107,12 +107,12 @@ namespace FastBitmapLib
   /// <summary>
   /// abstract Main class for FastBitmap with 32-Bit Pixels: <see cref="Color32"/>
   /// </summary>
-  public unsafe abstract class IFastBitmap32 : IFastBitmap
+  public abstract unsafe class IFastBitmap32 : IFastBitmap
 #else
   /// <summary>
   /// abstract Main class for FastBitmap with 64-Bit Pixels: <see cref="Color64"/>
   /// </summary>
-  public unsafe abstract class IFastBitmap64 : IFastBitmap
+  public abstract unsafe class IFastBitmap64 : IFastBitmap
 #endif
   {
     /// <summary>

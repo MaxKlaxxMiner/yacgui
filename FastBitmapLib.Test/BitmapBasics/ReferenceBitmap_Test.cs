@@ -27,5 +27,11 @@ namespace FastBitmapLib.Test.BitmapBasics
 
     [TestMethod]
     public new void Test03_SetPixel32() { base.Test03_SetPixel32(); }
+
+    [TestMethod]
+    public new void Test04_GetPixel32() { base.Test04_GetPixel32(); }
+
+    [TestMethod]
+    public new void Test05_FillScanline32() { base.Test05_FillScanline32(); }
   }
 }
