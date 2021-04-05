@@ -22,7 +22,7 @@ namespace FastBitmapLib
 #if DEBUG
     readonly ulong[] pixels;
 #else
-    readonly ulong* pixels;
+    ulong* pixels;
 #endif
 
     #region # // --- Constructor ---
@@ -37,11 +37,12 @@ namespace FastBitmapLib
     {
 #if DEBUG
       pixels = new ulong[width * height];
+      if (backgroundColor != 0x0000000000000000) Clear();
 #else
       pixels = (ulong*)Marshal.AllocHGlobal((IntPtr)((long)width * height * sizeof(ulong)));
+      if (pixels == null) throw new OutOfMemoryException();
+      Clear();
 #endif
-
-      if (backgroundColor != 0x0000000000000000) Clear();
     }
     #endregion
 
@@ -137,7 +138,11 @@ namespace FastBitmapLib
 #if DEBUG
       // pixels = null; // not needed
 #else
-      Marshal.FreeHGlobal((IntPtr)pixels);
+      if (pixels != null)
+      {
+        Marshal.FreeHGlobal((IntPtr)pixels);
+        pixels = null;
+      }
 #endif
     }
     #endregion

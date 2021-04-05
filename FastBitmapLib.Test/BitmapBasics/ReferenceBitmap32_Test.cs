@@ -29,9 +29,24 @@ namespace FastBitmapLib.Test.BitmapBasics
     public new void Test03_SetPixel32() { base.Test03_SetPixel32(); }
 
     [TestMethod]
+    public new void Test03_SetPixel64() { base.Test03_SetPixel64(); }
+
+    [TestMethod]
     public new void Test04_GetPixel32() { base.Test04_GetPixel32(); }
 
     [TestMethod]
+    public new void Test04_GetPixel64() { base.Test04_GetPixel64(); }
+
+    [TestMethod]
     public new void Test05_FillScanline32() { base.Test05_FillScanline32(); }
+
+    [TestMethod]
+    public new void Test05_FillScanline64() { base.Test05_FillScanline64(); }
+
+    [TestMethod]
+    public new void Test06_WriteScanline32() { base.Test06_WriteScanline32(); }
+
+    [TestMethod]
+    public new void Test06_WriteScanline64() { base.Test06_WriteScanline64(); }
   }
 }
