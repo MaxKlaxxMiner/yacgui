@@ -1,4 +1,4 @@
-﻿
+﻿#region # using *.*
 using System;
 using System.Drawing;
 using FastBitmapLib.Extras;
@@ -6,6 +6,7 @@ using FastBitmapLib.Extras;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable VirtualMemberNeverOverriden.Global
 // ReSharper disable UnusedParameter.Global
+#endregion
 
 namespace FastBitmapLib
 {
@@ -356,6 +357,52 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int y, ulong[] destPixels, int destPixelOffset = 0);
     #endregion
 
+    #region # // --- ColorGDI ---
+    /// <summary>
+    /// Set the pixel color at a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">Pixel color</param>
+    public virtual void SetPixel(int x, int y, Color color)
+    {
+      SetPixel(x, y, (uint)color.ToArgb());
+    }
+
+    /// <summary>
+    /// Get the pixel color from a specific position
+    /// </summary>
+    /// <param name="x">X-Pos (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <returns>Pixel color</returns>
+    public virtual Color GetPixelColor(int x, int y)
+    {
+      return Color.FromArgb((int)GetPixel32(x, y));
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public virtual void FillScanline(int x, int y, int w, Color color)
+    {
+      FillScanline(x, y, w, (uint)color.ToArgb());
+    }
+
+    /// <summary>
+    /// Fill the Scanline with a specific color
+    /// </summary>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="color">fill-color</param>
+    public virtual void FillScanline(int y, Color color)
+    {
+      FillScanline(y, (uint)color.ToArgb());
+    }
+    #endregion
+
     #endregion
 
     #region # // --- additional methods ---
@@ -374,6 +421,17 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="color">Fillcolor</param>
     public abstract void Clear(ulong color);
+    #endregion
+
+    #region # // --- ColorGDI ---
+    /// <summary>
+    /// Clear the bitmap
+    /// </summary>
+    /// <param name="color">Fillcolor</param>
+    public virtual void Clear(Color color)
+    {
+      Clear((uint)color.ToArgb());
+    }
     #endregion
 
     #region # // --- ColorXX ---

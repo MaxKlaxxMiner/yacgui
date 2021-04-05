@@ -92,9 +92,9 @@ namespace FastBitmapLib
       for (int i = 0; i < w; i++)
       {
 #if C32
-        destPixels[x] = GetPixelUnsafe32(x + i, y);
+        destPixels[i] = GetPixelUnsafe32(x + i, y);
 #else
-        destPixels[x] = GetPixelUnsafe64(x + i, y);
+        destPixels[i] = GetPixelUnsafe64(x + i, y);
 #endif
       }
     }
@@ -148,7 +148,7 @@ namespace FastBitmapLib
     /// <param name="color">Pixel color</param>
     public override void SetPixel(int x, int y, ColorType color)
     {
-      if ((uint)x < width || (uint)y < height) return;
+      if ((uint)x >= width || (uint)y >= height) return;
       SetPixelUnsafe(x, y, color);
     }
 
@@ -161,13 +161,13 @@ namespace FastBitmapLib
 #if C32
     public override ColorType GetPixel32(int x, int y)
     {
-      if ((uint)x < width || (uint)y < height) return backgroundColor;
+      if ((uint)x >= width || (uint)y >= height) return backgroundColor;
       return GetPixelUnsafe32(x, y);
     }
 #else
     public override ColorType GetPixel64(int x, int y)
     {
-      if ((uint)x < width || (uint)y < height) return backgroundColor;
+      if ((uint)x >= width || (uint)y >= height) return backgroundColor;
       return GetPixelUnsafe64(x, y);
     }
 #endif
@@ -181,7 +181,7 @@ namespace FastBitmapLib
     /// <param name="color">fill-color</param>
     public override void FillScanline(int x, int y, int w, ColorType color)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
 
       if (x < 0)
       {
@@ -206,7 +206,7 @@ namespace FastBitmapLib
     /// <param name="color">fill-color</param>
     public override void FillScanline(int y, ColorType color)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
       FillScanlineUnsafe(0, y, width, color);
     }
 
@@ -219,7 +219,7 @@ namespace FastBitmapLib
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
     public override void WriteScanLine(int x, int y, int w, ColorType* srcPixels)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
 
       if (x < 0)
       {
@@ -250,7 +250,7 @@ namespace FastBitmapLib
     {
       if (srcPixels == null) throw new ArgumentNullException("srcPixels");
       if (srcPixelOffset < 0 || srcPixelOffset + w > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if (w < 1 || (uint)y < height) return;
+      if (w < 1 || (uint)y >= height) return;
       fixed (ColorType* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLine(x, y, w, ptr);
@@ -264,7 +264,7 @@ namespace FastBitmapLib
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
     public override void WriteScanLine(int y, ColorType* srcPixels)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
       WriteScanLineUnsafe(0, y, width, srcPixels);
     }
 
@@ -278,7 +278,7 @@ namespace FastBitmapLib
     {
       if (srcPixels == null) throw new ArgumentNullException("srcPixels");
       if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
       fixed (ColorType* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLineUnsafe(0, y, width, ptr);
@@ -294,7 +294,7 @@ namespace FastBitmapLib
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public override void ReadScanLine(int x, int y, int w, ColorType* destPixels)
     {
-      if ((uint)y < height)
+      if ((uint)y >= height)
       {
         for (int i = 0; i < w; i++) destPixels[i] = backgroundColor;
         return;
@@ -415,13 +415,13 @@ namespace FastBitmapLib
 #if C32
     public override ColorTypeB GetPixel64(int x, int y)
     {
-      if ((uint)x < width || (uint)y < height) return Conv(backgroundColor);
+      if ((uint)x >= width || (uint)y >= height) return Conv(backgroundColor);
       return GetPixelUnsafe64(x, y);
     }
 #else
     public override ColorTypeB GetPixel32(int x, int y)
     {
-      if ((uint)x < width || (uint)y < height) return Conv(backgroundColor);
+      if ((uint)x >= width || (uint)y >= height) return Conv(backgroundColor);
       return GetPixelUnsafe32(x, y);
     }
 #endif
@@ -489,7 +489,7 @@ namespace FastBitmapLib
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
     public override void WriteScanLine(int x, int y, int w, ColorTypeB* srcPixels)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
 
       if (x < 0)
       {
@@ -520,7 +520,7 @@ namespace FastBitmapLib
     {
       if (srcPixels == null) throw new ArgumentNullException("srcPixels");
       if (srcPixelOffset < 0 || srcPixelOffset + w > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if (w < 1 || (uint)y < height) return;
+      if (w < 1 || (uint)y >= height) return;
       fixed (ColorTypeB* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLine(x, y, w, ptr);
@@ -534,7 +534,7 @@ namespace FastBitmapLib
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
     public override void WriteScanLine(int y, ColorTypeB* srcPixels)
     {
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
       WriteScanLineUnsafe(0, y, width, srcPixels);
     }
 
@@ -548,7 +548,7 @@ namespace FastBitmapLib
     {
       if (srcPixels == null) throw new ArgumentNullException("srcPixels");
       if (srcPixelOffset < 0 || srcPixelOffset + width > srcPixels.Length) throw new ArgumentOutOfRangeException();
-      if ((uint)y < height) return;
+      if ((uint)y >= height) return;
       fixed (ColorTypeB* ptr = &srcPixels[srcPixelOffset])
       {
         WriteScanLineUnsafe(0, y, width, ptr);
@@ -586,7 +586,7 @@ namespace FastBitmapLib
     {
       ColorTypeB bgColor = Conv(backgroundColor);
 
-      if ((uint)y < height)
+      if ((uint)y >= height)
       {
         for (int i = 0; i < w; i++) destPixels[i] = bgColor;
         return;
