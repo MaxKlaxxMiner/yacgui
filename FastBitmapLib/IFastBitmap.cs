@@ -170,7 +170,7 @@ namespace FastBitmapLib
     public abstract void WriteScanLine(int y, uint[] srcPixels, int srcPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color (without boundary check)
+    /// Read a Scanline array of pixels type: color32 (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -179,7 +179,7 @@ namespace FastBitmapLib
     public abstract void ReadScanLineUnsafe(int x, int y, int w, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color32
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -188,7 +188,7 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int x, int y, int w, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color32
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -198,14 +198,14 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int x, int y, int w, uint[] destPixels, int destPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color32
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public abstract void ReadScanLine(int y, uint* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color32
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
@@ -315,7 +315,7 @@ namespace FastBitmapLib
     public abstract void WriteScanLine(int y, ulong[] srcPixels, int srcPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color (without boundary check)
+    /// Read a Scanline array of pixels type: color64 (without boundary check)
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -324,7 +324,7 @@ namespace FastBitmapLib
     public abstract void ReadScanLineUnsafe(int x, int y, int w, ulong* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color64
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -333,7 +333,7 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int x, int y, int w, ulong* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color64
     /// </summary>
     /// <param name="x">X-Start (column)</param>
     /// <param name="y">Y-Pos (line)</param>
@@ -343,14 +343,14 @@ namespace FastBitmapLib
     public abstract void ReadScanLine(int x, int y, int w, ulong[] destPixels, int destPixelOffset = 0);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color64
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
     public abstract void ReadScanLine(int y, ulong* destPixels);
 
     /// <summary>
-    /// Read a Scanline array of pixels type: color
+    /// Read a Scanline array of pixels type: color64
     /// </summary>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>

@@ -1017,6 +1017,94 @@ namespace FastBitmapLib.Test.BitmapBasics
             }
           }
           return "ReadScanline32 - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0703);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get32(rnd), false));
+          }
+
+          var buf = new uint[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+          for (int i = 0; i < 1000; i++)
+          {
+            int posX = rnd.Next(b.width + 100) - 50;
+            int posY = rnd.Next(b.height + 100) - 50;
+            int w = rnd.Next(b.width - posX + 100);
+            if (w > buf.Length) throw new IndexOutOfRangeException();
+            int ofs = rnd.Next(100);
+            if (ofs + w > buf.Length) ofs = buf.Length - w;
+            b.ReadScanLine(posX, posY, w, buf, ofs);
+
+            if (rnd.Next(2) == 0)
+            {
+              for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixel32(posX + x, posY), buf[x + ofs]);
+            }
+            else
+            {
+              for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel32(posX + x, posY), buf[x + ofs]);
+            }
+          }
+          return "ReadScanline32[] - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0704);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get32(rnd), false));
+          }
+
+          var buf = new uint[b.width];
+          fixed (uint* ptr = buf)
+          {
+            for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+            for (int i = 0; i < 100; i++)
+            {
+              int posY = rnd.Next(b.height + 100) - 50;
+              b.ReadScanLine(posY, ptr);
+
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < b.width; x++) Assert.AreEqual(b.GetPixel32(x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = b.width - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel32(x, posY), ptr[x]);
+              }
+            }
+          }
+          return "ReadScanline32-y - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0705);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get32(rnd), false));
+          }
+
+          var buf = new uint[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+          for (int i = 0; i < 100; i++)
+          {
+            int posY = rnd.Next(b.height + 100) - 50;
+            int ofs = rnd.Next(200);
+            if (ofs + b.width > buf.Length) throw new IndexOutOfRangeException();
+            b.ReadScanLine(posY, buf, ofs);
+
+            if (rnd.Next(2) == 0)
+            {
+              for (int x = 0; x < b.width; x++) Assert.AreEqual(b.GetPixel32(x, posY), buf[x + ofs]);
+            }
+            else
+            {
+              for (int x = b.width - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel32(x, posY), buf[x + ofs]);
+            }
+          }
+          return "ReadScanline32-y[] - random";
         }
       );
     }
@@ -1118,6 +1206,94 @@ namespace FastBitmapLib.Test.BitmapBasics
             }
           }
           return "ReadScanline64 - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0703);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color64.From(Get64(rnd), false));
+          }
+
+          var buf = new ulong[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get64(rnd);
+          for (int i = 0; i < 1000; i++)
+          {
+            int posX = rnd.Next(b.width + 100) - 50;
+            int posY = rnd.Next(b.height + 100) - 50;
+            int w = rnd.Next(b.width - posX + 100);
+            if (w > buf.Length) throw new IndexOutOfRangeException();
+            int ofs = rnd.Next(100);
+            if (ofs + w > buf.Length) ofs = buf.Length - w;
+            b.ReadScanLine(posX, posY, w, buf, ofs);
+
+            if (rnd.Next(2) == 0)
+            {
+              for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixel64(posX + x, posY), buf[x + ofs]);
+            }
+            else
+            {
+              for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel64(posX + x, posY), buf[x + ofs]);
+            }
+          }
+          return "ReadScanline64[] - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0704);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color64.From(Get64(rnd), false));
+          }
+
+          var buf = new ulong[b.width];
+          fixed (ulong* ptr = buf)
+          {
+            for (int i = 0; i < buf.Length; i++) buf[i] = Get64(rnd);
+            for (int i = 0; i < 100; i++)
+            {
+              int posY = rnd.Next(b.height + 100) - 50;
+              b.ReadScanLine(posY, ptr);
+
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < b.width; x++) Assert.AreEqual(b.GetPixel64(x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = b.width - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel64(x, posY), ptr[x]);
+              }
+            }
+          }
+          return "ReadScanline64-y - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0705);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get64(rnd), false));
+          }
+
+          var buf = new ulong[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get64(rnd);
+          for (int i = 0; i < 100; i++)
+          {
+            int posY = rnd.Next(b.height + 100) - 50;
+            int ofs = rnd.Next(200);
+            if (ofs + b.width > buf.Length) throw new IndexOutOfRangeException();
+            b.ReadScanLine(posY, buf, ofs);
+
+            if (rnd.Next(2) == 0)
+            {
+              for (int x = 0; x < b.width; x++) Assert.AreEqual(b.GetPixel64(x, posY), buf[x + ofs]);
+            }
+            else
+            {
+              for (int x = b.width - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel64(x, posY), buf[x + ofs]);
+            }
+          }
+          return "ReadScanline64-y[] - random";
         }
       );
     }
