@@ -48,5 +48,11 @@ namespace FastBitmapLib.Test.BitmapBasics
 
     [TestMethod]
     public new void Test06_WriteScanline64() { base.Test06_WriteScanline64(); }
+
+    [TestMethod]
+    public new void Test07_ReadScanline32() { base.Test07_ReadScanline32(); }
+
+    [TestMethod]
+    public new void Test07_ReadScanline64() { base.Test07_ReadScanline64(); }
   }
 }

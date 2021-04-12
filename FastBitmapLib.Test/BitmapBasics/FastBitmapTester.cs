@@ -911,5 +911,206 @@ namespace FastBitmapLib.Test.BitmapBasics
       );
     }
     #endregion
+
+    #region # protected void Test07_ReadScanline32()
+    protected void Test07_ReadScanline32()
+    {
+      InternalTest(160, 90, Color.Black, "ReadScanline32",
+        b =>
+        {
+          var buf = new uint[b.width];
+          fixed (uint* ptr = buf)
+          {
+            Fill(buf, Color32.From(Color.Red));
+            b.WriteScanLineUnsafe(0, 0, b.width, ptr);
+            b.WriteScanLineUnsafe(0, 1, b.width, ptr);
+            Fill(buf, Color32.From(Color.Green));
+            b.WriteScanLineUnsafe(b.width / 4, 0, b.width / 2, ptr);
+            Fill(buf, Color32.From(Color.Blue));
+            b.WriteScanLineUnsafe(b.width / 3, b.height - 2, b.width / 3, ptr);
+            b.WriteScanLineUnsafe(b.width / 3, b.height - 1, b.width / 3, ptr);
+            Fill(buf, Color32.From(Color.White));
+            b.WriteScanLineUnsafe(b.width / 2, b.height - 1, b.width / 2, ptr);
+
+            b.ReadScanLineUnsafe(0, 0, b.width, ptr);
+            for (int i = 0; i < b.width; i++)
+            {
+              Assert.AreEqual(i >= b.width / 4 && i < b.width / 4 + b.width / 2 ? Color32.From(Color.Green) : Color32.From(Color.Red), ptr[i]);
+            }
+            b.ReadScanLineUnsafe(b.width / 4 - 1, 0, b.width / 2 + 2, ptr);
+            Assert.AreEqual(Color32.From(Color.Red), ptr[0]);
+            Assert.AreEqual(Color32.From(Color.Red), ptr[b.width / 2 + 1]);
+            for (int i = 1; i < b.width / 2 + 1; i++)
+            {
+              Assert.AreEqual(Color32.From(Color.Green), ptr[i]);
+            }
+          }
+          return "ReadScanlineUnsafe32 - simple";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0701);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get32(rnd), false));
+          }
+
+          var buf = new uint[b.width];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+          fixed (uint* ptr = buf)
+          {
+            for (int i = 0; i < 1000; i++)
+            {
+              int posX = rnd.Next(b.width);
+              int posY = rnd.Next(b.height);
+              int w = rnd.Next(b.width - posX);
+              b.ReadScanLineUnsafe(posX, posY, w, ptr);
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixelUnsafe32(posX + x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixelUnsafe32(posX + x, posY), ptr[x]);
+              }
+            }
+          }
+          return "ReadScanlineUnsafe32 - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0702);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color32.From(Get32(rnd), false));
+          }
+
+          var buf = new uint[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+          fixed (uint* ptr = buf)
+          {
+            for (int i = 0; i < 1000; i++)
+            {
+              int posX = rnd.Next(b.width + 100) - 50;
+              int posY = rnd.Next(b.height + 100) - 50;
+              int w = rnd.Next(b.width - posX + 100);
+              b.ReadScanLine(posX, posY, w, ptr);
+
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixel32(posX + x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel32(posX + x, posY), ptr[x]);
+              }
+              if (i > 50) break;
+            }
+          }
+          return "ReadScanline32 - random";
+        }
+      );
+    }
+    #endregion
+    #region # protected void Test07_ReadScanline64()
+    protected void Test07_ReadScanline64()
+    {
+      InternalTest(160, 90, Color.Black, "ReadScanline64",
+        b =>
+        {
+          var buf = new ulong[b.width];
+          fixed (ulong* ptr = buf)
+          {
+            Fill(buf, Color64.From(Color.Red));
+            b.WriteScanLineUnsafe(0, 0, b.width, ptr);
+            b.WriteScanLineUnsafe(0, 1, b.width, ptr);
+            Fill(buf, Color64.From(Color.Green));
+            b.WriteScanLineUnsafe(b.width / 4, 0, b.width / 2, ptr);
+            Fill(buf, Color64.From(Color.Blue));
+            b.WriteScanLineUnsafe(b.width / 3, b.height - 2, b.width / 3, ptr);
+            b.WriteScanLineUnsafe(b.width / 3, b.height - 1, b.width / 3, ptr);
+            Fill(buf, Color64.From(Color.White));
+            b.WriteScanLineUnsafe(b.width / 2, b.height - 1, b.width / 2, ptr);
+
+            b.ReadScanLineUnsafe(0, 0, b.width, ptr);
+            for (int i = 0; i < b.width; i++)
+            {
+              Assert.AreEqual(i >= b.width / 4 && i < b.width / 4 + b.width / 2 ? Color64.From(Color.Green) : Color64.From(Color.Red), ptr[i]);
+            }
+            b.ReadScanLineUnsafe(b.width / 4 - 1, 0, b.width / 2 + 2, ptr);
+            Assert.AreEqual(Color64.From(Color.Red), ptr[0]);
+            Assert.AreEqual(Color64.From(Color.Red), ptr[b.width / 2 + 1]);
+            for (int i = 1; i < b.width / 2 + 1; i++)
+            {
+              Assert.AreEqual(Color64.From(Color.Green), ptr[i]);
+            }
+          }
+          return "ReadScanlineUnsafe64 - simple";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0701);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color64.From(Get64(rnd), false));
+          }
+
+          var buf = new ulong[b.width];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get32(rnd);
+          fixed (ulong* ptr = buf)
+          {
+            for (int i = 0; i < 1000; i++)
+            {
+              int posX = rnd.Next(b.width);
+              int posY = rnd.Next(b.height);
+              int w = rnd.Next(b.width - posX);
+              b.ReadScanLineUnsafe(posX, posY, w, ptr);
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixelUnsafe64(posX + x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixelUnsafe64(posX + x, posY), ptr[x]);
+              }
+            }
+          }
+          return "ReadScanlineUnsafe64 - random";
+        },
+        b =>
+        {
+          var rnd = new Random(12345 + 0702);
+          for (int i = 0; i < 1000; i++)
+          {
+            b.SetPixelUnsafe(rnd.Next(b.width), rnd.Next(b.height), Color64.From(Get64(rnd), false));
+          }
+
+          var buf = new ulong[b.width + 200];
+          for (int i = 0; i < buf.Length; i++) buf[i] = Get64(rnd);
+          fixed (ulong* ptr = buf)
+          {
+            for (int i = 0; i < 1000; i++)
+            {
+              int posX = rnd.Next(b.width + 100) - 50;
+              int posY = rnd.Next(b.height + 100) - 50;
+              int w = rnd.Next(b.width - posX + 100);
+              b.ReadScanLine(posX, posY, w, ptr);
+
+              if (rnd.Next(2) == 0)
+              {
+                for (int x = 0; x < w; x++) Assert.AreEqual(b.GetPixel64(posX + x, posY), ptr[x]);
+              }
+              else
+              {
+                for (int x = w - 1; x >= 0; x--) Assert.AreEqual(b.GetPixel64(posX + x, posY), ptr[x]);
+              }
+              if (i > 1) break;
+            }
+          }
+          return "ReadScanline64 - random";
+        }
+      );
+    }
+    #endregion
   }
 }

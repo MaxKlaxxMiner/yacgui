@@ -310,7 +310,7 @@ namespace FastBitmapLib
 
       if (x + w > width)
       {
-        for (int i = width; i < w; i++) destPixels[i] = backgroundColor;
+        for (int i = width - x; i < w; i++) destPixels[i] = backgroundColor;
         w = width - x;
       }
 
@@ -602,7 +602,7 @@ namespace FastBitmapLib
 
       if (x + w > width)
       {
-        for (int i = width; i < w; i++) destPixels[i] = bgColor;
+        for (int i = width - x; i < w; i++) destPixels[i] = bgColor;
         w = width - x;
       }
 
