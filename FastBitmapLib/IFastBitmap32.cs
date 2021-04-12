@@ -302,7 +302,8 @@ namespace FastBitmapLib
 
       if (x < 0)
       {
-        for (int i = 0; i < -x; i++) destPixels[i] = backgroundColor;
+        int end = Math.Min(-x, w);
+        for (int i = 0; i < end; i++) destPixels[i] = backgroundColor;
         w += x;
         destPixels -= x;
         x = 0;
@@ -310,7 +311,7 @@ namespace FastBitmapLib
 
       if (x + w > width)
       {
-        for (int i = width - x; i < w; i++) destPixels[i] = backgroundColor;
+        for (int i = Math.Max(0, width - x); i < w; i++) destPixels[i] = backgroundColor;
         w = width - x;
       }
 
@@ -594,7 +595,8 @@ namespace FastBitmapLib
 
       if (x < 0)
       {
-        for (int i = 0; i < -x; i++) destPixels[i] = bgColor;
+        int end = Math.Min(-x, w);
+        for (int i = 0; i < end; i++) destPixels[i] = bgColor;
         w += x;
         destPixels -= x;
         x = 0;
@@ -602,7 +604,7 @@ namespace FastBitmapLib
 
       if (x + w > width)
       {
-        for (int i = width - x; i < w; i++) destPixels[i] = bgColor;
+        for (int i = Math.Max(0, width - x); i < w; i++) destPixels[i] = bgColor;
         w = width - x;
       }
 
