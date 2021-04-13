@@ -70,7 +70,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowShadowRealtime();
+      TestFastBitmap();
     }
   }
 }

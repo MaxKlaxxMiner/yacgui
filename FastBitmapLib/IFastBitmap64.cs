@@ -740,11 +740,33 @@ namespace FastBitmapLib
       var bits = srcBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, MapPixelFormat(srcBitmap.PixelFormat));
 
       // Copy raw pixels
-      var ptr = (byte*)bits.Scan0;
-      for (int y = 0; y < height; y++)
+      if (bits.PixelFormat != PixelFormat.Format64bppArgb)
       {
-        WriteScanLineUnsafe(0, y, width, (ColorType*)ptr);
-        ptr += bits.Stride;
+        var ptr = (byte*)bits.Scan0;
+        for (int y = 0; y < height; y++)
+        {
+          WriteScanLineUnsafe(0, y, width, (ColorType*)ptr);
+          ptr += bits.Stride;
+        }
+      }
+      else // "special" format: 13 Bits per Channel
+      {
+        var map = Color13Mapping.GetMap13to16();
+
+        var ptr = (byte*)bits.Scan0;
+        ushort[] tmp = new ushort[bits.Stride / 2];
+        fixed (ushort* tmpPtr = tmp)
+        {
+          for (int y = 0; y < height; y++)
+          {
+            for (int i = 0; i < tmp.Length; i++)
+            {
+              tmp[i] = map[Math.Min(8192, (uint)((ushort*)ptr)[i])];
+            }
+            WriteScanLineUnsafe(0, y, width, (ColorType*)tmpPtr);
+            ptr += bits.Stride;
+          }
+        }
       }
 
       // Release the lock
@@ -763,12 +785,34 @@ namespace FastBitmapLib
       // Lock Bitmap-data for fast write
       var bits = destBitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, MapPixelFormat(destBitmap.PixelFormat));
 
-      // Copy raw pixels
-      var ptr = (byte*)bits.Scan0;
-      for (int y = 0; y < height; y++)
+      if (bits.PixelFormat != PixelFormat.Format64bppArgb)
       {
-        ReadScanLineUnsafe(0, y, width, (ColorType*)ptr);
-        ptr += bits.Stride;
+        // Copy raw pixels
+        var ptr = (byte*)bits.Scan0;
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, (ColorType*)ptr);
+          ptr += bits.Stride;
+        }
+      }
+      else // "special" format: 13 Bits per Channel
+      {
+        var map = Color13Mapping.GetMap16to13();
+
+        var ptr = (byte*)bits.Scan0;
+        ushort[] tmp = new ushort[bits.Stride / 2];
+        fixed (ushort* tmpPtr = tmp)
+        {
+          for (int y = 0; y < height; y++)
+          {
+            ReadScanLineUnsafe(0, y, width, (ColorType*)tmpPtr);
+            for (int i = 0; i < tmp.Length; i++)
+            {
+              ((ushort*)ptr)[i] = map[tmp[i]];
+            }
+            ptr += bits.Stride;
+          }
+        }
       }
 
       // Release the lock
@@ -797,12 +841,12 @@ namespace FastBitmapLib
       var rect = new Rectangle(vx, vy, vw, vh);
 
       // Lock Bitmap-data for fast write
-      var bits = srcBitmap.LockBits(rect, ImageLockMode.WriteOnly, MapPixelFormat(srcBitmap.PixelFormat));
+      var bits = srcBitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
       // Copy raw pixels
       for (int line = 0; line < vh; line++)
       {
-        WriteScanLineUnsafe(vx, vy + line, vw, (ColorType*)(bits.Scan0.ToInt64() + line * bits.Stride));
+        WriteScanLineUnsafe(vx, vy + line, vw, (uint*)(bits.Scan0.ToInt64() + line * bits.Stride));
       }
 
       // Release the lock

@@ -1,6 +1,7 @@
 ﻿#region # using *.*
 // ReSharper disable RedundantUsingDirective
 using System;
+using System.Drawing;
 using FastBitmapLib.Extras;
 using System.Runtime.InteropServices;
 // ReSharper disable UnusedMember.Global
@@ -43,6 +44,17 @@ namespace FastBitmapLib
       if (pixels == null) throw new OutOfMemoryException();
       Clear();
 #endif
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public FastBitmap64(Bitmap bitmap, uint backgroundColor = 0x00000000)
+      : this(bitmap.Width, bitmap.Height, backgroundColor)
+    {
+      CopyFromGDIBitmap(bitmap);
     }
     #endregion
 

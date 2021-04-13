@@ -35,7 +35,7 @@ namespace FastBitmapLib
     public static int SaveTiffStream(this IFastBitmap bitmap, Stream writeStream)
     {
       bool is32Bit = bitmap is IFastBitmap32;
-      bool hasAlpha = ScanAlpha(bitmap);
+      bool hasAlpha = bitmap.HasAlphaPixels();
 
       int writtenBytes = WriteHeader(writeStream, bitmap, is32Bit, hasAlpha);
       writtenBytes += WriteData(writeStream, bitmap, is32Bit, hasAlpha);
@@ -196,25 +196,6 @@ namespace FastBitmapLib
       }
 
       return writtenBytes;
-    }
-
-    /// <summary>
-    /// scan bitmap if use alpha-channel
-    /// </summary>
-    /// <param name="bitmap">Bitmap to scan</param>
-    /// <returns>true, if alpha channel found</returns>
-    static bool ScanAlpha(IFastBitmap bitmap)
-    {
-      var tmp = new uint[bitmap.width];
-      for (int line = 0; line < bitmap.height; line++)
-      {
-        bitmap.ReadScanLine(line, tmp);
-        foreach (uint color in tmp)
-        {
-          if (color < 0xff000000) return true; // alpha channel found (opacity < 100%)
-        }
-      }
-      return false; // no alpha channel found
     }
   }
 }
