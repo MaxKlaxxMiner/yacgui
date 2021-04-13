@@ -26,7 +26,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1024, 576, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       fastBitmap.DrawBitmap(texture, -10, -10);
 
@@ -53,7 +53,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1024, 576, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       fastBitmap.DrawBitmapAlpha(texture, -10, -10);
 

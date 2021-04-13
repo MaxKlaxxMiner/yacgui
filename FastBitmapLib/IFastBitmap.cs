@@ -414,6 +414,91 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="color">Fillcolor</param>
     public abstract void Clear(uint color);
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: uint Func(uint sourceColor)</param>
+    public virtual void UpdatePixels32(Func<uint, uint> func)
+    {
+      var tmp = new uint[width];
+      fixed (uint* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: uint Func(int index, uint sourceColor)</param>
+    public virtual void UpdatePixels32(Func<int, uint, uint> func)
+    {
+      var tmp = new uint[width];
+      fixed (uint* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int yp = y * width;
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(yp + x, ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: uint Func(int x, int y, uint sourceColor)</param>
+    public virtual void UpdatePixels32(Func<int, int, uint, uint> func)
+    {
+      var tmp = new uint[width];
+      fixed (uint* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(x, y, ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels in scanlines
+    /// </summary>
+    /// <param name="func">Update function: void Func(uint[] pixels, int y)</param>
+    public virtual void UpdateScanlines32(Action<uint[], int> func)
+    {
+      var tmp = new uint[width];
+      fixed (uint* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          func(tmp, y);
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
     #endregion
 
     #region # // --- Color64 ---
@@ -422,6 +507,91 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="color">Fillcolor</param>
     public abstract void Clear(ulong color);
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: ulong Func(ulong sourceColor)</param>
+    public virtual void UpdatePixels64(Func<ulong, ulong> func)
+    {
+      var tmp = new ulong[width];
+      fixed (ulong* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: ulong Func(int index, ulong sourceColor)</param>
+    public virtual void UpdatePixels64(Func<int, ulong, ulong> func)
+    {
+      var tmp = new ulong[width];
+      fixed (ulong* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int yp = y * width;
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(yp + x, ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels
+    /// </summary>
+    /// <param name="func">Update function: uint Func(int x, int y, ulong sourceColor)</param>
+    public virtual void UpdatePixels64(Func<int, int, ulong, ulong> func)
+    {
+      var tmp = new ulong[width];
+      fixed (ulong* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          int w = width;
+          for (int x = 0; x < w; x++)
+          {
+            ptr[x] = func(x, y, ptr[x]);
+          }
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Update-Function for all pixels in scanlines
+    /// </summary>
+    /// <param name="func">Update function: void Func(ulong[] pixels, int y)</param>
+    public virtual void UpdateScanlines64(Action<ulong[], int> func)
+    {
+      var tmp = new ulong[width];
+      fixed (ulong* ptr = tmp)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, ptr);
+          func(tmp, y);
+          WriteScanLineUnsafe(0, y, width, ptr);
+        }
+      }
+    }
     #endregion
 
     #region # // --- ColorGDI ---

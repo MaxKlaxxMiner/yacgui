@@ -27,7 +27,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1900, 1000, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
 
@@ -66,7 +66,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1900, 1000, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
 
@@ -129,7 +129,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1000, 1000, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
 
@@ -174,7 +174,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1000, 1000, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
 
       var resultBitmap = fastBitmap.ToGDIBitmap();
 

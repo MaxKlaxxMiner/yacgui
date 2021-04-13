@@ -24,7 +24,26 @@ namespace TestTool
     /// Create a demo picture with shiny pieces (with alpha channel)
     /// </summary>
     /// <returns>Demo picture as FastBitmap</returns>
-    static FastBitmapOld GetDemoTexture()
+    static FastBitmap GetDemoTexture()
+    {
+      var texture = new FastBitmap(MainForm.DefaultChessPieces);
+      texture.ConvertGreenPixelsToAlpha();
+
+      var bits = new byte[texture.width * texture.height];
+      texture.UpdatePixels32((i, c) => { bits[i] = (byte)(c >> 24); return c; });
+
+      var distMap = DistanceTransform.GenerateMap(bits, texture.width, texture.height);
+      texture.UpdatePixels32((i, c) =>
+      {
+        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
+        if (opacity == 0) return c; // too far
+        return Color32.BlendFast(0xffcc00, c, c >> 24) & 0xffffff | opacity << 24;
+      });
+
+      return texture;
+    }
+
+    static FastBitmapOld GetDemoTextureOld()
     {
       var texture = new FastBitmapOld(MainForm.DefaultChessPieces);
       texture.ConvertGreenPixelsToAlpha();
@@ -47,7 +66,7 @@ namespace TestTool
     {
       var fastBitmap = GetDemoTexture();
 
-      ShowPicture(fastBitmap.ToGDIBitmapAlpha(), "Shiny Pieces", backgroundColor: Color.Black);
+      ShowPicture(fastBitmap.ToGDIBitmap(), "Shiny Pieces", backgroundColor: Color.Black);
     }
   }
 }

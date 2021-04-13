@@ -46,7 +46,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1024, 768, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
       double mulX = texture.width / 6;
       double ofsX = texture.width / 6 * 3;
       double mulY = texture.height / 2;
@@ -107,7 +107,7 @@ namespace TestTool
     {
       var fastBitmap = new FastBitmapOld(1024, 768, 0xff252525);
 
-      var texture = GetDemoTexture();
+      var texture = GetDemoTextureOld();
       double mulX = texture.width / 6;
       double ofsX = texture.width / 6 * 3;
       double mulY = texture.height / 2;
