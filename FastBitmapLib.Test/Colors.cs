@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using FastBitmapLib.Extras;
+using FastBitmapLib.Test.BitmapBasics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 // ReSharper disable MemberCanBePrivate.Global
 #endregion
@@ -218,6 +219,130 @@ namespace FastBitmapLib.Test
 
         var valAlpha32 = Color32.From(valAlpha);
         Assert.AreEqual((ColorTo32(color) & 0xffffff) | 0x12000000, valAlpha32);
+      }
+    }
+    #endregion
+
+    #region # // --- Blend ---
+    static uint BlendSlow32(uint firstColor, uint secondColor, uint amountSecond)
+    {
+      double r1 = (firstColor >> 16 & 0xff) / 256.0;
+      double g1 = (firstColor >> 8 & 0xff) / 256.0;
+      double b1 = (firstColor & 0xff) / 256.0;
+      double r2 = (secondColor >> 16 & 0xff) / 256.0;
+      double g2 = (secondColor >> 8 & 0xff) / 256.0;
+      double b2 = (secondColor & 0xff) / 256.0;
+      double amount1 = (256 - amountSecond) / 256.0;
+      double amount2 = amountSecond / 256.0;
+      double r = r1 * amount1 + r2 * amount2;
+      double g = g1 * amount1 + g2 * amount2;
+      double b = b1 * amount1 + b2 * amount2;
+      uint ur = Math.Min(255, Math.Max(0, (uint)(r * 256.0)));
+      uint ug = Math.Min(255, Math.Max(0, (uint)(g * 256.0)));
+      uint ub = Math.Min(255, Math.Max(0, (uint)(b * 256.0)));
+      return 0xff000000 | ur << 16 | ug << 8 | ub;
+    }
+
+    static ulong BlendSlow64(ulong firstColor, ulong secondColor, ulong amountSecond)
+    {
+      double r1 = (firstColor >> 32 & 0xffff) / 65536.0;
+      double g1 = (firstColor >> 16 & 0xffff) / 65536.0;
+      double b1 = (firstColor & 0xffff) / 65536.0;
+      double r2 = (secondColor >> 32 & 0xffff) / 65536.0;
+      double g2 = (secondColor >> 16 & 0xffff) / 65536.0;
+      double b2 = (secondColor & 0xffff) / 65536.0;
+      double amount1 = (65536 - amountSecond) / 65536.0;
+      double amount2 = amountSecond / 65536.0;
+      double r = r1 * amount1 + r2 * amount2;
+      double g = g1 * amount1 + g2 * amount2;
+      double b = b1 * amount1 + b2 * amount2;
+      ulong ur = Math.Min(65535, Math.Max(0, (uint)(r * 65536.0)));
+      ulong ug = Math.Min(65535, Math.Max(0, (uint)(g * 65536.0)));
+      ulong ub = Math.Min(65535, Math.Max(0, (uint)(b * 65536.0)));
+      return 0xffff000000000000 | ur << 32 | ug << 16 | ub;
+    }
+
+    static void CheckBlend32(uint first, uint second)
+    {
+      for (uint amount = 0; amount <= 256; amount++)
+      {
+        uint c1 = BlendSlow32(first, second, amount);
+        uint c2 = Color32.BlendFast(first, second, amount);
+        Assert.AreEqual(c1, c2);
+      }
+    }
+
+    static void CheckBlend64(ulong first, ulong second)
+    {
+      for (ulong amount = 0; amount <= 65536; amount++)
+      {
+        ulong c1 = BlendSlow64(first, second, amount);
+        ulong c2 = Color64.BlendFast(first, second, amount);
+        Assert.AreEqual(c1, c2);
+      }
+    }
+
+    static void CheckBlend64Quick(ulong first, ulong second)
+    {
+      for (ulong amount = 0; amount <= 65536; amount += 123)
+      {
+        ulong c1 = BlendSlow64(first, second, amount);
+        ulong c2 = Color64.BlendFast(first, second, amount);
+        Assert.AreEqual(c1, c2);
+      }
+    }
+
+    [TestMethod]
+    public void Blend32()
+    {
+      CheckBlend32(0xff0000, 0x00ff00);
+      CheckBlend32(0x002288, 0x99aa13);
+      CheckBlend32(0x112233, 0x99ccff);
+    }
+
+    [TestMethod]
+    public void Blend32Full()
+    {
+      for (uint cFirst = 0; cFirst < 256; cFirst++)
+      {
+        for (uint cSecond = 0; cSecond < 256; cSecond++)
+        {
+          CheckBlend32(cFirst, cSecond);
+        }
+      }
+      var rnd = new Random(12345);
+      for (int i = 0; i < 20000; i++)
+      {
+        uint c1 = FastBitmapTester.Get32(rnd);
+        uint c2 = FastBitmapTester.Get32(rnd);
+        CheckBlend32(c1, c2);
+      }
+    }
+
+    [TestMethod]
+    public void Blend64()
+    {
+      CheckBlend64(0xffff00000000, 0x0000ffff0000);
+      CheckBlend64(0x000022228888, 0x9999aaaa1313);
+      CheckBlend64(0x111122223333, 0x9999ccccffff);
+    }
+
+    [TestMethod]
+    public void Blend64Full()
+    {
+      for (uint cFirst = 0; cFirst < 256; cFirst++)
+      {
+        for (uint cSecond = 0; cSecond < 256; cSecond++)
+        {
+          CheckBlend64Quick(Color64.From(cFirst), Color64.From(cSecond));
+        }
+      }
+      var rnd = new Random(12345);
+      for (int i = 0; i < 10000; i++)
+      {
+        ulong c1 = FastBitmapTester.Get64(rnd);
+        ulong c2 = FastBitmapTester.Get64(rnd);
+        CheckBlend64Quick(c1, c2);
       }
     }
     #endregion

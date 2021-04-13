@@ -35,10 +35,16 @@ namespace TestTool
       g.FillEllipse(new SolidBrush(Color.White), 140, 120, 40, 40);
       g.FillEllipse(new SolidBrush(Color.White), 300, 120, 40, 40);
 
-      var fastBitmap = new FastBitmapOld(tmpBitmap);
+      var fastBitmap = new FastBitmap(tmpBitmap);
 
       var bits = new byte[fastBitmap.width * fastBitmap.height];
-      for (int i = 0; i < bits.Length; i++) bits[i] = (byte)fastBitmap.pixels[i];
+      for (int y = 0; y < fastBitmap.height; y++)
+      {
+        for (int x = 0; x < fastBitmap.width; x++)
+        {
+          bits[x + y * fastBitmap.width] = (byte)fastBitmap.GetPixelUnsafe32(x, y);
+        }
+      }
 
       var distances = DistanceTransform.GenerateMap(bits, fastBitmap.width, fastBitmap.height);
 
@@ -48,12 +54,12 @@ namespace TestTool
         {
           if (bits[x + y * fastBitmap.width] > 0)
           {
-            fastBitmap.SetPixel(x, y, FastBitmapOld.ColorBlend(0x000000, 0x808080, bits[x + y * fastBitmap.width]));
+            fastBitmap.SetPixelUnsafe(x, y, Color32.BlendFast(0x000000, 0x808080, bits[x + y * fastBitmap.width]));
             continue;
           }
           //uint val = 255 - (uint)Math.Max(0, 255 - distances[x + y * fastBitmap.width] / 2048 * 16);
           uint val = 255 - (uint)Math.Max(0, 255 - distances[x + y * fastBitmap.width] / 128);
-          fastBitmap.SetPixel(x, y, 0xff000000 | val << 16 | val << 8 | val);
+          fastBitmap.SetPixelUnsafe(x, y, 0xff000000 | val << 16 | val << 8 | val);
         }
       }
 

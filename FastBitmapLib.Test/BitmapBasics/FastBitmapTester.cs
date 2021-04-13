@@ -60,14 +60,14 @@ namespace FastBitmapLib.Test.BitmapBasics
     }
 
     #region # // --- Helper Methods ---
-    static uint Get32(Random rnd)
+    public static uint Get32(Random rnd)
     {
       var buf = new byte[4];
       rnd.NextBytes(buf);
       return BitConverter.ToUInt32(buf, 0);
     }
 
-    static ulong Get64(Random rnd)
+    public static ulong Get64(Random rnd)
     {
       var buf = new byte[8];
       rnd.NextBytes(buf);

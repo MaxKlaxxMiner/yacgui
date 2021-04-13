@@ -185,5 +185,22 @@ namespace FastBitmapLib
       return From(ushort.MaxValue, r, g, b);
     }
     #endregion
+
+    #region # // --- Blend ---
+    /// <summary>
+    /// Blend two colors
+    /// </summary>
+    /// <param name="firstColor">First color</param>
+    /// <param name="secondColor">Second color</param>
+    /// <param name="amountSecond">Amount of second color (0-65536)</param>
+    /// <returns>new color</returns>
+    public static ulong BlendFast(ulong firstColor, ulong secondColor, ulong amountSecond)
+    {
+      ulong amountFirst = 65536UL - amountSecond;
+      return (((firstColor & 0xffff0000ffff) * amountFirst + (secondColor & 0xffff0000ffff) * amountSecond) & 0xffff0000ffff0000 // red & blue
+            | ((firstColor & 0xffff0000) * amountFirst + (secondColor & 0xffff0000) * amountSecond) & 0xffff00000000             // green
+        ) >> 16 | 0xffff000000000000;
+    }
+    #endregion
   }
 }
