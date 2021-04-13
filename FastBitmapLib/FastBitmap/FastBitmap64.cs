@@ -2,7 +2,6 @@
 // ReSharper disable RedundantUsingDirective
 using System;
 using System.Drawing;
-using FastBitmapLib.Extras;
 using System.Runtime.InteropServices;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable RedundantUnsafeContext

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedType.Global
 
 namespace FastBitmapLib
 {

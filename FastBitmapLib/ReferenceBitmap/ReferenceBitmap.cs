@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using FastBitmapLib.Extras;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
 

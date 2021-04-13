@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
 
-namespace FastBitmapLib.Extras
+namespace FastBitmapLib
 {
   /// <summary>
   /// Helper class for 32-Bit Colors (8-Bit-Channels: alpha, red, green and blue)

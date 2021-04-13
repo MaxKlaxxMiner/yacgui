@@ -43,15 +43,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extras\Color13Mapping.cs" />
-    <Compile Include="FastBitmapExtensions.cs" />
+    <Compile Include="FastBitmapExtensions\Resize\GetResizedClear.cs" />
+    <Compile Include="FastBitmapExtensions\Resize\GetResizedHigh.cs" />
+    <Compile Include="FastBitmapExtensions\Resize\GetResizedSimple.cs" />
+    <Compile Include="FastBitmapExtensions\ToGDIBitmap.cs" />
+    <Compile Include="FastBitmapExtensions\ConvertGreenPixelsToAlpha.cs" />
+    <Compile Include="FastBitmapExtensions\HasAlphaPixels.cs" />
     <Compile Include="FileFormats\TiffEncoder.cs" />
     <Compile Include="FastBitmap\FastBitmap64.cs" />
     <Compile Include="FastBitmap\FastBitmap.cs" />
     <Compile Include="IFastBitmap64.cs" />
     <Compile Include="IFastBitmap32.cs" />
     <Compile Include="IFastBitmap.cs" />
-    <Compile Include="Extras\Color32.cs" />
-    <Compile Include="Extras\Color64.cs" />
+    <Compile Include="Color32.cs" />
+    <Compile Include="Color64.cs" />
     <Compile Include="Extras\DistanceTransform.cs" />
     <Compile Include="Extras\DrawViewPort.cs" />
     <Compile Include="Extras\Easing.cs" />
