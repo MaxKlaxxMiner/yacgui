@@ -66,11 +66,9 @@ namespace TestTool
     /// </summary>
     public static void Run()
     {
-      //TestAllValues();
+      TestAllValues();
 
       //ShowAllTestPictures();
-
-      TestFastBitmap();
     }
   }
 }
