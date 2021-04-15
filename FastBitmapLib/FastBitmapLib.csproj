@@ -42,6 +42,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompressedBitmap\CompressedBitmap.cs" />
+    <Compile Include="CompressedBitmap\MemoryManager.cs" />
     <Compile Include="Extras\Color13Mapping.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedClear.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedHigh.cs" />
@@ -79,7 +81,6 @@
     <Compile Include="ReferenceBitmap\ReferenceBitmap.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="CompressedBitmap\" />
     <Folder Include="FastCompressedBitmap\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
