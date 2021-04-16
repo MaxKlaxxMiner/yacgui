@@ -11,21 +11,10 @@ using System.Text;
 using System.Threading.Tasks;
 using FastBitmapLib;
 using YacGui;
-// ReSharper disable UnusedType.Global
-// ReSharper disable NotAccessedField.Local
-// ReSharper disable RedundantDefaultMemberInitializer
-// ReSharper disable UnusedMember.Local
-// ReSharper disable CollectionNeverQueried.Local
-// ReSharper disable MergeCastWithTypeCheck
 // ReSharper disable UnusedMember.Global
-// ReSharper disable ClassCanBeSealed.Global
+// ReSharper disable UnusedMember.Local
 // ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable RedundantIfElseBlock
-// ReSharper disable MemberCanBePrivate.Local
-// ReSharper disable UnusedMethodReturnValue.Local
-// ReSharper disable StaticMemberInGenericType
-#pragma warning disable 169
-#pragma warning disable 414
 #endregion
 
 namespace TestTool
@@ -297,76 +286,43 @@ namespace TestTool
     struct Bucket
     {
       public int dataCount;
-      public int dataOfs;
+      public int subStart;
       public int prev;
       public int next;
-      public Bucket(int dataCount, int dataOfs, int prev, int next)
+      public Bucket(int dataCount, int subStart, int prev, int next)
       {
         this.dataCount = dataCount;
-        this.dataOfs = dataOfs;
+        this.subStart = subStart;
         this.prev = prev;
         this.next = next;
       }
       public override string ToString()
       {
-        return new { dataCount, dataOfs, prev, next }.ToString();
+        return new { dataCount, ofs = subStart, prev, next }.ToString();
       }
     }
     Bucket[] buckets;
     int bucketsFill;
+    int lastBucket;
 
     // --- Clusters ---
-    struct Cluster
-    {
-      public int dataCount;
-      public int bucketStart;
-      public int prev;
-      public int next;
-      public Cluster(int dataCount, int bucketStart, int prev, int next)
-      {
-        this.dataCount = dataCount;
-        this.bucketStart = bucketStart;
-        this.prev = prev;
-        this.next = next;
-      }
-      public override string ToString()
-      {
-        return new { dataCount, bucketStart, prev, next }.ToString();
-      }
-    }
-    Cluster[] clusters;
+    Bucket[] clusters;
     int clustersFill;
+    int lastCluster;
 
     // --- Regions ---
-    struct Region
-    {
-      public int dataCount;
-      public int clusterStart;
-      public int prev;
-      public int next;
-      public Region(int dataCount, int clusterStart, int prev, int next)
-      {
-        this.dataCount = dataCount;
-        this.clusterStart = clusterStart;
-        this.prev = prev;
-        this.next = next;
-      }
-      public override string ToString()
-      {
-        return new { dataCount, clusterStart, prev, next }.ToString();
-      }
-    }
-    Region[] regions;
+    Bucket[] regions;
     int regionsFill;
+    int lastRegion;
 
     // --- Data ---
     T[] data;
     int dataCount;
     #endregion
 
-    #region # // --- constructors ---
+    #region # // --- Constructors ---
     /// <summary>
-    /// constructor
+    /// Constructor
     /// </summary>
     public BucketList2()
     {
@@ -374,23 +330,17 @@ namespace TestTool
       dataCount = 0;
       buckets = new[] { new Bucket(0, 0, -1, -1) };
       bucketsFill = buckets.Length;
-      clusters = new[] { new Cluster(0, 0, -1, -1) };
+      lastBucket = 0;
+      clusters = new[] { new Bucket(0, 0, -1, -1) };
       clustersFill = clusters.Length;
-      regions = new[] { new Region(0, 0, -1, -1) };
+      lastCluster = 0;
+      regions = new[] { new Bucket(0, 0, -1, -1) };
       regionsFill = regions.Length;
+      lastRegion = 0;
     }
     #endregion
 
-    #region # // --- IList ---
-    /// <summary>
-    /// Ruft die Anzahl der Elemente ab, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
-    /// </summary>
-    /// <returns>
-    /// Die Anzahl der Elemente, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
-    /// </returns>
-    public int Count { get { return dataCount; } }
-    #endregion
-
+    #region # // --- Helper Methods ---
     void MoveData(int destOfs, int srcOfs, int count)
     {
       var ds = data;
@@ -458,11 +408,11 @@ namespace TestTool
       // --- create new bucket & linking ---
       int newBucket = bucketsFill++;
       bs[newBucket] = new Bucket(newRightCount, newBucket * MaxBucketSize, bucket, bs[bucket].next);
-      if (bs[bucket].next >= 0) bs[bs[bucket].next].prev = newBucket;
+      if (bs[bucket].next >= 0) bs[bs[bucket].next].prev = newBucket; else lastBucket = newBucket;
       bs[bucket].next = newBucket;
 
       // --- copy (half) data to the new bucket ---
-      MoveData(bs[newBucket].dataOfs, bs[bucket].dataOfs + newLeftCount, newRightCount);
+      MoveData(bs[newBucket].subStart, bs[bucket].subStart + newLeftCount, newRightCount);
 
       return newBucket;
     }
@@ -477,7 +427,7 @@ namespace TestTool
       // --- calculate sizes ---
       int minLeftCount = cs[cluster].dataCount / 2;
       int newLeftCount = 0;
-      int bucketSplit = cs[cluster].bucketStart;
+      int bucketSplit = cs[cluster].subStart;
       while (newLeftCount < minLeftCount && bs[bucketSplit].next >= 0)
       {
         newLeftCount += bs[bucketSplit].dataCount;
@@ -490,8 +440,8 @@ namespace TestTool
 
       // --- create new cluster & linking ---
       int newCluster = clustersFill++;
-      cs[newCluster] = new Cluster(newRightCount, bucketSplit, cluster, cs[cluster].next);
-      if (cs[cluster].next >= 0) cs[cs[cluster].next].prev = newCluster;
+      cs[newCluster] = new Bucket(newRightCount, bucketSplit, cluster, cs[cluster].next);
+      if (cs[cluster].next >= 0) cs[cs[cluster].next].prev = newCluster; else lastCluster = newCluster;
       cs[cluster].next = newCluster;
 
       return newCluster;
@@ -507,7 +457,7 @@ namespace TestTool
       // --- calculate sizes ---
       int minLeftCount = rs[region].dataCount / 2;
       int newLeftCount = 0;
-      int clusterSplit = rs[region].clusterStart;
+      int clusterSplit = rs[region].subStart;
       while (newLeftCount < minLeftCount && cs[clusterSplit].next >= 0)
       {
         newLeftCount += cs[clusterSplit].dataCount;
@@ -520,8 +470,8 @@ namespace TestTool
 
       // --- create new region & linking ---
       int newRegion = regionsFill++;
-      rs[newRegion] = new Region(newRightCount, clusterSplit, region, rs[region].next);
-      if (rs[region].next >= 0) rs[rs[region].next].prev = newRegion;
+      rs[newRegion] = new Bucket(newRightCount, clusterSplit, region, rs[region].next);
+      if (rs[region].next >= 0) rs[rs[region].next].prev = newRegion; else lastRegion = newRegion;
       rs[region].next = newRegion;
 
       return newRegion;
@@ -555,7 +505,7 @@ namespace TestTool
         SplitCluster(cluster);
         OptimizeRegion(region);
       }
-      else if(clusters[cluster].dataCount < MinClusterSize)
+      else if (clusters[cluster].dataCount < MinClusterSize)
       {
         if (clusters[cluster].prev >= 0 && clusters[clusters[cluster].prev].dataCount + clusters[cluster].dataCount < MaxClusterSize)
         {
@@ -569,6 +519,16 @@ namespace TestTool
         }
       }
     }
+    #endregion
+
+    #region # // --- IList ---
+    /// <summary>
+    /// Ruft die Anzahl der Elemente ab, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
+    /// </summary>
+    /// <returns>
+    /// Die Anzahl der Elemente, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
+    /// </returns>
+    public int Count { get { return dataCount; } }
 
     /// <summary>
     /// Fügt am angegebenen Index ein Element in die <see cref="T:System.Collections.Generic.IList`1"/> ein.
@@ -576,13 +536,17 @@ namespace TestTool
     /// <param name="index">Der nullbasierte Index, an dem <paramref name="item"/> eingefügt werden soll.</param><param name="item">Das in die <see cref="T:System.Collections.Generic.IList`1"/> einzufügende Objekt.</param><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> ist kein gültiger Index in der <see cref="T:System.Collections.Generic.IList`1"/>.</exception><exception cref="T:System.NotSupportedException">Die <see cref="T:System.Collections.Generic.IList`1"/> ist schreibgeschützt.</exception>
     public void Insert(int index, T item)
     {
-      if ((uint)index > dataCount) throw new IndexOutOfRangeException("index");
+      if ((uint)index >= dataCount)
+      {
+        if (index == dataCount) { Add(item); return; }
+        throw new IndexOutOfRangeException("index");
+      }
 
       // --- search bucket per index ---
       int region, cluster, bucket;
       for (region = 0; index > regions[region].dataCount; region = regions[region].next) { index -= regions[region].dataCount; }
-      for (cluster = regions[region].clusterStart; index > clusters[cluster].dataCount; cluster = clusters[cluster].next) { index -= clusters[cluster].dataCount; }
-      for (bucket = clusters[cluster].bucketStart; index > buckets[bucket].dataCount; bucket = buckets[bucket].next) { index -= buckets[bucket].dataCount; }
+      for (cluster = regions[region].subStart; index > clusters[cluster].dataCount; cluster = clusters[cluster].next) { index -= clusters[cluster].dataCount; }
+      for (bucket = clusters[cluster].subStart; index > buckets[bucket].dataCount; bucket = buckets[bucket].next) { index -= buckets[bucket].dataCount; }
 
       // --- increment data-counts ---
       buckets[bucket].dataCount++;
@@ -603,7 +567,7 @@ namespace TestTool
       }
 
       // --- insert data ---
-      int dataOfs = buckets[bucket].dataOfs;
+      int dataOfs = buckets[bucket].subStart;
       for (int m = buckets[bucket].dataCount; m > index; m--)
       {
         data[dataOfs + m] = data[dataOfs + m - 1];
@@ -619,7 +583,16 @@ namespace TestTool
     /// </returns>
     public IEnumerator<T> GetEnumerator()
     {
-      yield break;
+      var bs = buckets;
+      for (int bucket = 0; bucket >= 0; bucket = bs[bucket].next)
+      {
+        int ofs = bs[bucket].subStart;
+        int count = bs[bucket].dataCount;
+        for (int i = 0; i < count; i++)
+        {
+          yield return data[ofs + i];
+        }
+      }
     }
 
     /// <summary>
@@ -632,6 +605,7 @@ namespace TestTool
     {
       return GetEnumerator();
     }
+    #endregion
 
     /// <summary>
     /// Fügt der <see cref="T:System.Collections.Generic.ICollection`1"/> ein Element hinzu.
@@ -639,6 +613,21 @@ namespace TestTool
     /// <param name="item">Das Objekt, das <see cref="T:System.Collections.Generic.ICollection`1"/> hinzugefügt werden soll.</param><exception cref="T:System.NotSupportedException"><see cref="T:System.Collections.Generic.ICollection`1"/> ist schreibgeschützt.</exception>
     public void Add(T item)
     {
+      int last = lastBucket;
+
+      // --- increment data-counts ---
+      clusters[lastCluster].dataCount++;
+      regions[lastRegion].dataCount++;
+      dataCount++;
+
+      if (buckets[last].dataCount == MaxBucketSize)
+      {
+        throw new NotImplementedException();
+      }
+
+      // --- add data ---
+      data[buckets[last].subStart + buckets[last].dataCount] = item;
+      buckets[last].dataCount++;
     }
 
     /// <summary>
@@ -687,7 +676,7 @@ namespace TestTool
     /// <returns>
     /// true, wenn das <see cref="T:System.Collections.Generic.ICollection`1"/> schreibgeschützt ist, andernfalls false.
     /// </returns>
-    public bool IsReadOnly { get; private set; }
+    public bool IsReadOnly { get { return false; } }
 
     /// <summary>
     /// Bestimmt den Index eines bestimmten Elements in der <see cref="T:System.Collections.Generic.IList`1"/>.
