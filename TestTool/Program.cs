@@ -15,6 +15,7 @@ using YacGui;
 // ReSharper disable UnusedMember.Local
 // ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable RedundantIfElseBlock
+// ReSharper disable UnusedMethodReturnValue.Local
 #endregion
 
 namespace TestTool
@@ -417,6 +418,46 @@ namespace TestTool
       return newBucket;
     }
 
+    void AddNewCluster(int startBucket)
+    {
+      ResizeClusters(clustersFill + 1);
+      int newCluster = clustersFill++;
+      clusters[newCluster] = new Bucket(0, startBucket, lastCluster, -1);
+      clusters[lastCluster].next = newCluster;
+      lastCluster = newCluster;
+
+      if (regions[lastRegion].dataCount >= MaxRegionSize)
+      {
+        ResizeRegions(regionsFill + 1);
+        int newRegion = regionsFill++;
+        regions[newRegion] = new Bucket(0, newCluster, lastRegion, -1);
+        regions[lastRegion].next = newRegion;
+        lastRegion = newRegion;
+      }
+    }
+
+    int AddNewBucket()
+    {
+      ResizeBuckets(bucketsFill + 1);
+
+      var bs = buckets;
+      int last = lastBucket;
+
+      // --- create new bucket & linking ---
+      int newBucket = bucketsFill++;
+      bs[newBucket] = new Bucket(0, newBucket * MaxBucketSize, last, -1);
+      bs[last].next = newBucket;
+      lastBucket = newBucket;
+
+      // --- update clusters if necessary ---
+      if (clusters[lastCluster].dataCount >= MaxClusterSize)
+      {
+        AddNewCluster(newBucket);
+      }
+
+      return newBucket;
+    }
+
     int SplitCluster(int cluster)
     {
       ResizeClusters(clustersFill + 1);
@@ -615,19 +656,19 @@ namespace TestTool
     {
       int last = lastBucket;
 
-      // --- increment data-counts ---
-      clusters[lastCluster].dataCount++;
-      regions[lastRegion].dataCount++;
-      dataCount++;
-
       if (buckets[last].dataCount == MaxBucketSize)
       {
-        throw new NotImplementedException();
+        last = AddNewBucket();
       }
 
       // --- add data ---
       data[buckets[last].subStart + buckets[last].dataCount] = item;
+
+      // --- increment data-counts ---
       buckets[last].dataCount++;
+      clusters[lastCluster].dataCount++;
+      regions[lastRegion].dataCount++;
+      dataCount++;
     }
 
     /// <summary>
@@ -786,8 +827,9 @@ namespace TestTool
       for (int i = 0; i < 10000000; i++)
       {
         if ((i & 0xffff) == 0) Console.WriteLine(i.ToString("N0"));
-        int next = rnd.Next(b1.Count + 1);
-        b1.Insert(next, i);
+        //int next = rnd.Next(b1.Count + 1);
+        //b1.Insert(next, i);
+        b1.Add(i);
       }
       time.Stop();
       Console.WriteLine(time.ElapsedMilliseconds.ToString("N0") + " ms");
