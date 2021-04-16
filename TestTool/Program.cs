@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using FastBitmapLib;
@@ -17,6 +18,13 @@ using YacGui;
 // ReSharper disable CollectionNeverQueried.Local
 // ReSharper disable MergeCastWithTypeCheck
 // ReSharper disable UnusedMember.Global
+// ReSharper disable ClassCanBeSealed.Global
+// ReSharper disable FieldCanBeMadeReadOnly.Local
+// ReSharper disable RedundantIfElseBlock
+// ReSharper disable MemberCanBePrivate.Local
+// ReSharper disable UnusedMethodReturnValue.Local
+// ReSharper disable StaticMemberInGenericType
+#pragma warning disable 169
 #pragma warning disable 414
 #endregion
 
@@ -274,6 +282,447 @@ namespace TestTool
     }
   }
 
+  public class BucketList2<T> : IList<T>
+  {
+    static readonly int MaxBucketSize = Marshal.SizeOf(default(T)) * 64;
+    static readonly int MaxClusterSize = MaxBucketSize * 16;
+    static readonly int MaxRegionSize = MaxClusterSize * 64;
+
+    static readonly int MinBucketSize = MaxBucketSize / 4;
+    static readonly int MinClusterSize = MaxClusterSize / 4;
+    static readonly int MinRegionSize = MaxRegionSize / 4;
+
+    #region # // --- Structs + Data ---
+    // --- Buckets ---
+    struct Bucket
+    {
+      public int dataCount;
+      public int dataOfs;
+      public int prev;
+      public int next;
+      public Bucket(int dataCount, int dataOfs, int prev, int next)
+      {
+        this.dataCount = dataCount;
+        this.dataOfs = dataOfs;
+        this.prev = prev;
+        this.next = next;
+      }
+      public override string ToString()
+      {
+        return new { dataCount, dataOfs, prev, next }.ToString();
+      }
+    }
+    Bucket[] buckets;
+    int bucketsFill;
+
+    // --- Clusters ---
+    struct Cluster
+    {
+      public int dataCount;
+      public int bucketStart;
+      public int prev;
+      public int next;
+      public Cluster(int dataCount, int bucketStart, int prev, int next)
+      {
+        this.dataCount = dataCount;
+        this.bucketStart = bucketStart;
+        this.prev = prev;
+        this.next = next;
+      }
+      public override string ToString()
+      {
+        return new { dataCount, bucketStart, prev, next }.ToString();
+      }
+    }
+    Cluster[] clusters;
+    int clustersFill;
+
+    // --- Regions ---
+    struct Region
+    {
+      public int dataCount;
+      public int clusterStart;
+      public int prev;
+      public int next;
+      public Region(int dataCount, int clusterStart, int prev, int next)
+      {
+        this.dataCount = dataCount;
+        this.clusterStart = clusterStart;
+        this.prev = prev;
+        this.next = next;
+      }
+      public override string ToString()
+      {
+        return new { dataCount, clusterStart, prev, next }.ToString();
+      }
+    }
+    Region[] regions;
+    int regionsFill;
+
+    // --- Data ---
+    T[] data;
+    int dataCount;
+    #endregion
+
+    #region # // --- constructors ---
+    /// <summary>
+    /// constructor
+    /// </summary>
+    public BucketList2()
+    {
+      data = new T[MaxBucketSize];
+      dataCount = 0;
+      buckets = new[] { new Bucket(0, 0, -1, -1) };
+      bucketsFill = buckets.Length;
+      clusters = new[] { new Cluster(0, 0, -1, -1) };
+      clustersFill = clusters.Length;
+      regions = new[] { new Region(0, 0, -1, -1) };
+      regionsFill = regions.Length;
+    }
+    #endregion
+
+    #region # // --- IList ---
+    /// <summary>
+    /// Ruft die Anzahl der Elemente ab, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
+    /// </summary>
+    /// <returns>
+    /// Die Anzahl der Elemente, die in <see cref="T:System.Collections.Generic.ICollection`1"/> enthalten sind.
+    /// </returns>
+    public int Count { get { return dataCount; } }
+    #endregion
+
+    void MoveData(int destOfs, int srcOfs, int count)
+    {
+      var ds = data;
+      for (int i = 0; i < count; i++)
+      {
+        ds[destOfs + i] = ds[srcOfs + i];
+        ds[srcOfs + i] = default(T);
+      }
+    }
+
+    void ResizeBuckets(int minBucketCount)
+    {
+      int newSize = buckets.Length;
+
+      while (newSize > MaxBucketSize && newSize / 2 > bucketsFill) newSize /= 2;
+
+      while (minBucketCount > newSize) newSize *= 2;
+
+      if (newSize != buckets.Length)
+      {
+        Array.Resize(ref buckets, newSize);
+        Array.Resize(ref data, newSize * MaxBucketSize);
+      }
+    }
+
+    void ResizeClusters(int minClusterCount)
+    {
+      int newSize = clusters.Length;
+
+      while (newSize > MaxBucketSize && newSize / 2 > clustersFill) newSize /= 2;
+
+      while (minClusterCount > newSize) newSize *= 2;
+
+      if (newSize != clusters.Length)
+      {
+        Array.Resize(ref clusters, newSize);
+      }
+    }
+
+    void ResizeRegions(int minRegionCount)
+    {
+      int newSize = regions.Length;
+
+      while (newSize > MaxBucketSize && newSize / 2 > regionsFill) newSize /= 2;
+
+      while (minRegionCount > newSize) newSize *= 2;
+
+      if (newSize != regions.Length)
+      {
+        Array.Resize(ref regions, newSize);
+      }
+    }
+
+    int SplitBucket(int bucket)
+    {
+      ResizeBuckets(bucketsFill + 1);
+
+      var bs = buckets;
+
+      // --- calculate sizes ---
+      int newLeftCount = bs[bucket].dataCount / 2;
+      int newRightCount = bs[bucket].dataCount - newLeftCount;
+      bs[bucket].dataCount = newLeftCount;
+
+      // --- create new bucket & linking ---
+      int newBucket = bucketsFill++;
+      bs[newBucket] = new Bucket(newRightCount, newBucket * MaxBucketSize, bucket, bs[bucket].next);
+      if (bs[bucket].next >= 0) bs[bs[bucket].next].prev = newBucket;
+      bs[bucket].next = newBucket;
+
+      // --- copy (half) data to the new bucket ---
+      MoveData(bs[newBucket].dataOfs, bs[bucket].dataOfs + newLeftCount, newRightCount);
+
+      return newBucket;
+    }
+
+    int SplitCluster(int cluster)
+    {
+      ResizeClusters(clustersFill + 1);
+
+      var bs = buckets;
+      var cs = clusters;
+
+      // --- calculate sizes ---
+      int minLeftCount = cs[cluster].dataCount / 2;
+      int newLeftCount = 0;
+      int bucketSplit = cs[cluster].bucketStart;
+      while (newLeftCount < minLeftCount && bs[bucketSplit].next >= 0)
+      {
+        newLeftCount += bs[bucketSplit].dataCount;
+        bucketSplit = bs[bucketSplit].next;
+      }
+      int newRightCount = cs[cluster].dataCount - newLeftCount;
+      Debug.Assert(newLeftCount > 0);
+      Debug.Assert(newRightCount > 0);
+      cs[cluster].dataCount = newLeftCount;
+
+      // --- create new cluster & linking ---
+      int newCluster = clustersFill++;
+      cs[newCluster] = new Cluster(newRightCount, bucketSplit, cluster, cs[cluster].next);
+      if (cs[cluster].next >= 0) cs[cs[cluster].next].prev = newCluster;
+      cs[cluster].next = newCluster;
+
+      return newCluster;
+    }
+
+    int SplitRegion(int region)
+    {
+      ResizeRegions(regionsFill + 1);
+
+      var cs = clusters;
+      var rs = regions;
+
+      // --- calculate sizes ---
+      int minLeftCount = rs[region].dataCount / 2;
+      int newLeftCount = 0;
+      int clusterSplit = rs[region].clusterStart;
+      while (newLeftCount < minLeftCount && cs[clusterSplit].next >= 0)
+      {
+        newLeftCount += cs[clusterSplit].dataCount;
+        clusterSplit = cs[clusterSplit].next;
+      }
+      int newRightCount = rs[region].dataCount - newLeftCount;
+      Debug.Assert(newLeftCount > 0);
+      Debug.Assert(newRightCount > 0);
+      rs[region].dataCount = newLeftCount;
+
+      // --- create new region & linking ---
+      int newRegion = regionsFill++;
+      rs[newRegion] = new Region(newRightCount, clusterSplit, region, rs[region].next);
+      if (rs[region].next >= 0) rs[rs[region].next].prev = newRegion;
+      rs[region].next = newRegion;
+
+      return newRegion;
+    }
+
+    void OptimizeRegion(int region)
+    {
+      if (regions[region].dataCount > MaxRegionSize)
+      {
+        SplitRegion(region);
+      }
+      else if (regions[region].dataCount < MinRegionSize)
+      {
+        if (regions[region].prev >= 0 && regions[regions[region].prev].dataCount + regions[region].dataCount < MaxRegionSize)
+        {
+          // --- merge previous region ---
+          throw new NotImplementedException();
+        }
+        else if (regions[region].next >= 0 && regions[regions[region].next].dataCount + regions[region].dataCount < MaxRegionSize)
+        {
+          // --- merge next region ---
+          throw new NotImplementedException();
+        }
+      }
+    }
+
+    void OptimizeCluster(int cluster, int region)
+    {
+      if (clusters[cluster].dataCount > MaxClusterSize)
+      {
+        SplitCluster(cluster);
+        OptimizeRegion(region);
+      }
+      else if(clusters[cluster].dataCount < MinClusterSize)
+      {
+        if (clusters[cluster].prev >= 0 && clusters[clusters[cluster].prev].dataCount + clusters[cluster].dataCount < MaxClusterSize)
+        {
+          // --- merge previous cluster ---
+          throw new NotImplementedException();
+        }
+        else if (clusters[cluster].next >= 0 && clusters[clusters[cluster].next].dataCount + clusters[cluster].dataCount < MaxClusterSize)
+        {
+          // --- merge next cluster ---
+          throw new NotImplementedException();
+        }
+      }
+    }
+
+    /// <summary>
+    /// Fügt am angegebenen Index ein Element in die <see cref="T:System.Collections.Generic.IList`1"/> ein.
+    /// </summary>
+    /// <param name="index">Der nullbasierte Index, an dem <paramref name="item"/> eingefügt werden soll.</param><param name="item">Das in die <see cref="T:System.Collections.Generic.IList`1"/> einzufügende Objekt.</param><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> ist kein gültiger Index in der <see cref="T:System.Collections.Generic.IList`1"/>.</exception><exception cref="T:System.NotSupportedException">Die <see cref="T:System.Collections.Generic.IList`1"/> ist schreibgeschützt.</exception>
+    public void Insert(int index, T item)
+    {
+      if ((uint)index > dataCount) throw new IndexOutOfRangeException("index");
+
+      // --- search bucket per index ---
+      int region, cluster, bucket;
+      for (region = 0; index > regions[region].dataCount; region = regions[region].next) { index -= regions[region].dataCount; }
+      for (cluster = regions[region].clusterStart; index > clusters[cluster].dataCount; cluster = clusters[cluster].next) { index -= clusters[cluster].dataCount; }
+      for (bucket = clusters[cluster].bucketStart; index > buckets[bucket].dataCount; bucket = buckets[bucket].next) { index -= buckets[bucket].dataCount; }
+
+      // --- increment data-counts ---
+      buckets[bucket].dataCount++;
+      clusters[cluster].dataCount++;
+      regions[region].dataCount++;
+      dataCount++;
+
+      // --- split bucket, if full ---
+      if (buckets[bucket].dataCount == MaxBucketSize)
+      {
+        int newBucket = SplitBucket(bucket);
+        OptimizeCluster(cluster, region);
+        if (index > buckets[bucket].dataCount)
+        {
+          index -= buckets[bucket].dataCount;
+          bucket = newBucket;
+        }
+      }
+
+      // --- insert data ---
+      int dataOfs = buckets[bucket].dataOfs;
+      for (int m = buckets[bucket].dataCount; m > index; m--)
+      {
+        data[dataOfs + m] = data[dataOfs + m - 1];
+      }
+      data[dataOfs + index] = item;
+    }
+
+    /// <summary>
+    /// Gibt einen Enumerator zurück, der die Auflistung durchläuft.
+    /// </summary>
+    /// <returns>
+    /// Ein <see cref="T:System.Collections.Generic.IEnumerator`1"/>, der zum Durchlaufen der Auflistung verwendet werden kann.
+    /// </returns>
+    public IEnumerator<T> GetEnumerator()
+    {
+      yield break;
+    }
+
+    /// <summary>
+    /// Gibt einen Enumerator zurück, der eine Auflistung durchläuft.
+    /// </summary>
+    /// <returns>
+    /// Ein <see cref="T:System.Collections.IEnumerator"/>-Objekt, das zum Durchlaufen der Auflistung verwendet werden kann.
+    /// </returns>
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+      return GetEnumerator();
+    }
+
+    /// <summary>
+    /// Fügt der <see cref="T:System.Collections.Generic.ICollection`1"/> ein Element hinzu.
+    /// </summary>
+    /// <param name="item">Das Objekt, das <see cref="T:System.Collections.Generic.ICollection`1"/> hinzugefügt werden soll.</param><exception cref="T:System.NotSupportedException"><see cref="T:System.Collections.Generic.ICollection`1"/> ist schreibgeschützt.</exception>
+    public void Add(T item)
+    {
+    }
+
+    /// <summary>
+    /// Entfernt alle Elemente aus <see cref="T:System.Collections.Generic.ICollection`1"/>.
+    /// </summary>
+    /// <exception cref="T:System.NotSupportedException"><see cref="T:System.Collections.Generic.ICollection`1"/> ist schreibgeschützt.</exception>
+    public void Clear()
+    {
+    }
+
+    /// <summary>
+    /// Ermittelt, ob die <see cref="T:System.Collections.Generic.ICollection`1"/> einen bestimmten Wert enthält.
+    /// </summary>
+    /// <returns>
+    /// true, wenn sich <paramref name="item"/> in <see cref="T:System.Collections.Generic.ICollection`1"/> befindet, andernfalls false.
+    /// </returns>
+    /// <param name="item">Das im <see cref="T:System.Collections.Generic.ICollection`1"/> zu suchende Objekt.</param>
+    public bool Contains(T item)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Kopiert die Elemente von <see cref="T:System.Collections.Generic.ICollection`1"/> in ein <see cref="T:System.Array"/>, beginnend bei einem bestimmten <see cref="T:System.Array"/>-Index.
+    /// </summary>
+    /// <param name="array">Das eindimensionale <see cref="T:System.Array"/>, das das Ziel der aus der <see cref="T:System.Collections.Generic.ICollection`1"/> kopierten Elemente ist. Für das <see cref="T:System.Array"/> muss eine nullbasierte Indizierung verwendet werden.</param><param name="arrayIndex">Der nullbasierte Index in <paramref name="array"/>, an dem das Kopieren beginnt.</param><exception cref="T:System.ArgumentNullException"><paramref name="array"/> ist null.</exception><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="arrayIndex"/> ist kleiner als 0.</exception><exception cref="T:System.ArgumentException">Die Anzahl der Elemente in der Quell-<see cref="T:System.Collections.Generic.ICollection`1"/> ist größer als der verfügbare Platz von <paramref name="arrayIndex"/> bis zum Ende des Ziel-<paramref name="array"/>.</exception>
+    public void CopyTo(T[] array, int arrayIndex)
+    {
+    }
+
+    /// <summary>
+    /// Entfernt das erste Vorkommen eines angegebenen Objekts aus der <see cref="T:System.Collections.Generic.ICollection`1"/>.
+    /// </summary>
+    /// <returns>
+    /// true, wenn das <paramref name="item"/> erfolgreich aus der <see cref="T:System.Collections.Generic.ICollection`1"/> entfernt wurde, andernfalls false. Diese Methode gibt auch dann false zurück, wenn <paramref name="item"/> nicht in der ursprünglichen <see cref="T:System.Collections.Generic.ICollection`1"/> gefunden wurde.
+    /// </returns>
+    /// <param name="item">Das aus dem <see cref="T:System.Collections.Generic.ICollection`1"/> zu entfernende Objekt.</param><exception cref="T:System.NotSupportedException"><see cref="T:System.Collections.Generic.ICollection`1"/> ist schreibgeschützt.</exception>
+    public bool Remove(T item)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Ruft einen Wert ab, der angibt, ob das <see cref="T:System.Collections.Generic.ICollection`1"/> schreibgeschützt ist.
+    /// </summary>
+    /// <returns>
+    /// true, wenn das <see cref="T:System.Collections.Generic.ICollection`1"/> schreibgeschützt ist, andernfalls false.
+    /// </returns>
+    public bool IsReadOnly { get; private set; }
+
+    /// <summary>
+    /// Bestimmt den Index eines bestimmten Elements in der <see cref="T:System.Collections.Generic.IList`1"/>.
+    /// </summary>
+    /// <returns>
+    /// Der Index von <paramref name="item"/>, wenn das Element in der Liste gefunden wird, andernfalls -1.
+    /// </returns>
+    /// <param name="item">Das im <see cref="T:System.Collections.Generic.IList`1"/> zu suchende Objekt.</param>
+    public int IndexOf(T item)
+    {
+      return 0;
+    }
+
+    /// <summary>
+    /// Entfernt das <see cref="T:System.Collections.Generic.IList`1"/>-Element am angegebenen Index.
+    /// </summary>
+    /// <param name="index">Der nullbasierte Index des zu entfernenden Elements.</param><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> ist kein gültiger Index in der <see cref="T:System.Collections.Generic.IList`1"/>.</exception><exception cref="T:System.NotSupportedException">Die <see cref="T:System.Collections.Generic.IList`1"/> ist schreibgeschützt.</exception>
+    public void RemoveAt(int index)
+    {
+    }
+
+    /// <summary>
+    /// Ruft das Element am angegebenen Index ab oder legt dieses fest.
+    /// </summary>
+    /// <returns>
+    /// Das Element am angegebenen Index.
+    /// </returns>
+    /// <param name="index">Der nullbasierte Index des Elements, das abgerufen oder festgelegt werden soll.</param><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> ist kein gültiger Index in der <see cref="T:System.Collections.Generic.IList`1"/>.</exception><exception cref="T:System.NotSupportedException">Die Eigenschaft wird festgelegt, und die <see cref="T:System.Collections.Generic.IList`1"/> ist schreibgeschützt.</exception>
+    public T this[int index]
+    {
+      get { return default(T); }
+      set { }
+    }
+  }
+
   class Program : ConsoleExtras
   {
     static void PrintDebug(MemoryManager mem, MemoryManager.Entry[] entries)
@@ -341,7 +790,7 @@ namespace TestTool
 
     static void BucketTest()
     {
-      var b1 = new BucketList<int>();
+      var b1 = new BucketList2<int>();
       var rnd = new Random(12345);
 
       var time = Stopwatch.StartNew();
