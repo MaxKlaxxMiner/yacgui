@@ -1168,6 +1168,10 @@ namespace TestTool
     #endregion
 
     #region # // --- Helper methods ---
+    /// <summary>
+    /// increment the dataCount in bucket (inclusive parents)
+    /// </summary>
+    /// <param name="bucket">Bucket to update</param>
     void IncrementCount(int bucket)
     {
       Debug.Assert((uint)bucket < bucketsFill);
@@ -1180,6 +1184,38 @@ namespace TestTool
       }
 
       dataCount++;
+    }
+
+    /// <summary>
+    /// get (Data-)Bucket from Index
+    /// </summary>
+    /// <param name="index">index to search</param>
+    /// <param name="innerIndex">fraction of the index inner the bucket</param>
+    /// <returns>Bucket-ID</returns>
+    int GetBucketDataFromIndex(int index, out int innerIndex)
+    {
+      Debug.Assert(index >= 0 && index < dataCount);
+
+      int bucket = 0;
+
+      for (; ; )
+      {
+        if (index >= buckets[bucket].dataCount)
+        {
+          index -= buckets[bucket].dataCount;
+          bucket = buckets[bucket].next;
+          continue;
+        }
+        if (buckets[bucket].HasData) break;
+        bucket = buckets[bucket].childStart;
+      }
+
+      innerIndex = index;
+
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(innerIndex >= 0 && innerIndex < buckets[bucket].dataCount);
+
+      return bucket;
     }
     #endregion
 
@@ -1221,8 +1257,10 @@ namespace TestTool
     public void Validate()
     {
       var knownBuckets = new HashSet<int>();
+      if (buckets[0].parent != -1) throw new Exception("validate: invalid main-bucket [0]");
       int totalCount = SubValidate(0, knownBuckets);
       if (totalCount != dataCount) throw new Exception("validate: wrong dataCount " + dataCount + " != " + totalCount);
+      if (knownBuckets.Count != bucketsFill) throw new Exception("validate: unused buckets: " + knownBuckets.Count + " != " + bucketsFill);
     }
     #endregion
 
@@ -1267,7 +1305,9 @@ namespace TestTool
     /// <returns>An enumerator that can be used to iterate through the collection.</returns>
     public IEnumerator<T> GetEnumerator()
     {
-      int b = 0;
+      int firstIndex;
+      int b = GetBucketDataFromIndex(0, out firstIndex);
+      Debug.Assert(firstIndex == 0);
       while (b >= 0)
       {
         Debug.Assert(buckets[b].HasData);
@@ -1302,6 +1342,39 @@ namespace TestTool
       IncrementCount(bucket);
     }
 
+    /// <summary>Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.</summary>
+    /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
+    /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
+    public void Insert(int index, T item)
+    {
+      if (index > dataCount) throw new IndexOutOfRangeException("index");
+
+      if (index == dataCount)
+      {
+        Add(item);
+        return;
+      }
+
+      int bucket = GetBucketDataFromIndex(index, out index);
+
+      if (buckets[bucket].dataCount == MaxBucketSize) // if bucket full?
+      {
+        throw new NotImplementedException();
+      }
+
+      int dataOffset = buckets[bucket].DataOffset + index;
+      for (int i = buckets[bucket].DataEndOffset; i > dataOffset; i--)
+      {
+        data[i] = data[i - 1];
+      }
+
+      data[dataOffset] = item;
+      IncrementCount(bucket);
+    }
+
     /// <summary>Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.</summary>
     /// <returns>true if <paramref name="item" /> is found in the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false.</returns>
     /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
@@ -1328,25 +1401,6 @@ namespace TestTool
     /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
     public int IndexOf(T item)
     {
-      throw new NotImplementedException();
-    }
-
-    /// <summary>Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.</summary>
-    /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
-    /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
-    /// <exception cref="T:System.ArgumentOutOfRangeException">
-    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
-    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
-    public void Insert(int index, T item)
-    {
-      if (index > dataCount) throw new IndexOutOfRangeException("index");
-
-      if (index == dataCount)
-      {
-        Add(item);
-        return;
-      }
-
       throw new NotImplementedException();
     }
 
