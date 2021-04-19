@@ -26,6 +26,7 @@ using YacGui;
 // ReSharper disable MemberCanBePrivate.Local
 // ReSharper disable NotAccessedField.Local
 // ReSharper disable ClassCanBeSealed.Global
+// ReSharper disable TailRecursiveCall
 #pragma warning disable 414
 #pragma warning disable 169
 #pragma warning disable 649
@@ -1031,11 +1032,11 @@ namespace TestTool
     /// <summary>
     /// Size of Bucket (max Elements per Bucket)
     /// </summary>
-    const int MaxBucketSize = 256;
+    const int MaxBucketSize = 128;
     /// <summary>
     /// max Bucket-Count per level
     /// </summary>
-    const int LevelMultiplicator = 16;
+    const int LevelMultiplicator = 8;
     /// <summary>
     /// lowest count to merge neighbors
     /// </summary>
@@ -1076,6 +1077,10 @@ namespace TestTool
       /// </summary>
       public int dataCount;
       /// <summary>
+      /// previuos Bucket at same level (-1 = first bucket)
+      /// </summary>
+      public int prev;
+      /// <summary>
       /// next Bucket at same level (-1 = last bucket)
       /// </summary>
       public int next;
@@ -1092,12 +1097,14 @@ namespace TestTool
       /// Constructor
       /// </summary>
       /// <param name="dataCount">total containing data count</param>
+      /// <param name="prev">previuos Bucket at same level (-1 = first bucket)</param>
       /// <param name="next">next Bucket at same level (-1 = last bucket)</param>
       /// <param name="parent">parent Bucket one level above (-1 = top bucket level)</param>
       /// <param name="childStart">first child Bucket (lower than 0 = Data-Offset - int.MinValue)</param>
-      public Bucket(int dataCount, int next, int parent, int childStart)
+      public Bucket(int dataCount, int prev, int next, int parent, int childStart)
       {
         this.dataCount = dataCount;
+        this.prev = prev;
         this.next = next;
         this.parent = parent;
         this.childStart = childStart;
@@ -1145,11 +1152,11 @@ namespace TestTool
       {
         if (HasData)
         {
-          return new { dataCount, next, parent, DataOffset }.ToString();
+          return new { dataCount, prev, next, parent, DataOffset }.ToString();
         }
         else
         {
-          return new { dataCount, next, parent, childStart }.ToString();
+          return new { dataCount, prev, next, parent, childStart }.ToString();
         }
       }
     }
@@ -1169,6 +1176,173 @@ namespace TestTool
 
     #region # // --- Helper methods ---
     /// <summary>
+    /// create a new Bucket
+    /// </summary>
+    /// <returns>ID of the Bucket</returns>
+    int GetNewBucket()
+    {
+      if (bucketsFill == buckets.Length)
+      {
+        Array.Resize(ref buckets, buckets.Length * 2);
+      }
+      return bucketsFill++;
+    }
+
+    /// <summary>
+    /// create a new Data-Bucket (and set the data offset)
+    /// </summary>
+    /// <param name="prev">previous Bucket</param>
+    /// <param name="next">next Bucket</param>
+    /// <param name="parent">parent Bucket</param>
+    /// <returns>ID of the Bucket</returns>
+    int GetNewDataBucket(int prev, int next, int parent)
+    {
+      int newBucket = GetNewBucket();
+
+      if (dataFill + MaxBucketSize > data.Length)
+      {
+        Array.Resize(ref data, data.Length * 2);
+      }
+
+      buckets[newBucket] = new Bucket(0, prev, next, parent, unchecked(dataFill - int.MinValue));
+      dataFill += MaxBucketSize;
+
+      return newBucket;
+    }
+
+    /// <summary>
+    /// update the Parent-Marker on a Bucket-Chain
+    /// </summary>
+    /// <param name="firstBucket">first Bucket in a Bucket-Chain</param>
+    /// <param name="newParent">new Parent-Marker to set</param>
+    void UpdateParents(int firstBucket, int newParent)
+    {
+      int oldParent = buckets[firstBucket].parent;
+      for (; firstBucket >= 0 && buckets[firstBucket].parent == oldParent; firstBucket = buckets[firstBucket].next)
+      {
+        buckets[firstBucket].parent = newParent;
+      }
+    }
+
+    /// <summary>
+    /// Move a Bucket + linking
+    /// </summary>
+    /// <param name="srcBucket">old Bucket</param>
+    /// <param name="destBucket">new Bucket</param>
+    void MoveBucket(int srcBucket, int destBucket)
+    {
+      // --- copy Data ---
+      var b = buckets[srcBucket];
+      buckets[destBucket] = b;
+
+      // --- update previous & next marker on neighbors ---
+      if (b.next >= 0) buckets[b.next].prev = destBucket;
+      if (b.prev >= 0) buckets[b.prev].next = destBucket;
+
+      // --- update the parent-marker in childs ---
+      if (!buckets[destBucket].HasData)
+      {
+        UpdateParents(buckets[destBucket].childStart, destBucket);
+      }
+    }
+
+    /// <summary>
+    /// Move Data-Elements (and zero old values)
+    /// </summary>
+    /// <param name="srcOffset">Source-Offset in Data Array</param>
+    /// <param name="destOffset">Destination-Offset in Date Array</param>
+    /// <param name="count">Element-Count</param>
+    void MoveData(int srcOffset, int destOffset, int count)
+    {
+      if (srcOffset > destOffset)
+      {
+        if (srcOffset == destOffset) return;
+        for (int i = 0; i < count; i++)
+        {
+          data[destOffset + i] = data[srcOffset + i];
+          data[srcOffset + i] = default(T);
+        }
+      }
+      else
+      {
+        for (int i = count - 1; i >= 0; i--)
+        {
+          data[destOffset + i] = data[srcOffset + i];
+          data[srcOffset + i] = default(T);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Split a (nonData) Bucket
+    /// </summary>
+    /// <param name="bucket">Bucket to be split</param>
+    /// <returns>new second Bucket-Id</returns>
+    int SplitNonDataBucket(int bucket)
+    {
+      Debug.Assert(!buckets[bucket].HasData);
+      Debug.Assert(buckets[bucket].dataCount > buckets[buckets[bucket].childStart].dataCount * 2);
+
+      // --- search middle ---
+      int targetCount = buckets[bucket].dataCount / 2;
+      int newCount = 0;
+      int subBucket;
+      for (subBucket = buckets[bucket].childStart; newCount < targetCount; subBucket = buckets[subBucket].next)
+      {
+        newCount += buckets[subBucket].dataCount;
+      }
+
+      Debug.Assert(buckets[subBucket].parent == bucket);
+
+      // --- create new bucket + linking ---
+      int newBucket = GetNewBucket();
+      buckets[newBucket] = new Bucket(buckets[bucket].dataCount - newCount, bucket, buckets[bucket].next, buckets[bucket].parent, subBucket);
+      buckets[bucket] = new Bucket(newCount, buckets[bucket].prev, newBucket, buckets[bucket].parent, buckets[bucket].childStart);
+      if (buckets[newBucket].next >= 0) buckets[buckets[newBucket].next].prev = newBucket;
+      UpdateParents(subBucket, newBucket);
+
+      return newBucket;
+    }
+
+    /// <summary>
+    /// Split a Data-Bucket
+    /// </summary>
+    /// <param name="bucket">Bucket to be split</param>
+    /// <returns>new second Bucket-Id</returns>
+    int SplitDataBucket(int bucket)
+    {
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(buckets[bucket].dataCount > 1);
+
+      // --- create new bucket + linking ---
+      int newBucket = GetNewDataBucket(bucket, buckets[bucket].next, buckets[bucket].parent);
+      int leftCount = buckets[bucket].dataCount / 2;
+      int rightCount = buckets[bucket].dataCount - leftCount;
+      buckets[newBucket].dataCount = rightCount;
+      buckets[bucket].dataCount = leftCount;
+      buckets[bucket].next = newBucket;
+      if (buckets[newBucket].next >= 0) buckets[buckets[newBucket].next].prev = newBucket; else lastBucket = newBucket;
+
+      // --- copy data ---
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(buckets[newBucket].HasData);
+      MoveData(buckets[bucket].DataEndOffset, buckets[newBucket].DataOffset, rightCount);
+
+      return newBucket;
+    }
+
+    /// <summary>
+    /// creates global levelup
+    /// </summary>
+    void LevelUp()
+    {
+      int moveBucket = GetNewBucket();
+      MoveBucket(0, moveBucket);
+      buckets[0] = new Bucket(dataCount, -1, -1, -1, moveBucket);
+      UpdateParents(moveBucket, 0);
+    }
+
+    /// <summary>
     /// increment the dataCount in bucket (inclusive parents)
     /// </summary>
     /// <param name="bucket">Bucket to update</param>
@@ -1177,13 +1351,29 @@ namespace TestTool
       Debug.Assert((uint)bucket < bucketsFill);
       Debug.Assert(buckets[bucket].HasData);
 
+      int currentMaxCount = MaxBucketSize;
+      int todoOptimize = -1;
       while ((uint)bucket < buckets.Length)
       {
-        buckets[(uint)bucket].dataCount++;
+        if (buckets[(uint)bucket].dataCount++ > currentMaxCount)
+        {
+          Debug.Assert(!buckets[(uint)bucket].HasData);
+          if (todoOptimize < 0) todoOptimize = bucket;
+        }
+        currentMaxCount *= LevelMultiplicator;
+        Debug.Assert(currentMaxCount > 0);
         bucket = buckets[(uint)bucket].parent;
       }
 
-      dataCount++;
+      if (todoOptimize >= 0)
+      {
+        SplitNonDataBucket(todoOptimize);
+      }
+
+      if (dataCount++ > currentMaxCount)
+      {
+        LevelUp();
+      }
     }
 
     /// <summary>
@@ -1220,35 +1410,91 @@ namespace TestTool
     #endregion
 
     #region # // --- Validate ---
-    int SubValidate(int checkBucket, HashSet<int> knownBuckets)
+    IEnumerable<int> Validate_ScanNext(int firstBucket, int sameParent, HashSet<int> knownBuckets)
     {
-      if (knownBuckets.Contains(checkBucket)) throw new Exception("validate: duplicate bucket used: " + checkBucket);
-      knownBuckets.Add(checkBucket);
-
-      var cb = buckets[checkBucket];
-
-      if (cb.HasData)
+      int limitCount = bucketsFill;
+      for (; firstBucket >= 0; )
       {
-        int totalCount = cb.dataCount;
-        if (totalCount < 1) throw new Exception("validate: empty/invalid bucket: " + checkBucket + " (" + cb + ")");
+        if (buckets[firstBucket].parent != sameParent) yield break;
+        if (knownBuckets.Contains(firstBucket)) throw new Exception("validate: duplicate used bucket: " + firstBucket);
+        knownBuckets.Add(firstBucket);
+        yield return firstBucket;
+        int next = buckets[firstBucket].next;
+        if (next < 0) break;
+        if (buckets[next].prev != firstBucket) throw new Exception("validate: invalid prev/next linking in " + next + ": " + buckets[next].prev + " != " + firstBucket);
+        firstBucket = next;
+        if (--limitCount < 0) throw new Exception("validate: found bucket endless loop at " + next);
+      }
+    }
 
-        if (cb.next >= 0 && cb.parent == buckets[cb.next].parent)
+    void Validate_Scan(int firstBucket, int parent, HashSet<int> knownBuckets)
+    {
+      var map = Validate_ScanNext(firstBucket, parent, knownBuckets).ToArray();
+      int sumCount = map.Sum(bucket => buckets[bucket].dataCount);
+      int parentCount = parent < 0 ? dataCount : buckets[parent].dataCount;
+      if (sumCount != parentCount) throw new Exception("validate: count error [start: " + firstBucket + "]: " + sumCount + " != " + parentCount);
+
+      // --- check Data-Status and parents ---
+      bool hasData = buckets[map[0]].HasData;
+      bool hasParentChanged = false;
+      foreach (var b in map)
+      {
+        if (buckets[b].HasData != hasData) throw new Exception("validate: hasData-Error");
+        if (buckets[b].parent == parent)
         {
-          totalCount += SubValidate(cb.next, knownBuckets);
+          if (hasParentChanged) throw new Exception("validate: invalid reused parent " + parent + " in " + b);
         }
         else
         {
-          if (cb.next < 0 && checkBucket != lastBucket) throw new Exception("validate: wrong lastBucket: " + checkBucket + " != " + lastBucket);
+          if (parent != -1) throw new Exception("validate: root-parent error in " + b);
+          hasParentChanged = true;
         }
-
-        return totalCount;
       }
-      else
+
+      // --- check Childs ---
+      if (!hasData)
       {
-        throw new NotImplementedException();
+        foreach (var b in map)
+        {
+          Validate_Scan(buckets[b].childStart, b, knownBuckets);
+        }
+      }
+    }
+
+    IEnumerable<int> Validate_ScanNext(int firstBucket, HashSet<int> knownBuckets)
+    {
+      int limitCount = bucketsFill;
+      for (; firstBucket >= 0; )
+      {
+        if (knownBuckets.Contains(firstBucket)) throw new Exception("validate: duplicate used bucket: " + firstBucket);
+        knownBuckets.Add(firstBucket);
+        yield return firstBucket;
+        int next = buckets[firstBucket].next;
+        if (next < 0) break;
+        if (buckets[next].prev != firstBucket) throw new Exception("validate: invalid prev/next linking in " + next + ": " + buckets[next].prev + " != " + firstBucket);
+        firstBucket = next;
+        if (--limitCount < 0) throw new Exception("validate: found bucket endless loop at " + next);
+      }
+    }
+
+    void Validate_Scan(int firstBucket, HashSet<int> knownBuckets)
+    {
+      var map = Validate_ScanNext(firstBucket, knownBuckets).ToArray();
+      int sumCount = map.Sum(bucket => buckets[bucket].dataCount);
+      if (sumCount != dataCount) throw new Exception("validate: count error [start: " + firstBucket + "]: " + sumCount + " != " + dataCount);
+
+      // --- check Data-Status ---
+      bool hasData = buckets[map[0]].HasData;
+      foreach (var b in map)
+      {
+        if (buckets[b].HasData != hasData) throw new Exception("validate: hasData-Error");
       }
 
-      return 0;
+      // --- check next level ---
+      if (!hasData)
+      {
+        Validate_Scan(buckets[map[0]].childStart, knownBuckets);
+      }
     }
 
     /// <summary>
@@ -1256,11 +1502,24 @@ namespace TestTool
     /// </summary>
     public void Validate()
     {
+      // --- check last bucket ---
+      for (int i = 0; i < bucketsFill; i++)
+      {
+        if (buckets[i].next == -1 && buckets[i].HasData && lastBucket != i) throw new Exception("validate: wrong last Bucket: " + i + " != " + lastBucket);
+      }
+
+      // --- check root bucket ---
+      if (buckets[0].parent != -1 || buckets[0].prev != -1) throw new Exception("validate: invalid root-Bucket: " + buckets[0]);
+
+      // --- child-search ---
       var knownBuckets = new HashSet<int>();
-      if (buckets[0].parent != -1) throw new Exception("validate: invalid main-bucket [0]");
-      int totalCount = SubValidate(0, knownBuckets);
-      if (totalCount != dataCount) throw new Exception("validate: wrong dataCount " + dataCount + " != " + totalCount);
-      if (knownBuckets.Count != bucketsFill) throw new Exception("validate: unused buckets: " + knownBuckets.Count + " != " + bucketsFill);
+      Validate_Scan(0, -1, knownBuckets);
+      if (knownBuckets.Count != bucketsFill) throw new Exception("validate: unused buckets found: " + string.Join(", ", Enumerable.Range(0, bucketsFill).Where(b => !knownBuckets.Contains(b))));
+
+      // --- level-search ---
+      knownBuckets.Clear();
+      Validate_Scan(0, knownBuckets);
+      if (knownBuckets.Count != bucketsFill) throw new Exception("validate: unused buckets found: " + string.Join(", ", Enumerable.Range(0, bucketsFill).Where(b => !knownBuckets.Contains(b))));
     }
     #endregion
 
@@ -1274,8 +1533,8 @@ namespace TestTool
     public void Clear()
     {
       Array.Clear(data, 0, dataFill);
-      dataFill = 0;
-      buckets[0] = new Bucket(0, -1, -1, unchecked(0 - int.MinValue));
+      dataFill = MaxBucketSize;
+      buckets[0] = new Bucket(0, -1, -1, -1, unchecked(0 - int.MinValue));
       bucketsFill = 1;
       lastBucket = 0;
       dataCount = 0;
@@ -1332,7 +1591,9 @@ namespace TestTool
 
       if (buckets[bucket].dataCount == MaxBucketSize) // if bucket full?
       {
-        throw new NotImplementedException();
+        bucket = GetNewDataBucket(bucket, -1, buckets[bucket].parent);
+        buckets[lastBucket].next = bucket;
+        lastBucket = bucket;
       }
 
       Debug.Assert(buckets[bucket].HasData);
@@ -1362,7 +1623,12 @@ namespace TestTool
 
       if (buckets[bucket].dataCount == MaxBucketSize) // if bucket full?
       {
-        throw new NotImplementedException();
+        int newBucket = SplitDataBucket(bucket);
+        if (index >= buckets[bucket].dataCount)
+        {
+          bucket = newBucket;
+          index -= buckets[bucket].dataCount;
+        }
       }
 
       int dataOffset = buckets[bucket].DataOffset + index;
@@ -1435,6 +1701,7 @@ namespace TestTool
 
   class Program : ConsoleExtras
   {
+    #region # // --- Memtest ---
     static void PrintDebug(MemoryManager mem, MemoryManager.Entry[] entries)
     {
       mem.Validate(entries);
@@ -1497,12 +1764,13 @@ namespace TestTool
       Console.WriteLine("time: {0:N0} ms", time.ElapsedMilliseconds);
       Console.ReadLine();
     }
+    #endregion
 
     static void BucketTest()
     {
-      const int Validate = 2;
-      const int Count = 10;
-      const bool Remover = true;
+      const int Validate = 0;
+      const int Count = 10000000;
+      const bool Remover = false;
 
       var b1 = new BucketList3<int>();
       var b2 = new List<int>();
@@ -1512,13 +1780,14 @@ namespace TestTool
       int tick = Environment.TickCount;
       for (int i = 0; i < Count; i++)
       {
-        if ((i & 0xff) == 0 && tick != Environment.TickCount)
+        if ((i & 0xffff) == 0 && tick != Environment.TickCount)
         {
           tick = Environment.TickCount;
           Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0"));
         }
 
         int next = rnd.Next(b1.Count + 1);
+        //int next = b1.Count;
 
         b1.Insert(next, i);
 
@@ -1555,6 +1824,7 @@ namespace TestTool
 
       if (Validate > 0)
       {
+        b1.Validate();
         int c = 0;
         foreach (var v in b1)
         {
