@@ -27,6 +27,8 @@ using YacGui;
 // ReSharper disable NotAccessedField.Local
 // ReSharper disable ClassCanBeSealed.Global
 // ReSharper disable TailRecursiveCall
+// ReSharper disable MergeCastWithTypeCheck
+// ReSharper disable UnreachableCode
 #pragma warning disable 414
 #pragma warning disable 169
 #pragma warning disable 649
@@ -1038,9 +1040,9 @@ namespace TestTool
     /// </summary>
     const int LevelMultiplicator = 8;
     /// <summary>
-    /// lowest count to merge neighbors
+    /// divisor for lowest count to merge neighbors
     /// </summary>
-    const int LowMergeLevelCount = 4;
+    const int LowMergeLevelDiv = 4;
 
     #region # // --- Structs and data ---
     /// <summary>
@@ -1382,7 +1384,7 @@ namespace TestTool
     /// <param name="index">index to search</param>
     /// <param name="innerIndex">fraction of the index inner the bucket</param>
     /// <returns>Bucket-ID</returns>
-    int GetBucketDataFromIndex(int index, out int innerIndex)
+    int GetDataBucketFromIndex(int index, out int innerIndex)
     {
       Debug.Assert(index >= 0 && index < dataCount);
 
@@ -1565,22 +1567,22 @@ namespace TestTool
     public IEnumerator<T> GetEnumerator()
     {
       int firstIndex;
-      int b = GetBucketDataFromIndex(0, out firstIndex);
+      int b = GetDataBucketFromIndex(0, out firstIndex);
       Debug.Assert(firstIndex == 0);
+      var bs = buckets;
       while (b >= 0)
       {
-        Debug.Assert(buckets[b].HasData);
+        Debug.Assert(bs[b].HasData);
 
-        int end = buckets[b].DataEndOffset;
-        for (int i = buckets[b].DataOffset; i < end; i++)
+        int end = bs[b].DataEndOffset;
+        for (int i = bs[b].DataOffset; i < end; i++)
         {
           yield return data[i];
         }
 
-        b = buckets[b].next;
+        b = bs[b].next;
       }
     }
-    #endregion
 
     /// <summary>Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.</summary>
     /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
@@ -1611,31 +1613,32 @@ namespace TestTool
     /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
     public void Insert(int index, T item)
     {
-      if (index > dataCount) throw new IndexOutOfRangeException("index");
-
-      if (index == dataCount)
+      if (index >= dataCount)
       {
-        Add(item);
-        return;
+        if (index == dataCount)
+        {
+          Add(item);
+          return;
+        }
+        throw new IndexOutOfRangeException("index");
       }
 
-      int bucket = GetBucketDataFromIndex(index, out index);
+      int bucket = GetDataBucketFromIndex(index, out index);
 
-      if (buckets[bucket].dataCount == MaxBucketSize) // if bucket full?
+      var bs = buckets;
+      if (bs[bucket].dataCount == MaxBucketSize) // if bucket full?
       {
         int newBucket = SplitDataBucket(bucket);
-        if (index >= buckets[bucket].dataCount)
+        bs = buckets;
+        if (index >= bs[bucket].dataCount)
         {
           bucket = newBucket;
-          index -= buckets[bucket].dataCount;
+          index -= bs[bucket].dataCount;
         }
       }
 
-      int dataOffset = buckets[bucket].DataOffset + index;
-      for (int i = buckets[bucket].DataEndOffset; i > dataOffset; i--)
-      {
-        data[i] = data[i - 1];
-      }
+      int dataOffset = bs[bucket].DataOffset + index;
+      Array.Copy(data, dataOffset, data, dataOffset + 1, bs[bucket].dataCount - index);
 
       data[dataOffset] = item;
       IncrementCount(bucket);
@@ -1646,7 +1649,28 @@ namespace TestTool
     /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
     public bool Contains(T item)
     {
-      throw new NotImplementedException();
+      return IndexOf(item) >= 0;
+    }
+
+    /// <summary>Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.</summary>
+    /// <returns>The index of <paramref name="item" /> if found in the list; otherwise, -1.</returns>
+    /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+    public int IndexOf(T item)
+    {
+      var bs = buckets;
+
+      var equalityComparer = EqualityComparer<T>.Default;
+      for (int bucket = 0, index = 0; bucket >= 0; bucket = bs[bucket].next)
+      {
+        int end = bs[bucket].DataEndOffset;
+        for (int i = bs[bucket].DataOffset; i < end; i++)
+        {
+          if (equalityComparer.Equals(data[i], item)) return index + i - bs[bucket].DataOffset;
+        }
+        index += bs[bucket].dataCount;
+      }
+
+      return -1;
     }
 
     /// <summary>Copies the elements of the <see cref="T:System.Collections.Generic.ICollection`1" /> to an <see cref="T:System.Array" />, starting at a particular <see cref="T:System.Array" /> index.</summary>
@@ -1659,25 +1683,19 @@ namespace TestTool
     /// <exception cref="T:System.ArgumentException">The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />.</exception>
     public void CopyTo(T[] array, int arrayIndex)
     {
-      throw new NotImplementedException();
-    }
+      if (array == null) throw new ArgumentNullException("array");
+      if (arrayIndex + dataCount > array.Length) throw new ArgumentOutOfRangeException("arrayIndex");
 
-    /// <summary>Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.</summary>
-    /// <returns>The index of <paramref name="item" /> if found in the list; otherwise, -1.</returns>
-    /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
-    public int IndexOf(T item)
-    {
-      throw new NotImplementedException();
-    }
+      int firstIndex;
+      int firstBucket = GetDataBucketFromIndex(0, out firstIndex);
+      Debug.Assert(firstIndex == 0);
 
-    /// <summary>Removes the <see cref="T:System.Collections.Generic.IList`1" /> item at the specified index.</summary>
-    /// <param name="index">The zero-based index of the item to remove.</param>
-    /// <exception cref="T:System.ArgumentOutOfRangeException">
-    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
-    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
-    public void RemoveAt(int index)
-    {
-      throw new NotImplementedException();
+      var bs = buckets;
+      for (int bucket = firstBucket; bucket >= 0; bucket = bs[bucket].next)
+      {
+        Array.Copy(data, bs[bucket].DataOffset, array, arrayIndex, bs[bucket].dataCount);
+        arrayIndex += bs[bucket].dataCount;
+      }
     }
 
     /// <summary>Gets or sets the element at the specified index.</summary>
@@ -1690,12 +1708,31 @@ namespace TestTool
     {
       get
       {
-        throw new NotImplementedException();
+        if ((uint)index >= dataCount) throw new IndexOutOfRangeException("index");
+
+        int bucket = GetDataBucketFromIndex(index, out index);
+
+        return data[buckets[bucket].DataOffset + index];
       }
       set
       {
-        throw new NotImplementedException();
+        if ((uint)index >= dataCount) throw new IndexOutOfRangeException("index");
+
+        int bucket = GetDataBucketFromIndex(index, out index);
+
+        data[buckets[bucket].DataOffset + index] = value;
       }
+    }
+    #endregion
+
+    /// <summary>Removes the <see cref="T:System.Collections.Generic.IList`1" /> item at the specified index.</summary>
+    /// <param name="index">The zero-based index of the item to remove.</param>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
+    public void RemoveAt(int index)
+    {
+      throw new NotImplementedException();
     }
   }
 
@@ -1768,7 +1805,7 @@ namespace TestTool
 
     static void BucketTest()
     {
-      const int Validate = 0;
+      const int Validate = 4;
       const int Count = 10000000;
       const bool Remover = false;
 
@@ -1780,7 +1817,7 @@ namespace TestTool
       int tick = Environment.TickCount;
       for (int i = 0; i < Count; i++)
       {
-        if ((i & 0xffff) == 0 && tick != Environment.TickCount)
+        if ((i & 0xff) == 0 && tick != Environment.TickCount)
         {
           tick = Environment.TickCount;
           Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0"));
@@ -1797,6 +1834,30 @@ namespace TestTool
         {
           b2.Insert(next, i);
           if (b1.Count != b2.Count) throw new Exception();
+          if (Validate > 2)
+          {
+            var b1array = Validate > 3 ? b1.ToArray() : null;
+            int c = 0;
+            foreach (var v in b1)
+            {
+              if (b2[c] != v)
+              {
+                throw new Exception("value dif [" + c + "]: " + v + " != " + b2[c]);
+              }
+              if (Validate > 3)
+              {
+                if (v != b1array[c])
+                {
+                  throw new Exception("array error [" + c + "]: " + v + " != " + b1array[c]);
+                }
+                if (v != b1[c])
+                {
+                  throw new Exception("indexer error [" + c + "]: " + v + " != " + b1[c]);
+                }
+              }
+              c++;
+            }
+          }
         }
 
         if (Remover)
@@ -1840,17 +1901,6 @@ namespace TestTool
 
       time.Stop();
       Console.WriteLine(time.ElapsedMilliseconds.ToString("N0") + " ms");
-
-      //var buf = new int[b1.Count];
-      //b1.CopyTo(buf, 0);
-      //for (int i = 0; i < buf.Length; i++)
-      //{
-      //  if (b1[i] != buf[i]) throw new Exception();
-      //  int lol = b1.IndexOf(buf[i]);
-      //  if (lol < 0) throw new Exception();
-      //  if (lol != i) throw new Exception();
-      //}
-
     }
 
     /// <summary>
