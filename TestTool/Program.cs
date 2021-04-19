@@ -18,6 +18,18 @@ using YacGui;
 // ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable RedundantIfElseBlock
 // ReSharper disable UnusedMethodReturnValue.Local
+// ReSharper disable HeuristicUnreachableCode
+// ReSharper disable ConditionIsAlwaysTrueOrFalse
+// ReSharper disable RedundantAssignment
+// ReSharper disable UnusedType.Local
+// ReSharper disable UnusedType.Global
+// ReSharper disable MemberCanBePrivate.Local
+// ReSharper disable NotAccessedField.Local
+// ReSharper disable ClassCanBeSealed.Global
+#pragma warning disable 414
+#pragma warning disable 169
+#pragma warning disable 649
+#pragma warning disable 162
 #endregion
 
 namespace TestTool
@@ -548,6 +560,70 @@ namespace TestTool
         }
       }
     }
+
+    void MoveBucket(int destBucket, int srcBucket)
+    {
+      if (srcBucket == destBucket) return;
+
+      // --- copy bucket-meta & linking ---
+      var b = buckets[srcBucket];
+      buckets[destBucket] = b;
+      buckets[destBucket].subStart = destBucket * MaxBucketSize;
+      if (b.prev >= 0) buckets[b.prev].next = destBucket;
+      if (b.next >= 0) buckets[b.next].prev = destBucket; else lastBucket = destBucket;
+
+      // --- copy data ---
+      MoveData(buckets[destBucket].subStart, b.subStart, b.dataCount);
+
+      for (int cluster = 0; cluster < clustersFill; cluster++)
+      {
+        if (clusters[cluster].subStart == srcBucket)
+        {
+          clusters[cluster].subStart = destBucket;
+          break;
+        }
+      }
+    }
+
+    int MergeBuckets(int leftBucket, int rightBucket)
+    {
+      var leftB = buckets[leftBucket];
+      var rightB = buckets[rightBucket];
+
+      Debug.Assert(leftB.next == rightBucket);
+      Debug.Assert(rightB.prev == leftBucket);
+      Debug.Assert(leftB.dataCount + rightB.dataCount <= MaxBucketSize);
+
+      // --- copy data ---
+      MoveData(leftB.subStart + leftB.dataCount, rightB.subStart, rightB.dataCount);
+
+      // --- linking ---
+      buckets[leftBucket].dataCount += rightB.dataCount;
+      buckets[leftBucket].next = rightB.next;
+      if (rightB.next >= 0) buckets[rightB.next].prev = leftBucket; else lastBucket = rightBucket;
+      buckets[rightBucket].dataCount = 0;
+
+      for (int cluster = 0; cluster < clustersFill; cluster++)
+      {
+        if (clusters[cluster].subStart == rightBucket)
+        {
+          clusters[cluster].dataCount -= rightB.dataCount;
+          if (clusters[cluster].dataCount <= 0 || rightB.next < 0)
+          {
+            throw new NotImplementedException();
+          }
+          else
+          {
+            clusters[cluster].subStart = rightB.next;
+          }
+        }
+      }
+
+      bucketsFill--;
+      MoveBucket(rightBucket, bucketsFill);
+
+      return leftBucket;
+    }
     #endregion
 
     #region # // --- IList ---
@@ -830,6 +906,42 @@ namespace TestTool
     /// <param name="index">Der nullbasierte Index des zu entfernenden Elements.</param><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> ist kein gültiger Index in der <see cref="T:System.Collections.Generic.IList`1"/>.</exception><exception cref="T:System.NotSupportedException">Die <see cref="T:System.Collections.Generic.IList`1"/> ist schreibgeschützt.</exception>
     public void RemoveAt(int index)
     {
+      if ((uint)index >= dataCount) throw new IndexOutOfRangeException("index");
+
+      // --- search bucket per index ---
+      int region, cluster, bucket;
+      for (region = 0; index >= regions[region].dataCount; region = regions[region].next) { index -= regions[region].dataCount; }
+      for (cluster = regions[region].subStart; index >= clusters[cluster].dataCount; cluster = clusters[cluster].next) { index -= clusters[cluster].dataCount; }
+      for (bucket = clusters[cluster].subStart; index >= buckets[bucket].dataCount; bucket = buckets[bucket].next) { index -= buckets[bucket].dataCount; }
+
+      // --- decrement count ---
+      buckets[bucket].dataCount--;
+      clusters[cluster].dataCount--;
+      regions[region].dataCount--;
+      dataCount--;
+
+      // --- remove item ---
+      var b = buckets[bucket];
+      for (int i = index; i < b.dataCount; i++)
+      {
+        data[b.subStart + i] = data[b.subStart + i + 1];
+      }
+      data[b.subStart + b.dataCount] = default(T);
+
+      // --- optimize clusters ---
+      if (b.dataCount < MinBucketSize)
+      {
+        if (b.prev >= 0 && buckets[b.prev].dataCount + b.dataCount <= MaxBucketSize)
+        {
+          // --- merge previous bucket ---
+          MergeBuckets(b.prev, bucket);
+        }
+        else if (b.next >= 0 && buckets[b.next].dataCount + b.dataCount <= MaxBucketSize)
+        {
+          // --- merge next bucket ---
+          MergeBuckets(bucket, b.next);
+        }
+      }
     }
 
     public void Validate()
@@ -843,7 +955,14 @@ namespace TestTool
         if (knownIds.Contains(bucket)) throw new Exception("validate: duplicate buckets: " + bucket);
         knownIds.Add(bucket);
         totalCount += buckets[bucket].dataCount;
-        if (buckets[bucket].next < 0 && lastBucket != bucket) throw new Exception("validate: wrong lastBucket: " + bucket + " != " + lastBucket);
+        if (buckets[bucket].next < 0)
+        {
+          if (lastBucket != bucket) throw new Exception("validate: wrong lastBucket: " + bucket + " != " + lastBucket);
+        }
+        else
+        {
+          if (buckets[buckets[bucket].next].prev != bucket) throw new Exception("validate: bucket linking error: " + bucket + " <-> " + buckets[bucket].next);
+        }
       }
       if (totalCount != dataCount) throw new Exception("validate: wrong bucket data count: " + totalCount + " != " + dataCount);
 
@@ -856,7 +975,14 @@ namespace TestTool
         if (knownIds.Contains(cluster)) throw new Exception("validate: duplicate clusters: " + cluster);
         knownIds.Add(cluster);
         totalCount += clusters[cluster].dataCount;
-        if (clusters[cluster].next < 0 && lastCluster != cluster) throw new Exception("validate: wrong lastCluster: " + cluster + " != " + lastCluster);
+        if (clusters[cluster].next < 0)
+        {
+          if (lastCluster != cluster) throw new Exception("validate: wrong lastCluster: " + cluster + " != " + lastCluster);
+        }
+        else
+        {
+          if (clusters[clusters[cluster].next].prev != cluster) throw new Exception("validate: cluster linking error: " + cluster + " <-> " + clusters[cluster].next);
+        }
 
         int subCount = 0;
         for (int bucket = clusters[cluster].subStart; subCount < clusters[cluster].dataCount && bucket >= 0; bucket = buckets[bucket].next)
@@ -878,7 +1004,14 @@ namespace TestTool
         if (knownIds.Contains(region)) throw new Exception("validate: duplicate regions: " + region);
         knownIds.Add(region);
         totalCount += regions[region].dataCount;
-        if (regions[region].next < 0 && lastRegion != region) throw new Exception("validate: wrong lastRegion: " + region + " != " + lastRegion);
+        if (regions[region].next < 0)
+        {
+          if (lastRegion != region) throw new Exception("validate: wrong lastRegion: " + region + " != " + lastRegion);
+        }
+        else
+        {
+          if (regions[regions[region].next].prev != region) throw new Exception("validate: region linking error: " + region + " <-> " + regions[region].next);
+        }
 
         int subCount = 0;
         for (int cluster = regions[region].subStart; subCount < regions[region].dataCount && cluster >= 0; cluster = clusters[cluster].next)
@@ -890,6 +1023,359 @@ namespace TestTool
         if (regions[region].dataCount != subCount) throw new Exception("validate: wrong region-size in [" + region + "]: " + regions[region].dataCount + " != " + subCount);
       }
       if (usedSubs.Count != clustersFill) throw new Exception("validate: market clusters in regions are invalid: " + usedSubs.Count + " != " + clustersFill);
+    }
+  }
+
+  public class BucketList3<T> : IList<T>
+  {
+    /// <summary>
+    /// Size of Bucket (max Elements per Bucket)
+    /// </summary>
+    const int MaxBucketSize = 256;
+    /// <summary>
+    /// max Bucket-Count per level
+    /// </summary>
+    const int LevelMultiplicator = 16;
+    /// <summary>
+    /// lowest count to merge neighbors
+    /// </summary>
+    const int LowMergeLevelCount = 4;
+
+    #region # // --- Structs and data ---
+    /// <summary>
+    /// base data array with all elements
+    /// </summary>
+    T[] data;
+    /// <summary>
+    /// total used Elements
+    /// </summary>
+    int dataCount;
+    /// <summary>
+    /// used data-elements as buckets (&gt;= dataCount)
+    /// </summary>
+    int dataFill;
+    /// <summary>
+    /// all buckets
+    /// </summary>
+    Bucket[] buckets;
+    /// <summary>
+    /// used buckets in array
+    /// </summary>
+    int bucketsFill;
+    /// <summary>
+    /// last bucket (on lowest level)
+    /// </summary>
+    int lastBucket;
+    /// <summary>
+    /// Bucket-Struct
+    /// </summary>
+    struct Bucket
+    {
+      /// <summary>
+      /// total containing data count
+      /// </summary>
+      public int dataCount;
+      /// <summary>
+      /// next Bucket at same level (-1 = last bucket)
+      /// </summary>
+      public int next;
+      /// <summary>
+      /// parent Bucket one level above (-1 = top bucket level)
+      /// </summary>
+      public int parent;
+      /// <summary>
+      /// first child Bucket (lower than 0 = Data-Offset - int.MinValue)
+      /// </summary>
+      public int childStart;
+
+      /// <summary>
+      /// Constructor
+      /// </summary>
+      /// <param name="dataCount">total containing data count</param>
+      /// <param name="next">next Bucket at same level (-1 = last bucket)</param>
+      /// <param name="parent">parent Bucket one level above (-1 = top bucket level)</param>
+      /// <param name="childStart">first child Bucket (lower than 0 = Data-Offset - int.MinValue)</param>
+      public Bucket(int dataCount, int next, int parent, int childStart)
+      {
+        this.dataCount = dataCount;
+        this.next = next;
+        this.parent = parent;
+        this.childStart = childStart;
+      }
+
+      /// <summary>
+      /// return true if a Data-Bucket
+      /// </summary>
+      public bool HasData { get { return childStart < 0; } }
+
+      /// <summary>
+      /// get or set DataOffset (use childStart)
+      /// </summary>
+      public int DataOffset
+      {
+        get
+        {
+          Debug.Assert(childStart < 0);
+          return childStart + int.MinValue;
+        }
+        set
+        {
+          childStart = value - int.MinValue;
+        }
+      }
+
+      /// <summary>
+      /// get last unused Element as global Data-Array
+      /// </summary>
+      public int DataEndOffset
+      {
+        get
+        {
+          Debug.Assert(HasData);
+          Debug.Assert(dataCount >= 0 && dataCount <= MaxBucketSize);
+          return childStart + int.MinValue + dataCount;
+        }
+      }
+
+      /// <summary>
+      /// return a readable string of content
+      /// </summary>
+      /// <returns></returns>
+      public override string ToString()
+      {
+        if (HasData)
+        {
+          return new { dataCount, next, parent, DataOffset }.ToString();
+        }
+        else
+        {
+          return new { dataCount, next, parent, childStart }.ToString();
+        }
+      }
+    }
+    #endregion
+
+    #region # // --- Constructors ---
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public BucketList3()
+    {
+      data = new T[MaxBucketSize];
+      buckets = new Bucket[1];
+      Clear();
+    }
+    #endregion
+
+    #region # // --- Helper methods ---
+    void IncrementCount(int bucket)
+    {
+      Debug.Assert((uint)bucket < bucketsFill);
+      Debug.Assert(buckets[bucket].HasData);
+
+      while ((uint)bucket < buckets.Length)
+      {
+        buckets[(uint)bucket].dataCount++;
+        bucket = buckets[(uint)bucket].parent;
+      }
+
+      dataCount++;
+    }
+    #endregion
+
+    #region # // --- Validate ---
+    int SubValidate(int checkBucket, HashSet<int> knownBuckets)
+    {
+      if (knownBuckets.Contains(checkBucket)) throw new Exception("validate: duplicate bucket used: " + checkBucket);
+      knownBuckets.Add(checkBucket);
+
+      var cb = buckets[checkBucket];
+
+      if (cb.HasData)
+      {
+        int totalCount = cb.dataCount;
+        if (totalCount < 1) throw new Exception("validate: empty/invalid bucket: " + checkBucket + " (" + cb + ")");
+
+        if (cb.next >= 0 && cb.parent == buckets[cb.next].parent)
+        {
+          totalCount += SubValidate(cb.next, knownBuckets);
+        }
+        else
+        {
+          if (cb.next < 0 && checkBucket != lastBucket) throw new Exception("validate: wrong lastBucket: " + checkBucket + " != " + lastBucket);
+        }
+
+        return totalCount;
+      }
+      else
+      {
+        throw new NotImplementedException();
+      }
+
+      return 0;
+    }
+
+    /// <summary>
+    /// check the internal bucket consistency
+    /// </summary>
+    public void Validate()
+    {
+      var knownBuckets = new HashSet<int>();
+      int totalCount = SubValidate(0, knownBuckets);
+      if (totalCount != dataCount) throw new Exception("validate: wrong dataCount " + dataCount + " != " + totalCount);
+    }
+    #endregion
+
+    #region # // --- IList<T> ---
+    /// <summary>Returns an enumerator that iterates through a collection.</summary>
+    /// <returns>An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.</returns>
+    IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+
+    /// <summary>Removes all items from the <see cref="T:System.Collections.Generic.ICollection`1" />.</summary>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only. </exception>
+    public void Clear()
+    {
+      Array.Clear(data, 0, dataFill);
+      dataFill = 0;
+      buckets[0] = new Bucket(0, -1, -1, unchecked(0 - int.MinValue));
+      bucketsFill = 1;
+      lastBucket = 0;
+      dataCount = 0;
+    }
+
+    /// <summary>Gets the number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.</summary>
+    /// <returns>The number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.</returns>
+    public int Count { get { return dataCount; } }
+
+    /// <summary>Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.</summary>
+    /// <returns>true if the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only; otherwise, false.</returns>
+    public bool IsReadOnly { get { return false; } }
+
+    /// <summary>Removes the first occurrence of a specific object from the <see cref="T:System.Collections.Generic.ICollection`1" />.</summary>
+    /// <returns>true if <paramref name="item" /> was successfully removed from the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false. This method also returns false if <paramref name="item" /> is not found in the original <see cref="T:System.Collections.Generic.ICollection`1" />.</returns>
+    /// <param name="item">The object to remove from the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.</exception>
+    public bool Remove(T item)
+    {
+      int index = IndexOf(item);
+      if (index < 0) return false;
+      RemoveAt(index);
+      return true;
+    }
+
+    /// <summary>Returns an enumerator that iterates through the collection.</summary>
+    /// <returns>An enumerator that can be used to iterate through the collection.</returns>
+    public IEnumerator<T> GetEnumerator()
+    {
+      int b = 0;
+      while (b >= 0)
+      {
+        Debug.Assert(buckets[b].HasData);
+
+        int end = buckets[b].DataEndOffset;
+        for (int i = buckets[b].DataOffset; i < end; i++)
+        {
+          yield return data[i];
+        }
+
+        b = buckets[b].next;
+      }
+    }
+    #endregion
+
+    /// <summary>Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.</summary>
+    /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.</exception>
+    public void Add(T item)
+    {
+      int bucket = lastBucket;
+
+      if (buckets[bucket].dataCount == MaxBucketSize) // if bucket full?
+      {
+        throw new NotImplementedException();
+      }
+
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(buckets[bucket].next == -1);
+
+      data[buckets[bucket].DataEndOffset] = item;
+      IncrementCount(bucket);
+    }
+
+    /// <summary>Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.</summary>
+    /// <returns>true if <paramref name="item" /> is found in the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false.</returns>
+    /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+    public bool Contains(T item)
+    {
+      throw new NotImplementedException();
+    }
+
+    /// <summary>Copies the elements of the <see cref="T:System.Collections.Generic.ICollection`1" /> to an <see cref="T:System.Array" />, starting at a particular <see cref="T:System.Array" /> index.</summary>
+    /// <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the elements copied from <see cref="T:System.Collections.Generic.ICollection`1" />. The <see cref="T:System.Array" /> must have zero-based indexing.</param>
+    /// <param name="arrayIndex">The zero-based index in <paramref name="array" /> at which copying begins.</param>
+    /// <exception cref="T:System.ArgumentNullException">
+    /// <paramref name="array" /> is null.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="arrayIndex" /> is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />.</exception>
+    public void CopyTo(T[] array, int arrayIndex)
+    {
+      throw new NotImplementedException();
+    }
+
+    /// <summary>Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.</summary>
+    /// <returns>The index of <paramref name="item" /> if found in the list; otherwise, -1.</returns>
+    /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+    public int IndexOf(T item)
+    {
+      throw new NotImplementedException();
+    }
+
+    /// <summary>Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.</summary>
+    /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
+    /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
+    public void Insert(int index, T item)
+    {
+      if (index > dataCount) throw new IndexOutOfRangeException("index");
+
+      if (index == dataCount)
+      {
+        Add(item);
+        return;
+      }
+
+      throw new NotImplementedException();
+    }
+
+    /// <summary>Removes the <see cref="T:System.Collections.Generic.IList`1" /> item at the specified index.</summary>
+    /// <param name="index">The zero-based index of the item to remove.</param>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
+    /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
+    public void RemoveAt(int index)
+    {
+      throw new NotImplementedException();
+    }
+
+    /// <summary>Gets or sets the element at the specified index.</summary>
+    /// <returns>The element at the specified index.</returns>
+    /// <param name="index">The zero-based index of the element to get or set.</param>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="index" /> is not a valid index in the <see cref="T:System.Collections.Generic.IList`1" />.</exception>
+    /// <exception cref="T:System.NotSupportedException">The property is set and the <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
+    public T this[int index]
+    {
+      get
+      {
+        throw new NotImplementedException();
+      }
+      set
+      {
+        throw new NotImplementedException();
+      }
     }
   }
 
@@ -960,32 +1446,72 @@ namespace TestTool
 
     static void BucketTest()
     {
-      var b1 = new BucketList2<int>();
+      const int Validate = 2;
+      const int Count = 10;
+      const bool Remover = true;
+
+      var b1 = new BucketList3<int>();
       var b2 = new List<int>();
       var rnd = new Random(12345);
 
       var time = Stopwatch.StartNew();
-      for (int i = 0; i < 1000000; i++)
+      int tick = Environment.TickCount;
+      for (int i = 0; i < Count; i++)
       {
-        if ((i & 0xfff) == 0) Console.WriteLine(i.ToString("N0"));
+        if ((i & 0xff) == 0 && tick != Environment.TickCount)
+        {
+          tick = Environment.TickCount;
+          Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0"));
+        }
+
         int next = rnd.Next(b1.Count + 1);
 
         b1.Insert(next, i);
 
-        //b1.Validate();
-        b2.Insert(next, i);
+        if (Validate > 1) b1.Validate();
+
+        if (Validate > 0)
+        {
+          b2.Insert(next, i);
+          if (b1.Count != b2.Count) throw new Exception();
+        }
+
+        if (Remover)
+        {
+          int removeCount = Math.Max(0, rnd.Next(rnd.Next(rnd.Next(b1.Count + 1))) - Count / 10);
+          if (removeCount > 0)
+          {
+            for (int r = 0; r < removeCount; r++)
+            {
+              next = rnd.Next(b1.Count);
+
+              b1.RemoveAt(next);
+
+              if (Validate > 1) b1.Validate();
+
+              if (Validate > 0)
+              {
+                b2.RemoveAt(next);
+                if (b1.Count != b2.Count) throw new Exception();
+              }
+            }
+          }
+        }
       }
 
-      int c = 0;
-      foreach (var v in b1)
+      if (Validate > 0)
       {
-        if (b2[c] != v)
+        int c = 0;
+        foreach (var v in b1)
         {
-          File.WriteAllText(@"C:\Users\Max\Desktop\prog\DBs\lol-dumm.txt", string.Join("\r\n", b1));
-          File.WriteAllText(@"C:\Users\Max\Desktop\prog\DBs\lol-soll.txt", string.Join("\r\n", b2));
-          throw new Exception();
+          if (b2[c] != v)
+          {
+            File.WriteAllText(@"C:\Users\Max\Desktop\prog\DBs\lol-dumm.txt", string.Join("\r\n", b1));
+            File.WriteAllText(@"C:\Users\Max\Desktop\prog\DBs\lol-soll.txt", string.Join("\r\n", b2));
+            throw new Exception();
+          }
+          c++;
         }
-        c++;
       }
 
       time.Stop();
