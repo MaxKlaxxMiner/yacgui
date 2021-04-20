@@ -45,6 +45,7 @@
     <Compile Include="CompressedBitmap\CompressedBitmap.cs" />
     <Compile Include="CompressedBitmap\MemoryManager.cs" />
     <Compile Include="Extras\Color13Mapping.cs" />
+    <Compile Include="Extras\UnsafeHelper.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedClear.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedHigh.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedSimple.cs" />

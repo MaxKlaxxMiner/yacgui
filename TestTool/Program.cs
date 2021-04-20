@@ -1,4 +1,6 @@
-﻿#region # using *.*
+﻿//#define UnsafeBuckets
+
+#region # using *.*
 // ReSharper disable RedundantUsingDirective
 using System;
 using System.Collections;
@@ -9,9 +11,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using FastBitmapLib;
+using FastBitmapLib.Extras;
 using YacGui;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMember.Local
@@ -1029,7 +1033,108 @@ namespace TestTool
     }
   }
 
-  public class BucketList3<T> : IList<T>
+  /// <summary>
+  /// Bucket-Struct
+  /// </summary>
+  [StructLayout(LayoutKind.Explicit, Size = 20)]
+  public struct Bucket
+  {
+    /// <summary>
+    /// total containing data count
+    /// </summary>
+    [FieldOffset(0)]
+    public int dataCount;
+    /// <summary>
+    /// previuos Bucket at same level (-1 = first bucket)
+    /// </summary>
+    [FieldOffset(4)]
+    public int prev;
+    /// <summary>
+    /// next Bucket at same level (-1 = last bucket)
+    /// </summary>
+    [FieldOffset(8)]
+    public int next;
+    /// <summary>
+    /// parent Bucket one level above (-1 = top bucket level)
+    /// </summary>
+    [FieldOffset(12)]
+    public int parent;
+    /// <summary>
+    /// first child Bucket (lower than 0 = Data-Offset - int.MinValue)
+    /// </summary>
+    [FieldOffset(16)]
+    public int childStart;
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="dataCount">total containing data count</param>
+    /// <param name="prev">previuos Bucket at same level (-1 = first bucket)</param>
+    /// <param name="next">next Bucket at same level (-1 = last bucket)</param>
+    /// <param name="parent">parent Bucket one level above (-1 = top bucket level)</param>
+    /// <param name="childStart">first child Bucket (lower than 0 = Data-Offset - int.MinValue)</param>
+    public Bucket(int dataCount, int prev, int next, int parent, int childStart)
+    {
+      this.dataCount = dataCount;
+      this.prev = prev;
+      this.next = next;
+      this.parent = parent;
+      this.childStart = childStart;
+    }
+
+    /// <summary>
+    /// return true if a Data-Bucket
+    /// </summary>
+    public bool HasData { get { return childStart < 0; } }
+
+    /// <summary>
+    /// get or set DataOffset (use childStart)
+    /// </summary>
+    public int DataOffset
+    {
+      get
+      {
+        Debug.Assert(childStart < 0);
+        return childStart + int.MinValue;
+      }
+      set
+      {
+        childStart = value - int.MinValue;
+      }
+    }
+
+    /// <summary>
+    /// get last unused Element as global Data-Array
+    /// </summary>
+    public int DataEndOffset
+    {
+      get
+      {
+        Debug.Assert(HasData);
+        Debug.Assert(dataCount >= 0);
+        return childStart + int.MinValue + dataCount;
+      }
+    }
+
+    /// <summary>
+    /// return a readable string of content
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString()
+    {
+      if (HasData)
+      {
+        return new { dataCount, prev, next, parent, DataOffset }.ToString();
+      }
+      else
+      {
+        return new { dataCount, prev, next, parent, childStart }.ToString();
+      }
+    }
+  }
+
+
+  public unsafe class BucketList3<T> : IList<T>
   {
     /// <summary>
     /// Size of Bucket (max Elements per Bucket)
@@ -1044,11 +1149,23 @@ namespace TestTool
     /// </summary>
     const int LowMergeLevelDiv = 4;
 
-    #region # // --- Structs and data ---
+    #region # // --- static type scan ---
+    static readonly int UnsafeSize = GetUnsafeSize();
+    static readonly bool NeedSafeData = UnsafeSize == 0;
+    static readonly bool UnsafeMode = !NeedSafeData;
+
+    static int GetUnsafeSize()
+    {
+      if (typeof(T) == typeof(int)) return sizeof(int);
+      return 0;
+    }
+    #endregion
+
+    #region # // --- members & data ---
     /// <summary>
     /// base data array with all elements
     /// </summary>
-    T[] data;
+    T[] dataRaw;
     /// <summary>
     /// total used Elements
     /// </summary>
@@ -1060,7 +1177,11 @@ namespace TestTool
     /// <summary>
     /// all buckets
     /// </summary>
+#if UnsafeBuckets
+    byte* buckets;
+#else
     Bucket[] buckets;
+#endif
     /// <summary>
     /// used buckets in array
     /// </summary>
@@ -1069,110 +1190,35 @@ namespace TestTool
     /// last bucket (on lowest level)
     /// </summary>
     int lastBucket;
-    /// <summary>
-    /// Bucket-Struct
-    /// </summary>
-    struct Bucket
-    {
-      /// <summary>
-      /// total containing data count
-      /// </summary>
-      public int dataCount;
-      /// <summary>
-      /// previuos Bucket at same level (-1 = first bucket)
-      /// </summary>
-      public int prev;
-      /// <summary>
-      /// next Bucket at same level (-1 = last bucket)
-      /// </summary>
-      public int next;
-      /// <summary>
-      /// parent Bucket one level above (-1 = top bucket level)
-      /// </summary>
-      public int parent;
-      /// <summary>
-      /// first child Bucket (lower than 0 = Data-Offset - int.MinValue)
-      /// </summary>
-      public int childStart;
-
-      /// <summary>
-      /// Constructor
-      /// </summary>
-      /// <param name="dataCount">total containing data count</param>
-      /// <param name="prev">previuos Bucket at same level (-1 = first bucket)</param>
-      /// <param name="next">next Bucket at same level (-1 = last bucket)</param>
-      /// <param name="parent">parent Bucket one level above (-1 = top bucket level)</param>
-      /// <param name="childStart">first child Bucket (lower than 0 = Data-Offset - int.MinValue)</param>
-      public Bucket(int dataCount, int prev, int next, int parent, int childStart)
-      {
-        this.dataCount = dataCount;
-        this.prev = prev;
-        this.next = next;
-        this.parent = parent;
-        this.childStart = childStart;
-      }
-
-      /// <summary>
-      /// return true if a Data-Bucket
-      /// </summary>
-      public bool HasData { get { return childStart < 0; } }
-
-      /// <summary>
-      /// get or set DataOffset (use childStart)
-      /// </summary>
-      public int DataOffset
-      {
-        get
-        {
-          Debug.Assert(childStart < 0);
-          return childStart + int.MinValue;
-        }
-        set
-        {
-          childStart = value - int.MinValue;
-        }
-      }
-
-      /// <summary>
-      /// get last unused Element as global Data-Array
-      /// </summary>
-      public int DataEndOffset
-      {
-        get
-        {
-          Debug.Assert(HasData);
-          Debug.Assert(dataCount >= 0 && dataCount <= MaxBucketSize);
-          return childStart + int.MinValue + dataCount;
-        }
-      }
-
-      /// <summary>
-      /// return a readable string of content
-      /// </summary>
-      /// <returns></returns>
-      public override string ToString()
-      {
-        if (HasData)
-        {
-          return new { dataCount, prev, next, parent, DataOffset }.ToString();
-        }
-        else
-        {
-          return new { dataCount, prev, next, parent, childStart }.ToString();
-        }
-      }
-    }
     #endregion
 
-    #region # // --- Constructors ---
+    #region # // --- Constructor / Destructor ---
+    GCHandle unsafeDataPinnedHandle;
+    long unsafeDataPinned;
+
     /// <summary>
     /// Constructor
     /// </summary>
     public BucketList3()
     {
-      data = new T[MaxBucketSize];
+      dataRaw = new T[MaxBucketSize];
+      if (UnsafeMode)
+      {
+        unsafeDataPinnedHandle = GCHandle.Alloc(dataRaw, GCHandleType.Pinned);
+        unsafeDataPinned = (long)unsafeDataPinnedHandle.AddrOfPinnedObject();
+      }
       buckets = new Bucket[1];
       Clear();
+    }
+
+    ~BucketList3()
+    {
+      if (UnsafeMode)
+      {
+        unsafeDataPinned = 0;
+        unsafeDataPinnedHandle.Free();
+        unsafeDataPinnedHandle = default(GCHandle);
+      }
     }
     #endregion
 
@@ -1201,9 +1247,19 @@ namespace TestTool
     {
       int newBucket = GetNewBucket();
 
-      if (dataFill + MaxBucketSize > data.Length)
+      if (dataFill + MaxBucketSize > dataRaw.Length)
       {
-        Array.Resize(ref data, data.Length * 2);
+        if (UnsafeMode)
+        {
+          unsafeDataPinned = 0;
+          unsafeDataPinnedHandle.Free();
+        }
+        Array.Resize(ref dataRaw, dataRaw.Length * 2);
+        if (UnsafeMode)
+        {
+          unsafeDataPinnedHandle = GCHandle.Alloc(dataRaw, GCHandleType.Pinned);
+          unsafeDataPinned = (long)unsafeDataPinnedHandle.AddrOfPinnedObject();
+        }
       }
 
       buckets[newBucket] = new Bucket(0, prev, next, parent, unchecked(dataFill - int.MinValue));
@@ -1271,21 +1327,77 @@ namespace TestTool
     /// <param name="count">Element-Count</param>
     void MoveData(int srcOffset, int destOffset, int count)
     {
-      if (srcOffset > destOffset)
+      if (UnsafeMode)
+      {
+        UnsafeHelper.MemCopy(unsafeDataPinned + destOffset * UnsafeSize, unsafeDataPinned + srcOffset * UnsafeSize, count * UnsafeSize);
+      }
+      else
+      {
+        if (srcOffset > destOffset)
+        {
+          if (srcOffset == destOffset) return;
+          for (int i = 0; i < count; i++)
+          {
+            dataRaw[destOffset + i] = dataRaw[srcOffset + i];
+            dataRaw[srcOffset + i] = default(T);
+          }
+        }
+        else
+        {
+          for (int i = count - 1; i >= 0; i--)
+          {
+            dataRaw[destOffset + i] = dataRaw[srcOffset + i];
+            dataRaw[srcOffset + i] = default(T);
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Move Data-Elements (and zero old values)
+    /// </summary>
+    /// <param name="srcOffset">Source-Offset in Data Array</param>
+    /// <param name="destOffset">Destination-Offset in Date Array</param>
+    /// <param name="count">Element-Count</param>
+    void MoveDataLeft(int srcOffset, int destOffset, int count)
+    {
+      Debug.Assert(srcOffset > destOffset);
+
+      if (UnsafeMode)
+      {
+        UnsafeHelper.MemCopyForward(unsafeDataPinned + destOffset * UnsafeSize, unsafeDataPinned + srcOffset * UnsafeSize, count * UnsafeSize);
+      }
+      else
       {
         if (srcOffset == destOffset) return;
         for (int i = 0; i < count; i++)
         {
-          data[destOffset + i] = data[srcOffset + i];
-          data[srcOffset + i] = default(T);
+          dataRaw[destOffset + i] = dataRaw[srcOffset + i];
+          dataRaw[srcOffset + i] = default(T);
         }
+      }
+    }
+
+    /// <summary>
+    /// Move Data-Elements (and zero old values)
+    /// </summary>
+    /// <param name="srcOffset">Source-Offset in Data Array</param>
+    /// <param name="destOffset">Destination-Offset in Date Array</param>
+    /// <param name="count">Element-Count</param>
+    void MoveDataRight(int srcOffset, int destOffset, int count)
+    {
+      Debug.Assert(srcOffset < destOffset);
+
+      if (UnsafeMode)
+      {
+        UnsafeHelper.MemCopyBackward(unsafeDataPinned + destOffset * UnsafeSize, unsafeDataPinned + srcOffset * UnsafeSize, count * UnsafeSize);
       }
       else
       {
         for (int i = count - 1; i >= 0; i--)
         {
-          data[destOffset + i] = data[srcOffset + i];
-          data[srcOffset + i] = default(T);
+          dataRaw[destOffset + i] = dataRaw[srcOffset + i];
+          dataRaw[srcOffset + i] = default(T);
         }
       }
     }
@@ -1343,7 +1455,7 @@ namespace TestTool
       // --- copy data ---
       Debug.Assert(buckets[bucket].HasData);
       Debug.Assert(buckets[newBucket].HasData);
-      MoveData(buckets[bucket].DataEndOffset, buckets[newBucket].DataOffset, rightCount);
+      MoveDataRight(buckets[bucket].DataEndOffset, buckets[newBucket].DataOffset, rightCount);
 
       return newBucket;
     }
@@ -1453,6 +1565,33 @@ namespace TestTool
       }
 
       dataCount--;
+
+      if (buckets[bucket].dataCount == 0 && buckets[bucket].prev + buckets[bucket].next != -2)
+      {
+        RemoveEmptyBucket(bucket);
+      }
+    }
+
+    /// <summary>
+    /// subtract from dataCount in bucket (inclusive parents)
+    /// </summary>
+    /// <param name="bucket">Bucket to update</param>
+    /// <param name="count">count to subtract</param>
+    void SubtractCount(int bucket, int count)
+    {
+      Debug.Assert((uint)bucket < bucketsFill);
+      Debug.Assert(count > 0);
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(buckets[bucket].dataCount >= count);
+
+      int b = bucket;
+      while ((uint)b < buckets.Length)
+      {
+        buckets[(uint)b].dataCount -= count;
+        b = buckets[(uint)b].parent;
+      }
+
+      dataCount -= count;
 
       if (buckets[bucket].dataCount == 0 && buckets[bucket].prev + buckets[bucket].next != -2)
       {
@@ -1682,8 +1821,9 @@ namespace TestTool
     /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only. </exception>
     public void Clear()
     {
-      Array.Clear(data, 0, dataFill);
+      if (NeedSafeData) Array.Clear(dataRaw, 0, dataFill);
       dataFill = MaxBucketSize;
+      Array.Clear(buckets, 0, bucketsFill);
       buckets[0] = new Bucket(0, -1, -1, -1, unchecked(0 - int.MinValue));
       bucketsFill = 1;
       lastBucket = 0;
@@ -1725,7 +1865,7 @@ namespace TestTool
         int end = bs[b].DataEndOffset;
         for (int i = bs[b].DataOffset; i < end; i++)
         {
-          yield return data[i];
+          yield return dataRaw[i];
         }
 
         b = bs[b].next;
@@ -1749,7 +1889,7 @@ namespace TestTool
       Debug.Assert(buckets[bucket].HasData);
       Debug.Assert(buckets[bucket].next == -1);
 
-      data[buckets[bucket].DataEndOffset] = item;
+      dataRaw[buckets[bucket].DataEndOffset] = item;
       IncrementCount(bucket);
     }
 
@@ -1786,9 +1926,9 @@ namespace TestTool
       }
 
       int dataOffset = bs[bucket].DataOffset + index;
-      Array.Copy(data, dataOffset, data, dataOffset + 1, bs[bucket].dataCount - index);
+      MoveDataRight(dataOffset, dataOffset + 1, bs[bucket].dataCount - index);
 
-      data[dataOffset] = item;
+      dataRaw[dataOffset] = item;
       IncrementCount(bucket);
     }
 
@@ -1813,7 +1953,7 @@ namespace TestTool
         int end = bs[bucket].DataEndOffset;
         for (int i = bs[bucket].DataOffset; i < end; i++)
         {
-          if (equalityComparer.Equals(data[i], item)) return index + i - bs[bucket].DataOffset;
+          if (equalityComparer.Equals(dataRaw[i], item)) return index + i - bs[bucket].DataOffset;
         }
         index += bs[bucket].dataCount;
       }
@@ -1841,7 +1981,7 @@ namespace TestTool
       var bs = buckets;
       for (int bucket = firstBucket; bucket >= 0; bucket = bs[bucket].next)
       {
-        Array.Copy(data, bs[bucket].DataOffset, array, arrayIndex, bs[bucket].dataCount);
+        Array.Copy(dataRaw, bs[bucket].DataOffset, array, arrayIndex, bs[bucket].dataCount);
         arrayIndex += bs[bucket].dataCount;
       }
     }
@@ -1860,7 +2000,7 @@ namespace TestTool
 
         int bucket = GetDataBucketFromIndex(index, out index);
 
-        return data[buckets[bucket].DataOffset + index];
+        return dataRaw[buckets[bucket].DataOffset + index];
       }
       set
       {
@@ -1868,7 +2008,7 @@ namespace TestTool
 
         int bucket = GetDataBucketFromIndex(index, out index);
 
-        data[buckets[bucket].DataOffset + index] = value;
+        dataRaw[buckets[bucket].DataOffset + index] = value;
       }
     }
 
@@ -1883,10 +2023,69 @@ namespace TestTool
 
       int bucket = GetDataBucketFromIndex(index, out index);
 
-      Array.Copy(data, buckets[bucket].DataOffset + index + 1, data, buckets[bucket].DataOffset + index, buckets[bucket].dataCount - index - 1);
-      data[buckets[bucket].DataEndOffset - 1] = default(T);
+      MoveDataLeft(buckets[bucket].DataOffset + index + 1, buckets[bucket].DataOffset + index, buckets[bucket].dataCount - index - 1);
+
+      if (NeedSafeData) dataRaw[buckets[bucket].DataEndOffset - 1] = default(T);
 
       DecrementCount(bucket);
+    }
+    #endregion
+
+    #region # // --- additional Methods ---
+    /// <summary>
+    /// remove multiple items
+    /// </summary>
+    /// <param name="index">startposition in the list</param>
+    /// <param name="count">count of items to remove</param>
+    public void RemoveRange(int index, int count)
+    {
+      if ((uint)index >= dataCount) throw new IndexOutOfRangeException("index");
+      if (count < 1) return;
+      if (index + count > dataCount) throw new ArgumentOutOfRangeException("count");
+
+      int localIndex;
+      int bucket = GetDataBucketFromIndex(index, out localIndex);
+      int next = buckets[bucket].next;
+
+      // --- remove first items --
+      if (localIndex > 0)
+      {
+        int removeItems = Math.Min(buckets[bucket].dataCount - localIndex, count);
+        MoveDataLeft(buckets[bucket].DataOffset + localIndex + removeItems, buckets[bucket].DataOffset + localIndex, buckets[bucket].dataCount - localIndex - removeItems);
+        if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataEndOffset - removeItems, removeItems); // clear last items
+        SubtractCount(bucket, removeItems);
+        count -= removeItems;
+      }
+      else next = bucket;
+
+      while (count > 0)
+      {
+        if (next < bucketsFill)
+        {
+          bucket = next;
+        }
+        else
+        {
+          bucket = GetDataBucketFromIndex(index, out localIndex);
+          Debug.Assert(localIndex == 0);
+        }
+        next = buckets[bucket].next;
+        Debug.Assert((uint)bucket < bucketsFill);
+
+        // --- remove last items ---
+        if (count < buckets[bucket].dataCount)
+        {
+          MoveDataLeft(buckets[bucket].DataOffset + count, buckets[bucket].DataOffset, buckets[bucket].dataCount - count);
+          if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataEndOffset - count, count); // clear last items
+          SubtractCount(bucket, count);
+          break;
+        }
+
+        // --- remove all items from a bucket ---
+        if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataOffset, buckets[bucket].dataCount); // clear all items
+        count -= buckets[bucket].dataCount;
+        SubtractCount(bucket, buckets[bucket].dataCount);
+      }
     }
     #endregion
   }
@@ -1998,8 +2197,8 @@ namespace TestTool
 
     static void BucketTest()
     {
-      const int Validate = 4;
-      const int Count = 10000;
+      const int Validate = 0;
+      const int Count = 10000000;
       const bool Remover = true;
 
       var b1 = new BucketList3<int>();
@@ -2021,7 +2220,11 @@ namespace TestTool
         b1.Insert(next, i);
         if (Validate > 0) b2.Insert(next, i);
 
-        if (Validate > 1) b1.Validate();
+        if (Validate > 1)
+        {
+          b1.Validate();
+          if (Validate > 3) FullCompare(b2, b1, true);
+        }
 
         if (Remover)
         {
@@ -2036,8 +2239,8 @@ namespace TestTool
                 for (int x = removeCount - 1; x >= 0; x--) b2.RemoveAt(pos + x);
               }
 
-              //b1.RemoveRange(pos, removeCount);
-              for (int x = 0; x < removeCount; x++) b1.RemoveAt(pos);
+              b1.RemoveRange(pos, removeCount);
+              //for (int x = 0; x < removeCount; x++) b1.RemoveAt(pos);
 
               if (Validate > 1) b1.Validate();
             }
@@ -2100,6 +2303,8 @@ namespace TestTool
 
       //BitmapTests.Run();
       BucketTest();
+
+      //int size = Marshal.SizeOf(typeof(Bucket));
     }
   }
 }
