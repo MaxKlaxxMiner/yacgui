@@ -1217,8 +1217,9 @@ namespace TestTool
     /// </summary>
     /// <param name="firstBucket">first Bucket in a Bucket-Chain</param>
     /// <param name="newParent">new Parent-Marker to set</param>
-    void UpdateParents(int firstBucket, int newParent)
+    void UpdateParentsInChain(int firstBucket, int newParent)
     {
+      if (firstBucket == int.MaxValue) return;
       int oldParent = buckets[firstBucket].parent;
       for (; firstBucket >= 0 && buckets[firstBucket].parent == oldParent; firstBucket = buckets[firstBucket].next)
       {
@@ -1233,6 +1234,8 @@ namespace TestTool
     /// <param name="destBucket">new Bucket</param>
     void MoveBucket(int srcBucket, int destBucket)
     {
+      Debug.Assert(srcBucket != destBucket);
+
       // --- copy Data ---
       var b = buckets[srcBucket];
       buckets[destBucket] = b;
@@ -1241,11 +1244,23 @@ namespace TestTool
       if (b.next >= 0) buckets[b.next].prev = destBucket;
       if (b.prev >= 0) buckets[b.prev].next = destBucket;
 
+      // --- update child-marker in parent (if first bucket) ---
+      if (buckets[destBucket].parent >= 0 && buckets[buckets[destBucket].parent].childStart == srcBucket)
+      {
+        buckets[buckets[destBucket].parent].childStart = destBucket;
+      }
+
       // --- update the parent-marker in childs ---
       if (!buckets[destBucket].HasData)
       {
-        UpdateParents(buckets[destBucket].childStart, destBucket);
+        UpdateParentsInChain(buckets[destBucket].childStart, destBucket);
       }
+      else
+      {
+        if (srcBucket == lastBucket) lastBucket = destBucket;
+      }
+
+      buckets[srcBucket] = default(Bucket);
     }
 
     /// <summary>
@@ -1301,7 +1316,7 @@ namespace TestTool
       buckets[newBucket] = new Bucket(buckets[bucket].dataCount - newCount, bucket, buckets[bucket].next, buckets[bucket].parent, subBucket);
       buckets[bucket] = new Bucket(newCount, buckets[bucket].prev, newBucket, buckets[bucket].parent, buckets[bucket].childStart);
       if (buckets[newBucket].next >= 0) buckets[buckets[newBucket].next].prev = newBucket;
-      UpdateParents(subBucket, newBucket);
+      UpdateParentsInChain(subBucket, newBucket);
 
       return newBucket;
     }
@@ -1341,7 +1356,7 @@ namespace TestTool
       int moveBucket = GetNewBucket();
       MoveBucket(0, moveBucket);
       buckets[0] = new Bucket(dataCount, -1, -1, -1, moveBucket);
-      UpdateParents(moveBucket, 0);
+      UpdateParentsInChain(moveBucket, 0);
     }
 
     /// <summary>
@@ -1375,6 +1390,73 @@ namespace TestTool
       if (dataCount++ > currentMaxCount)
       {
         LevelUp();
+      }
+    }
+
+    /// <summary>
+    /// remove an empty bucket
+    /// </summary>
+    /// <param name="bucket">Bucket to remove</param>
+    void RemoveEmptyBucket(int bucket)
+    {
+      var b = buckets[bucket];
+      Debug.Assert(b.dataCount == 0);
+      Debug.Assert(b.prev >= 0 || b.next >= 0);
+
+      if (b.prev >= 0) buckets[b.prev].next = b.next;
+      if (b.next >= 0) buckets[b.next].prev = b.prev; else if (b.HasData) lastBucket = b.prev;
+
+      int nextEmptyBucket = -1;
+
+      if (b.parent >= 0 && buckets[b.parent].childStart == bucket)
+      {
+        if (buckets[b.parent].dataCount == 0 && buckets[b.parent].prev + buckets[b.parent].next != -2)
+        {
+          buckets[b.parent].childStart = int.MaxValue;
+          nextEmptyBucket = b.parent;
+          if (nextEmptyBucket == bucketsFill - 1) nextEmptyBucket = bucket;
+        }
+        else
+        {
+          buckets[b.parent].childStart = b.next;
+        }
+      }
+
+      bucketsFill--;
+      if (bucket == bucketsFill)
+      {
+        buckets[bucket] = default(Bucket);
+      }
+      else
+      {
+        MoveBucket(bucketsFill, bucket);
+      }
+
+      if (nextEmptyBucket >= 0) RemoveEmptyBucket(nextEmptyBucket);
+    }
+
+    /// <summary>
+    /// decrement the dataCount in bucket (inclusive parents)
+    /// </summary>
+    /// <param name="bucket">Bucket to update</param>
+    void DecrementCount(int bucket)
+    {
+      Debug.Assert((uint)bucket < bucketsFill);
+      Debug.Assert(buckets[bucket].HasData);
+      Debug.Assert(buckets[bucket].dataCount > 0);
+
+      int b = bucket;
+      while ((uint)b < buckets.Length)
+      {
+        buckets[(uint)b].dataCount--;
+        b = buckets[(uint)b].parent;
+      }
+
+      dataCount--;
+
+      if (buckets[bucket].dataCount == 0 && buckets[bucket].prev + buckets[bucket].next != -2)
+      {
+        RemoveEmptyBucket(bucket);
       }
     }
 
@@ -1522,6 +1604,72 @@ namespace TestTool
       knownBuckets.Clear();
       Validate_Scan(0, knownBuckets);
       if (knownBuckets.Count != bucketsFill) throw new Exception("validate: unused buckets found: " + string.Join(", ", Enumerable.Range(0, bucketsFill).Where(b => !knownBuckets.Contains(b))));
+
+      // --- duplicate childs check ---
+      var knownChilds = new HashSet<int>();
+      for (int b = 0; b < bucketsFill; b++)
+      {
+        if (buckets[b].HasData) continue;
+        if (knownChilds.Contains(buckets[b].childStart)) throw new Exception("validate: duplicate childs: " + buckets[b].childStart);
+        knownChilds.Add(buckets[b].childStart);
+      }
+
+      // --- check empty buckets ---
+      for (int b = bucketsFill; b < buckets.Length; b++)
+      {
+        if (buckets[b].dataCount != 0 || buckets[b].prev != 0 || buckets[b].next != 0 || buckets[b].parent != 0 || buckets[b].childStart != 0)
+        {
+          throw new Exception("validate: unclean bucket [" + b + "]: " + buckets[b]);
+        }
+      }
+    }
+
+    public string DebugBuckets()
+    {
+      var sb = new StringBuilder();
+      foreach (var g in buckets.Take(bucketsFill).Select((b, i) => new { b, i }).GroupBy(x => x.b.parent))
+      {
+        var src = g.ToList();
+        var dest = src.Take(0).ToList();
+        for (var i = 0; i < src.Count; i++)
+        {
+          var b = src[i];
+          if (src.Any(x => x.i == b.b.prev)) continue;
+          dest.Add(b);
+          src.RemoveAt(i);
+          break;
+        }
+        if (dest.Count == 0)
+        {
+          dest.Add(src[0]);
+          src.RemoveAt(0);
+          sb.AppendLine("error-first");
+        }
+        while (src.Count > 0)
+        {
+          int find = -1;
+          for (int i = 0; i < src.Count; i++)
+          {
+            if (src[i].i == dest[dest.Count - 1].b.next)
+            {
+              find = i;
+            }
+          }
+          if (find < 0)
+          {
+            sb.AppendLine("error-connect");
+            find = 0;
+          }
+          dest.Add(src[find]);
+          src.RemoveAt(find);
+        }
+        foreach (var b in dest)
+        {
+          sb.AppendLine("[" + b.i + "] " + b.b);
+        }
+        sb.AppendLine();
+      }
+      return sb.ToString();
     }
     #endregion
 
@@ -1723,7 +1871,6 @@ namespace TestTool
         data[buckets[bucket].DataOffset + index] = value;
       }
     }
-    #endregion
 
     /// <summary>Removes the <see cref="T:System.Collections.Generic.IList`1" /> item at the specified index.</summary>
     /// <param name="index">The zero-based index of the item to remove.</param>
@@ -1732,8 +1879,16 @@ namespace TestTool
     /// <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.IList`1" /> is read-only.</exception>
     public void RemoveAt(int index)
     {
-      throw new NotImplementedException();
+      if ((uint)index >= dataCount) throw new IndexOutOfRangeException("index");
+
+      int bucket = GetDataBucketFromIndex(index, out index);
+
+      Array.Copy(data, buckets[bucket].DataOffset + index + 1, data, buckets[bucket].DataOffset + index, buckets[bucket].dataCount - index - 1);
+      data[buckets[bucket].DataEndOffset - 1] = default(T);
+
+      DecrementCount(bucket);
     }
+    #endregion
   }
 
   class Program : ConsoleExtras
@@ -1803,11 +1958,49 @@ namespace TestTool
     }
     #endregion
 
+    static void FullCompare(IList<int> org, IList<int> cmp, bool checkDetail)
+    {
+      if (checkDetail)
+      {
+        var b1array = cmp.ToArray();
+        int c = 0;
+        foreach (var v in cmp)
+        {
+          if (org[c] != v)
+          {
+            throw new Exception("value dif [" + c + "]: " + v + " != " + org[c]);
+          }
+          if (v != b1array[c])
+          {
+            throw new Exception("array error [" + c + "]: " + v + " != " + b1array[c]);
+          }
+          if (v != cmp[c])
+          {
+            throw new Exception("indexer error [" + c + "]: " + v + " != " + cmp[c]);
+          }
+          c++;
+        }
+      }
+      else
+      {
+        var orgArray = org.ToArray();
+        var cmpArray = cmp.ToArray();
+        if (orgArray.Length != cmpArray.Length) throw new Exception("?");
+        for (int i = 0; i < cmpArray.Length; i++)
+        {
+          if (cmpArray[i] != orgArray[i])
+          {
+            throw new Exception("value dif [" + i + "]: " + cmpArray[i] + " != " + orgArray[i]);
+          }
+        }
+      }
+    }
+
     static void BucketTest()
     {
       const int Validate = 4;
-      const int Count = 10000000;
-      const bool Remover = false;
+      const int Count = 10000;
+      const bool Remover = true;
 
       var b1 = new BucketList3<int>();
       var b2 = new List<int>();
@@ -1820,68 +2013,63 @@ namespace TestTool
         if ((i & 0xff) == 0 && tick != Environment.TickCount)
         {
           tick = Environment.TickCount;
-          Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0"));
+          Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0") + " (" + b1.Count.ToString("N0") + ")");
         }
 
         int next = rnd.Next(b1.Count + 1);
-        //int next = b1.Count;
 
         b1.Insert(next, i);
+        if (Validate > 0) b2.Insert(next, i);
 
         if (Validate > 1) b1.Validate();
-
-        if (Validate > 0)
-        {
-          b2.Insert(next, i);
-          if (b1.Count != b2.Count) throw new Exception();
-          if (Validate > 2)
-          {
-            var b1array = Validate > 3 ? b1.ToArray() : null;
-            int c = 0;
-            foreach (var v in b1)
-            {
-              if (b2[c] != v)
-              {
-                throw new Exception("value dif [" + c + "]: " + v + " != " + b2[c]);
-              }
-              if (Validate > 3)
-              {
-                if (v != b1array[c])
-                {
-                  throw new Exception("array error [" + c + "]: " + v + " != " + b1array[c]);
-                }
-                if (v != b1[c])
-                {
-                  throw new Exception("indexer error [" + c + "]: " + v + " != " + b1[c]);
-                }
-              }
-              c++;
-            }
-          }
-        }
 
         if (Remover)
         {
           int removeCount = Math.Max(0, rnd.Next(rnd.Next(rnd.Next(b1.Count + 1))) - Count / 10);
           if (removeCount > 0)
           {
-            for (int r = 0; r < removeCount; r++)
+            if (rnd.Next(2) == 0) // chunk remove
             {
-              next = rnd.Next(b1.Count);
-
-              b1.RemoveAt(next);
-
-              if (Validate > 1) b1.Validate();
-
+              int pos = rnd.Next(b1.Count - removeCount);
               if (Validate > 0)
               {
-                b2.RemoveAt(next);
-                if (b1.Count != b2.Count) throw new Exception();
+                for (int x = removeCount - 1; x >= 0; x--) b2.RemoveAt(pos + x);
+              }
+
+              //b1.RemoveRange(pos, removeCount);
+              for (int x = 0; x < removeCount; x++) b1.RemoveAt(pos);
+
+              if (Validate > 1) b1.Validate();
+            }
+            else // random remove
+            {
+              for (int r = 0; r < removeCount; r++)
+              {
+                next = rnd.Next(b1.Count);
+
+                b1.RemoveAt(next);
+
+                if (Validate > 1) b1.Validate();
+
+                if (Validate > 0)
+                {
+                  b2.RemoveAt(next);
+                  if (b1.Count != b2.Count) throw new Exception();
+                }
               }
             }
           }
         }
+
+        if (Validate > 0)
+        {
+          if (b1.Count != b2.Count) throw new Exception();
+          if (Validate > 2) FullCompare(b1, b2, Validate > 3);
+        }
       }
+
+      time.Stop();
+      Console.WriteLine(time.ElapsedMilliseconds.ToString("N0") + " ms");
 
       if (Validate > 0)
       {
@@ -1897,10 +2085,8 @@ namespace TestTool
           }
           c++;
         }
+        FullCompare(b2, b1, true);
       }
-
-      time.Stop();
-      Console.WriteLine(time.ElapsedMilliseconds.ToString("N0") + " ms");
     }
 
     /// <summary>
