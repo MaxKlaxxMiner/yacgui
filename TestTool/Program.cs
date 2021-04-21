@@ -39,7 +39,7 @@ using YacGui;
 
 namespace TestTool
 {
-  class Program : ConsoleExtras
+  unsafe class Program : ConsoleExtras
   {
     #region # // --- Memtest ---
     static void PrintDebug(MiniMemoryManager mem, MiniMemoryManager.Entry[] entries)
@@ -58,6 +58,7 @@ namespace TestTool
       var rnd = new Random(12345);
 
       var entries = new BucketList<MiniMemoryManager.Entry>();
+      var entriesByte = new BucketList<byte>();
 
       var time = Stopwatch.StartNew();
 
@@ -68,19 +69,37 @@ namespace TestTool
           if (entries.Count > 0)
           {
             int kill = rnd.Next(entries.Count);
-            //Console.WriteLine("    free: " + entries[kill]);
+            var checkByte = entriesByte[kill];
+
+            var entry = entries[kill];
+            fixed (byte* ptr = &mem.data[entry.ofs])
+            {
+              for (uint x = 0; x < entry.len; x++)
+              {
+                if (ptr[x] != (byte)(checkByte + x)) throw new Exception();
+              }
+            }
+
             mem.Free(entries[kill]);
 
             entries.RemoveAt(kill);
+            entriesByte.RemoveAt(kill);
           }
         }
         else // reservieren
         {
           ulong size = (ulong)rnd.Next(1920);
           var newEntry = mem.Alloc(size);
-          //Console.WriteLine("   alloc: " + newEntry);
           entries.Add(newEntry);
-          //entries.Insert(rnd.Next(entries.Count + 1), newEntry);
+          entriesByte.Add((byte)newEntry.ofs);
+
+          fixed (byte* ptr = &mem.data[newEntry.ofs])
+          {
+            for (uint x = 0; x < newEntry.len; x++)
+            {
+              ptr[x] = (byte)(newEntry.ofs + x);
+            }
+          }
         }
         if ((i & 0xfffff) == 0)
         {
