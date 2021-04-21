@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="CompressedBitmap\CompressedBitmap.cs" />
     <Compile Include="CompressedBitmap\MemoryManager.cs" />
+    <Compile Include="Extras\BucketList.cs" />
     <Compile Include="Extras\Color13Mapping.cs" />
     <Compile Include="Extras\UnsafeHelper.cs" />
     <Compile Include="FastBitmapExtensions\Resize\GetResizedClear.cs" />
