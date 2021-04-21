@@ -57,7 +57,7 @@ namespace TestTool
 
       var rnd = new Random(12345);
 
-      var entries = new List<MemoryManager.Entry>();
+      var entries = new BucketList<MemoryManager.Entry>();
 
       var time = Stopwatch.StartNew();
 
@@ -70,6 +70,12 @@ namespace TestTool
             int kill = rnd.Next(entries.Count);
             //Console.WriteLine("    free: " + entries[kill]);
             mem.Free(entries[kill]);
+
+            if (i == 22794)
+            {
+              int stop = 0;
+            }
+
             entries.RemoveAt(kill);
           }
         }
@@ -106,55 +112,6 @@ namespace TestTool
     }
     #endregion
 
-    static void BucketTest()
-    {
-      const int Count = 10000000;
-      const bool Remover = true;
-
-      var blist = new BucketList<int>();
-      var rnd = new Random(12345);
-
-      var time = Stopwatch.StartNew();
-      int tick = Environment.TickCount;
-      for (int i = 0; i < Count; i++)
-      {
-        if ((i & 0xffff) == 0 && tick != Environment.TickCount)
-        {
-          tick = Environment.TickCount;
-          Console.WriteLine(i.ToString("N0") + " / " + Count.ToString("N0") + " (" + blist.Count.ToString("N0") + ")");
-        }
-
-        int next = rnd.Next(blist.Count + 1);
-
-        blist.Insert(next, i);
-
-        if (Remover)
-        {
-          int removeCount = Math.Max(0, rnd.Next(rnd.Next(rnd.Next(blist.Count + 1))) - Count / 10);
-          if (removeCount > 0)
-          {
-            if (rnd.Next(2) == 0) // chunk remove
-            {
-              int pos = rnd.Next(blist.Count - removeCount);
-
-              blist.RemoveRange(pos, removeCount);
-            }
-            else // random remove
-            {
-              for (int r = 0; r < removeCount; r++)
-              {
-                next = rnd.Next(blist.Count);
-
-                blist.RemoveAt(next);
-              }
-            }
-          }
-        }
-      }
-
-      time.Stop();
-      Console.WriteLine(time.ElapsedMilliseconds.ToString("N0") + " ms");
-    }
 
     /// <summary>
     /// TestTool program entry
@@ -166,7 +123,7 @@ namespace TestTool
       //var comp = new CompressedBitmap(1920, 1080);
 
       //BitmapTests.Run();
-      BucketTest();
+      MemTest();
     }
   }
 }

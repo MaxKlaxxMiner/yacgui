@@ -470,8 +470,13 @@ namespace FastBitmapLib.Extras
 
         if (b.prev >= 0) buckets[b.prev].next = b.next;
         if (b.next >= 0)
+        {
           buckets[b.next].prev = b.prev;
-        else if (b.HasData) lastBucket = b.prev;
+        }
+        else
+        {
+          if (b.HasData) lastBucket = b.prev;
+        }
 
         int nextEmptyBucket = -1;
 
@@ -490,11 +495,15 @@ namespace FastBitmapLib.Extras
         }
 
         bucketsFill--;
-        if (bucket == bucketsFill)
+        if (bucket == 0) // new root bucket?
         {
-          buckets[bucket] = default(BucketListBucket);
+          int nextRoot = buckets[bucket].next;
+          Debug.Assert(nextRoot >= 0);
+          Debug.Assert(buckets[nextRoot].prev == -1);
+          MoveBucket(nextRoot, 0);
+          bucket = nextRoot;
         }
-        else
+        if (bucket < bucketsFill)
         {
           MoveBucket(bucketsFill, bucket);
         }
@@ -518,6 +527,7 @@ namespace FastBitmapLib.Extras
       int b = bucket;
       while ((uint)b < bucketsReserved)
       {
+        Debug.Assert(buckets[(uint)b].dataCount > 0);
         buckets[(uint)b].dataCount--;
         b = buckets[(uint)b].parent;
       }
@@ -711,15 +721,6 @@ namespace FastBitmapLib.Extras
         if (buckets[b].HasData) continue;
         if (knownChilds.Contains(buckets[b].childStart)) throw new Exception("validate: duplicate childs: " + buckets[b].childStart);
         knownChilds.Add(buckets[b].childStart);
-      }
-
-      // --- check empty buckets ---
-      for (int b = bucketsFill; b < bucketsReserved; b++)
-      {
-        if (buckets[b].dataCount != 0 || buckets[b].prev != 0 || buckets[b].next != 0 || buckets[b].parent != 0 || buckets[b].childStart != 0)
-        {
-          throw new Exception("validate: unclean bucket [" + b + "]: " + buckets[b]);
-        }
       }
     }
 
@@ -1051,6 +1052,18 @@ namespace FastBitmapLib.Extras
         if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataOffset, buckets[bucket].dataCount); // clear all items
         count -= buckets[bucket].dataCount;
         SubtractCount(bucket, buckets[bucket].dataCount);
+      }
+    }
+
+    /// <summary>
+    /// add multiple items
+    /// </summary>
+    /// <param name="items">items to add</param>
+    public void AddRange(IEnumerable<T> items)
+    {
+      foreach (var item in items)
+      {
+        Add(item);
       }
     }
     #endregion
