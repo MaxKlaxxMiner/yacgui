@@ -58,7 +58,7 @@ namespace TestTool
       var rnd = new Random(12345);
 
       var entries = new BucketList<MiniMemoryManager.Entry>();
-      var entriesByte = new BucketList<byte>();
+      //var entriesByte = new BucketList<byte>();
 
       var time = Stopwatch.StartNew();
 
@@ -69,21 +69,21 @@ namespace TestTool
           if (entries.Count > 0)
           {
             int kill = rnd.Next(entries.Count);
-            var checkByte = entriesByte[kill];
+            //var checkByte = entriesByte[kill];
 
-            var entry = entries[kill];
-            fixed (byte* ptr = &mem.data[entry.ofs])
-            {
-              for (uint x = 0; x < entry.len; x++)
-              {
-                if (ptr[x] != (byte)(checkByte + x)) throw new Exception();
-              }
-            }
+            //var entry = entries[kill];
+            //fixed (byte* ptr = &mem.data[entry.ofs])
+            //{
+            //  for (uint x = 0; x < entry.len; x++)
+            //  {
+            //    if (ptr[x] != (byte)(checkByte + x)) throw new Exception();
+            //  }
+            //}
 
             mem.Free(entries[kill]);
 
             entries.RemoveAt(kill);
-            entriesByte.RemoveAt(kill);
+            //entriesByte.RemoveAt(kill);
           }
         }
         else // reservieren
@@ -91,15 +91,15 @@ namespace TestTool
           ulong size = (ulong)rnd.Next(1920);
           var newEntry = mem.Alloc(size);
           entries.Add(newEntry);
-          entriesByte.Add((byte)newEntry.ofs);
+          //entriesByte.Add((byte)newEntry.ofs);
 
-          fixed (byte* ptr = &mem.data[newEntry.ofs])
-          {
-            for (uint x = 0; x < newEntry.len; x++)
-            {
-              ptr[x] = (byte)(newEntry.ofs + x);
-            }
-          }
+          //fixed (byte* ptr = &mem.data[newEntry.ofs])
+          //{
+          //  for (uint x = 0; x < newEntry.len; x++)
+          //  {
+          //    ptr[x] = (byte)(newEntry.ofs + x);
+          //  }
+          //}
         }
         if ((i & 0xfffff) == 0)
         {
@@ -134,10 +134,11 @@ namespace TestTool
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 
-      //var comp = new CompressedBitmap(1920, 1080);
+      var comp = new CompressedBitmap(320, 240);
+      comp.Test();
 
       //BitmapTests.Run();
-      MemTest();
+      //MemTest();
     }
   }
 }
