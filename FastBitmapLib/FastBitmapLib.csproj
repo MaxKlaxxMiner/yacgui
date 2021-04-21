@@ -43,7 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompressedBitmap\CompressedBitmap.cs" />
-    <Compile Include="CompressedBitmap\MemoryManager.cs" />
+    <Compile Include="CompressedBitmap\MiniMemoryManager.cs" />
     <Compile Include="Extras\BucketList.cs" />
     <Compile Include="Extras\Color13Mapping.cs" />
     <Compile Include="Extras\UnsafeHelper.cs" />

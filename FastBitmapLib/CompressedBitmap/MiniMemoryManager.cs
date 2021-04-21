@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace FastBitmapLib
 {
-  public unsafe class MemoryManager
+  public class MiniMemoryManager
   {
     public struct Entry
     {
@@ -42,7 +42,7 @@ namespace FastBitmapLib
     public ulong dataFilled;
     public ulong dataFragmented;
 
-    public MemoryManager()
+    public MiniMemoryManager()
     {
       data = new byte[0];
       dataSize = 0;
@@ -52,13 +52,10 @@ namespace FastBitmapLib
 
     public void SetMemoryLength(ulong minSize)
     {
-      ulong targetSize = 128;
-      ulong lastSize = targetSize;
+      ulong targetSize = 255;
       while (targetSize < minSize)
       {
-        ulong tmp = lastSize;
-        lastSize = targetSize;
-        targetSize += tmp;
+        targetSize *= 2;
       }
       if (targetSize == dataSize) return; // same size?
 

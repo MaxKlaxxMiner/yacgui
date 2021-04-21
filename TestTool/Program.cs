@@ -42,7 +42,7 @@ namespace TestTool
   class Program : ConsoleExtras
   {
     #region # // --- Memtest ---
-    static void PrintDebug(MemoryManager mem, MemoryManager.Entry[] entries)
+    static void PrintDebug(MiniMemoryManager mem, MiniMemoryManager.Entry[] entries)
     {
       mem.Validate(entries);
       Console.WriteLine("------------------------\r\n" +
@@ -53,11 +53,11 @@ namespace TestTool
 
     static void MemTest()
     {
-      var mem = new MemoryManager();
+      var mem = new MiniMemoryManager();
 
       var rnd = new Random(12345);
 
-      var entries = new BucketList<MemoryManager.Entry>();
+      var entries = new BucketList<MiniMemoryManager.Entry>();
 
       var time = Stopwatch.StartNew();
 
@@ -70,11 +70,6 @@ namespace TestTool
             int kill = rnd.Next(entries.Count);
             //Console.WriteLine("    free: " + entries[kill]);
             mem.Free(entries[kill]);
-
-            if (i == 22794)
-            {
-              int stop = 0;
-            }
 
             entries.RemoveAt(kill);
           }

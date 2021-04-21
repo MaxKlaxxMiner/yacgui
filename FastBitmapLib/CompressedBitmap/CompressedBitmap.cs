@@ -8,8 +8,8 @@ namespace FastBitmapLib
   /// </summary>
   public class CompressedBitmap : IFastBitmapSimple32
   {
-    readonly MemoryManager data;
-    readonly MemoryManager.Entry[] dataIndex;
+    readonly MiniMemoryManager data;
+    readonly MiniMemoryManager.Entry[] dataIndex;
 
     /// <summary>
     /// Constructor
@@ -20,8 +20,8 @@ namespace FastBitmapLib
     public CompressedBitmap(int width, int height, uint backgroundColor = 0x00000000)
       : base(width, height, backgroundColor)
     {
-      data = new MemoryManager();
-      dataIndex = new MemoryManager.Entry[height + 1];
+      data = new MiniMemoryManager();
+      dataIndex = new MiniMemoryManager.Entry[height + 1];
       dataIndex[height] = data.Alloc((uint)width * sizeof(uint) * 2 + 8); // last line = cache
     }
 
