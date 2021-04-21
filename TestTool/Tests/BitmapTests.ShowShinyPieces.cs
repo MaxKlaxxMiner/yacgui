@@ -24,9 +24,9 @@ namespace TestTool
     /// Create a demo picture with shiny pieces (with alpha channel)
     /// </summary>
     /// <returns>Demo picture as FastBitmap</returns>
-    static FastBitmap GetDemoTexture()
+    static IFastBitmap GetDemoTexture()
     {
-      var texture = new FastBitmap(MainForm.DefaultChessPieces);
+      var texture = new CompressedBitmap(MainForm.DefaultChessPieces);
       texture.ConvertGreenPixelsToAlpha();
 
       var bits = new byte[texture.width * texture.height];

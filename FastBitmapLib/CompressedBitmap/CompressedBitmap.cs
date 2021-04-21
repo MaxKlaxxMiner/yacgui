@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable RedundantIfElseBlock
@@ -30,6 +31,37 @@ namespace FastBitmapLib
       mem = new MiniMemoryManager();
       memIndex = new MiniMemoryManager.Entry[height + 1];
       memIndex[height] = mem.Alloc((uint)width * sizeof(uint) * 2 + 4 + (uint)width / 2048); // last line = raw-cache + comp-cache + comp-overhead
+
+      fixed (byte* rawPixelPtr = &mem.data[memIndex[height].ofs])
+      {
+        for (uint i = 0; i < width; i++) ((uint*)rawPixelPtr)[i] = backgroundColor;
+      }
+
+      uint compressedSize = CompressLine();
+
+      fixed (byte* compPtr = &mem.data[memIndex[height].ofs + (uint)width * sizeof(uint)])
+      {
+        for (int y = 0; y < height; y++)
+        {
+          var entry = mem.Alloc(compressedSize);
+          memIndex[y] = entry;
+          for (uint i = 0; i < compressedSize; i++)
+          {
+            mem.data[entry.ofs + i] = compPtr[i];
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public CompressedBitmap(Bitmap bitmap, uint backgroundColor = 0x00000000)
+      : this(bitmap.Width, bitmap.Height, backgroundColor)
+    {
+      CopyFromGDIBitmap(bitmap);
     }
 
     #region # // --- CompressLine() ---
@@ -279,30 +311,58 @@ namespace FastBitmapLib
       }
       return p;
     }
+
+    uint DecompressLine(uint ofs)
+    {
+      uint p = 0;
+
+      fixed (byte* ptr = &mem.data[memIndex[height].ofs], compPtr = &mem.data[ofs])
+      {
+        uint* rawPixels = (uint*)ptr;
+
+        for (uint pixelCount = 0; pixelCount < width; )
+        {
+          uint currentPixel = *(uint*)(compPtr + p); p += sizeof(uint);
+          rawPixels[pixelCount++] = currentPixel;
+          uint count;
+          p += UnpackValue(currentPixel, compPtr + p, rawPixels + pixelCount, out count);
+          pixelCount += count;
+          Debug.Assert(pixelCount <= width);
+        }
+      }
+      return p;
+    }
     #endregion
 
-    public void Test()
+    void CopyCompCacheTo(ulong ofs, ulong len)
     {
-      var rnd = new Random(12345);
-      byte[] randomBytes = new byte[width * sizeof(uint)];
-      rnd.NextBytes(randomBytes);
+      fixed (byte* compPtr = &mem.data[memIndex[height].ofs + (uint)width * sizeof(uint)], destPtr = &mem.data[ofs])
+      {
+        for (uint i = 0; i < len; i++)
+        {
+          destPtr[i] = compPtr[i];
+        }
+      }
+    }
 
-      for (int i = 0; i < randomBytes.Length; i += 4) randomBytes[i + 3] = 0xff;
+    int lastCacheLine = -1;
+    ulong SetCacheLine(int y)
+    {
+      if (lastCacheLine == y) return memIndex[height].ofs;
 
-      for (int r = 100; r < 130; r++) if (r % 4 != 3) randomBytes[r] = 0x00;
+      if (lastCacheLine >= 0)
+      {
+        uint newLen = CompressLine();
+        var entry = mem.Resize(memIndex[lastCacheLine], newLen);
+        memIndex[lastCacheLine] = entry;
+        CopyCompCacheTo(entry.ofs, entry.len);
+        // todo: optimize memory fragmentations
+      }
 
-      Array.Copy(randomBytes, 0, mem.data, (int)memIndex[height].ofs, randomBytes.Length);
-
-      uint compLen = CompressLine();
-
-      Array.Clear(mem.data, (int)memIndex[height].ofs, randomBytes.Length);
-
-      uint decompLen = DecompressLine();
-
-      if (compLen != decompLen) throw new Exception();
-
-      int ofs = (int)memIndex[height].ofs;
-      for (int i = 0; i < randomBytes.Length; i++) if (mem.data[ofs + i] != randomBytes[i]) throw new Exception();
+      lastCacheLine = y;
+      uint len = DecompressLine((uint)memIndex[y].ofs);
+      Debug.Assert(len == memIndex[y].len);
+      return memIndex[height].ofs;
     }
 
     /// <summary>
@@ -313,6 +373,10 @@ namespace FastBitmapLib
     /// <param name="color">Pixel color</param>
     public override void SetPixelUnsafe(int x, int y, uint color)
     {
+      fixed (byte* ptr = &mem.data[SetCacheLine(y)])
+      {
+        ((uint*)ptr)[x] = color;
+      }
     }
 
     /// <summary>
@@ -323,7 +387,10 @@ namespace FastBitmapLib
     /// <returns>Pixel color</returns>
     public override uint GetPixelUnsafe32(int x, int y)
     {
-      return 0;
+      fixed (byte* ptr = &mem.data[SetCacheLine(y)])
+      {
+        return ((uint*)ptr)[x];
+      }
     }
 
     /// <summary>
@@ -331,6 +398,30 @@ namespace FastBitmapLib
     /// </summary>
     public override void Dispose()
     {
+    }
+
+    public ulong CompressedSizeReserved
+    {
+      get
+      {
+        return (ulong)mem.data.Length + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
+      }
+    }
+
+    public ulong CompressedSizeUsed
+    {
+      get
+      {
+        return mem.dataFilled - mem.dataFragmented + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
+      }
+    }
+
+    public ulong UncompressedSize
+    {
+      get
+      {
+        return (ulong)width * (ulong)height * sizeof(uint);
+      }
     }
   }
 }
