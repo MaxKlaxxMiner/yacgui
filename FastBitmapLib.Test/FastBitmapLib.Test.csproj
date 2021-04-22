@@ -53,6 +53,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="BitmapBasics\CompressedBitmap64_Test.cs" />
     <Compile Include="BitmapBasics\CompressedBitmap32_Test.cs" />
     <Compile Include="BitmapBasics\FastBitmapTester.cs" />
     <Compile Include="BitmapBasics\FastBitmap64_Test.cs" />

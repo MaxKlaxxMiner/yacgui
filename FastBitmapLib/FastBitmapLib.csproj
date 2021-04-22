@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompressedBitmap\CompressedBitmap64.cs" />
     <Compile Include="CompressedBitmap\CompressedBitmap.cs" />
     <Compile Include="CompressedBitmap\MiniMemoryManager.cs" />
     <Compile Include="Extras\BucketList.cs" />

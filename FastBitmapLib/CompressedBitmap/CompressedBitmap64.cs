@@ -15,7 +15,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Compressed-Version of FastBitmap
   /// </summary>
-  public unsafe class CompressedBitmap : IFastBitmap32
+  public unsafe class CompressedBitmap64 : IFastBitmap64
   {
     readonly MiniMemoryManager mem;
     readonly MiniMemoryManager.Entry[] memIndex;
@@ -27,21 +27,21 @@ namespace FastBitmapLib
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public CompressedBitmap(int width, int height, uint backgroundColor = 0x00000000)
+    public CompressedBitmap64(int width, int height, ulong backgroundColor = 0x0000000000000000)
       : base(width, height, backgroundColor)
     {
       mem = new MiniMemoryManager();
       memIndex = new MiniMemoryManager.Entry[height + 1];
-      memIndex[height] = mem.Alloc((uint)width * sizeof(uint) * 2 + 4 + (uint)width / 2048); // last line = raw-cache + comp-cache + comp-overhead
+      memIndex[height] = mem.Alloc((uint)width * sizeof(ulong) * 2 + 8 + (uint)width / 2048); // last line = raw-cache + comp-cache + comp-overhead
 
       fixed (byte* rawPixelPtr = &mem.data[memIndex[height].ofs])
       {
-        for (uint i = 0; i < width; i++) ((uint*)rawPixelPtr)[i] = backgroundColor;
+        for (uint i = 0; i < width; i++) ((ulong*)rawPixelPtr)[i] = backgroundColor;
       }
 
       uint compressedSize = CompressLine();
 
-      fixed (byte* compPtr = &mem.data[memIndex[height].ofs + (uint)width * sizeof(uint)])
+      fixed (byte* compPtr = &mem.data[memIndex[height].ofs + (uint)width * sizeof(ulong)])
       {
         for (int y = 0; y < height; y++)
         {
@@ -60,7 +60,7 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public CompressedBitmap(Bitmap bitmap, uint backgroundColor = 0x00000000)
+    public CompressedBitmap64(Bitmap bitmap, ulong backgroundColor = 0x0000000000000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {
       CopyFromGDIBitmap(bitmap);
@@ -68,49 +68,47 @@ namespace FastBitmapLib
     #endregion
 
     #region # // --- CompressLine() ---
-    void SearchRepeats(uint* pixelPtr, uint pixelStart, out uint sameAlpha, out uint sameColor)
+    void SearchRepeats(ulong* pixelPtr, uint pixelStart, out uint sameAlpha, out uint sameColor)
     {
-      uint currentPixel = pixelPtr[pixelStart - 1];
+      ulong currentPixel = pixelPtr[pixelStart - 1];
       uint nextPixel;
       for (nextPixel = pixelStart; nextPixel < width && pixelPtr[nextPixel] == currentPixel; nextPixel++) { }
 
-      if (nextPixel < width && (pixelPtr[nextPixel] & 0xff000000) == (currentPixel & 0xff000000))
+      if (nextPixel < width && (pixelPtr[nextPixel] & 0xffff000000000000) == (currentPixel & 0xffff000000000000))
       {
         sameColor = nextPixel - pixelStart;
-        for (nextPixel++; nextPixel < width && (pixelPtr[nextPixel] & 0xff000000) == (currentPixel & 0xff000000); nextPixel++) { }
+        for (nextPixel++; nextPixel < width && (pixelPtr[nextPixel] & 0xffff000000000000) == (currentPixel & 0xffff000000000000); nextPixel++) { }
         sameAlpha = nextPixel - pixelStart;
       }
       else
       {
         sameAlpha = nextPixel - pixelStart;
-        for (; nextPixel < width && (pixelPtr[nextPixel] & 0xffffff) == (currentPixel & 0xffffff); nextPixel++) { }
+        for (; nextPixel < width && (pixelPtr[nextPixel] & 0xffffffffffff) == (currentPixel & 0xffffffffffff); nextPixel++) { }
         sameColor = nextPixel - pixelStart;
       }
     }
 
-    uint SearchNextQuadAlpha(uint* pixelPtr, uint pixelStart)
-    {
-      pixelPtr += pixelStart;
-      for (uint pos = 3; pixelStart + pos < width; pos++)
-      {
-        if ((pixelPtr[pos - 1] & 0xff000000) == (pixelPtr[pos] & 0xff000000)
-         && (pixelPtr[pos - 2] & 0xff000000) == (pixelPtr[pos - 1] & 0xff000000)
-         && (pixelPtr[pos - 3] & 0xff000000) == (pixelPtr[pos - 2] & 0xff000000)) return pos - 3;
-      }
-      return uint.MaxValue;
-    }
-
-    uint SearchNextDuplicateColor(uint* pixelPtr, uint pixelStart)
+    uint SearchNextDuplicateAlpha(ulong* pixelPtr, uint pixelStart)
     {
       pixelPtr += pixelStart;
       for (uint pos = 1; pixelStart + pos < width; pos++)
       {
-        if ((pixelPtr[pos - 1] & 0xffffff) == (pixelPtr[pos] & 0xffffff)) return pos - 1;
+        if ((pixelPtr[pos - 1] & 0xffff000000000000) == (pixelPtr[pos] & 0xffff000000000000)) return pos - 1;
       }
       return uint.MaxValue;
     }
 
-    static uint PackValue(byte* compPtr, uint* pixelPtr, uint count, uint sameAlpha, uint sameColor)
+    uint SearchNextDuplicateColor(ulong* pixelPtr, uint pixelStart)
+    {
+      pixelPtr += pixelStart;
+      for (uint pos = 1; pixelStart + pos < width; pos++)
+      {
+        if ((pixelPtr[pos - 1] & 0xffffffffffff) == (pixelPtr[pos] & 0xffffffffffff)) return pos - 1;
+      }
+      return uint.MaxValue;
+    }
+
+    static uint PackValue(byte* compPtr, ulong* pixelPtr, uint count, uint sameAlpha, uint sameColor)
     {
       uint p = UnsafeHelper.WritePacketInt(compPtr, count << 2 | sameAlpha << 1 | sameColor);
       compPtr += p;
@@ -127,9 +125,9 @@ namespace FastBitmapLib
           // --- sameAlpha = false, sameColor = false ---
           for (int i = 0; i < count; i++)
           {
-            ((uint*)compPtr)[i] = pixelPtr[i]; // copy full compressed pixel
+            ((ulong*)compPtr)[i] = pixelPtr[i]; // copy full compressed pixel
           }
-          return p + count * sizeof(uint);
+          return p + count * sizeof(ulong);
         }
       }
       else
@@ -137,20 +135,20 @@ namespace FastBitmapLib
         if (sameAlpha == 1)
         {
           // --- sameAlpha = true, sameColor = false ---
-          for (int i = 0; i < count; i++, compPtr += 3)
+          for (int i = 0; i < count; i++, compPtr += 6)
           {
-            *(uint*)compPtr = pixelPtr[i]; // copy 3 color-bytes (ignore alpha)
+            *(ulong*)compPtr = pixelPtr[i]; // copy 6 color-bytes (ignore alpha)
           }
-          return p + count * 3;
+          return p + count * 6;
         }
         else
         {
           // --- sameAlpha = false, sameColor = true ---
           for (int i = 0; i < count; i++)
           {
-            compPtr[i] = (byte)(pixelPtr[i] >> 24);
+            ((ushort*)compPtr)[i] = (ushort)(pixelPtr[i] >> 48);
           }
-          return p + count;
+          return p + count * sizeof(ushort);
         }
       }
     }
@@ -161,22 +159,22 @@ namespace FastBitmapLib
 
       fixed (byte* ptr = &mem.data[memIndex[height].ofs])
       {
-        uint* rawPixels = (uint*)ptr;
+        ulong* rawPixels = (ulong*)ptr;
         byte* compPtr = (byte*)&rawPixels[width];
 
         for (uint pixelCount = 0; pixelCount < width; )
         {
-          *(uint*)(compPtr + p) = rawPixels[pixelCount++]; p += sizeof(uint);
+          *(ulong*)(compPtr + p) = rawPixels[pixelCount++]; p += sizeof(ulong);
           uint sameAlpha, sameColor;
           SearchRepeats(rawPixels, pixelCount, out sameAlpha, out sameColor);
 
-          uint nextRepeatedAlpha = SearchNextQuadAlpha(rawPixels, pixelCount + sameAlpha);
+          uint nextRepeatedAlpha = SearchNextDuplicateAlpha(rawPixels, pixelCount + sameAlpha);
           uint nextRepeatedColor = SearchNextDuplicateColor(rawPixels, pixelCount + sameColor);
 
           if (nextRepeatedAlpha == uint.MaxValue) nextRepeatedAlpha = (uint)width - pixelCount;
           if (nextRepeatedColor == uint.MaxValue) nextRepeatedColor = (uint)width - pixelCount;
 
-          if (sameAlpha <= 2 && sameColor == 0) // uncompressable?
+          if (sameAlpha == 0 && sameColor == 0) // uncompressable?
           {
             uint copyCount = Math.Min(nextRepeatedAlpha, nextRepeatedColor);
             p += PackValue(compPtr + p, rawPixels + pixelCount, copyCount, 0, 0);
@@ -191,7 +189,7 @@ namespace FastBitmapLib
             pixelCount += copyCount;
             continue;
           }
-          if (sameAlpha <= 2) // only same color
+          if (sameAlpha == 0) // only same color
           {
             uint copyCount = Math.Min(sameColor, nextRepeatedAlpha);
             p += PackValue(compPtr + p, rawPixels + pixelCount, copyCount, 0, 1);
@@ -208,13 +206,13 @@ namespace FastBitmapLib
         }
       }
 
-      Debug.Assert((uint)width * sizeof(uint) + p < memIndex[height].len);
+      Debug.Assert((uint)width * sizeof(ulong) + p < memIndex[height].len);
       return p;
     }
     #endregion
 
     #region # // --- DecompressLine() ---
-    static uint UnpackValue(uint currentPixel, byte* compPtr, uint* pixelPtr, out uint count)
+    static uint UnpackValue(ulong currentPixel, byte* compPtr, ulong* pixelPtr, out uint count)
     {
       ulong val;
       uint p = UnsafeHelper.ReadPacketInt(compPtr, out val);
@@ -227,27 +225,27 @@ namespace FastBitmapLib
         {
           for (uint i = 0; i < count; i++)
           {
-            pixelPtr[i] = ((uint*)compPtr)[i];
+            pixelPtr[i] = ((ulong*)compPtr)[i];
           }
-          return p + count * sizeof(uint);
+          return p + count * sizeof(ulong);
         }
         case 0x1: // repeated color
         {
-          uint color = currentPixel & 0xffffff;
+          ulong color = currentPixel & 0xffffffffffff;
           for (uint i = 0; i < count; i++)
           {
-            pixelPtr[i] = (uint)compPtr[i] << 24 | color;
+            pixelPtr[i] = (ulong)((ushort*)compPtr)[i] << 48 | color;
           }
-          return p + count;
+          return p + count * sizeof(ushort);
         }
         case 0x2: // repeated alpha
         {
-          uint alpha = currentPixel & 0xff000000;
-          for (uint i = 0; i < count; i++, compPtr += 3)
+          ulong alpha = currentPixel & 0xffff000000000000;
+          for (uint i = 0; i < count; i++, compPtr += 6)
           {
-            pixelPtr[i] = *(uint*)compPtr & 0xffffff | alpha;
+            pixelPtr[i] = *(ulong*)compPtr & 0xffffffffffff | alpha;
           }
-          return p + count * 3;
+          return p + count * 6;
         }
         case 0x3: // full repeated alpha+color
         {
@@ -267,11 +265,11 @@ namespace FastBitmapLib
 
       fixed (byte* ptr = &mem.data[memIndex[height].ofs], compPtr = &mem.data[ofs])
       {
-        uint* rawPixels = (uint*)ptr;
+        ulong* rawPixels = (ulong*)ptr;
 
         for (uint pixelCount = 0; pixelCount < width; )
         {
-          uint currentPixel = *(uint*)(compPtr + p); p += sizeof(uint);
+          ulong currentPixel = *(ulong*)(compPtr + p); p += sizeof(ulong);
           rawPixels[pixelCount++] = currentPixel;
           uint count;
           p += UnpackValue(currentPixel, compPtr + p, rawPixels + pixelCount, out count);
@@ -286,7 +284,7 @@ namespace FastBitmapLib
     #region # // --- Helper Methods ---
     void CopyCompCacheTo(ulong ofs, ulong len)
     {
-      ulong srcOfs = memIndex[height].ofs + (uint)width * sizeof(uint);
+      ulong srcOfs = memIndex[height].ofs + (uint)width * sizeof(ulong);
       fixed (byte* compPtr = &mem.data[srcOfs], destPtr = &mem.data[ofs])
       {
         for (uint i = 0; i < len; i++)
@@ -381,7 +379,7 @@ namespace FastBitmapLib
     {
       get
       {
-        return (ulong)width * (ulong)height * sizeof(uint);
+        return (ulong)width * (ulong)height * sizeof(ulong);
       }
     }
     #endregion
@@ -393,12 +391,12 @@ namespace FastBitmapLib
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color">Pixel color</param>
-    public override void SetPixelUnsafe(int x, int y, uint color)
+    public override void SetPixelUnsafe(int x, int y, ulong color)
     {
       ulong ofs = SetCacheLine(y);
       fixed (byte* ptr = &mem.data[ofs])
       {
-        ((uint*)ptr)[x] = color;
+        ((ulong*)ptr)[x] = color;
       }
     }
 
@@ -408,12 +406,12 @@ namespace FastBitmapLib
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel color</returns>
-    public override uint GetPixelUnsafe32(int x, int y)
+    public override ulong GetPixelUnsafe64(int x, int y)
     {
       ulong ofs = SetCacheLine(y);
       fixed (byte* ptr = &mem.data[ofs])
       {
-        return ((uint*)ptr)[x];
+        return ((ulong*)ptr)[x];
       }
     }
 
@@ -424,14 +422,14 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="color">fill-color</param>
-    public override void FillScanlineUnsafe(int x, int y, int w, uint color)
+    public override void FillScanlineUnsafe(int x, int y, int w, ulong color)
     {
-      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(ulong);
       fixed (byte* ptr = &mem.data[ofs])
       {
         for (uint i = 0; i < w; i++)
         {
-          ((uint*)ptr)[i] = color;
+          ((ulong*)ptr)[i] = color;
         }
       }
     }
@@ -443,14 +441,14 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLineUnsafe(int x, int y, int w, uint* srcPixels)
+    public override void WriteScanLineUnsafe(int x, int y, int w, ulong* srcPixels)
     {
-      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(ulong);
       fixed (byte* ptr = &mem.data[ofs])
       {
         for (uint i = 0; i < w; i++)
         {
-          ((uint*)ptr)[i] = srcPixels[i];
+          ((ulong*)ptr)[i] = srcPixels[i];
         }
       }
     }
@@ -462,14 +460,14 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLineUnsafe(int x, int y, int w, uint* destPixels)
+    public override void ReadScanLineUnsafe(int x, int y, int w, ulong* destPixels)
     {
-      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(ulong);
       fixed (byte* ptr = &mem.data[ofs])
       {
         for (uint i = 0; i < w; i++)
         {
-          destPixels[i] = ((uint*)ptr)[i];
+          destPixels[i] = ((ulong*)ptr)[i];
         }
       }
     }

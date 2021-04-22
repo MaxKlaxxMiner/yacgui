@@ -26,7 +26,7 @@ namespace TestTool
     /// <returns>Demo picture as FastBitmap</returns>
     static IFastBitmap GetDemoTexture()
     {
-      var texture = new CompressedBitmap(MainForm.DefaultChessPieces);
+      var texture = new CompressedBitmap64(MainForm.DefaultChessPieces);
       texture.ConvertGreenPixelsToAlpha();
 
       var bits = new byte[texture.width * texture.height];

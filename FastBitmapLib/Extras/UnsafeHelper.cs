@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 // ReSharper disable RedundantUnsafeContext
 // ReSharper disable UnusedType.Global
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace FastBitmapLib.Extras
 {
@@ -59,6 +60,38 @@ namespace FastBitmapLib.Extras
       {
         MemCopyBackward(dest, src, count);
       }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint WritePacketInt(byte* ptr, ulong val)
+    {
+      uint p = 0;
+      for (; ; )
+      {
+        ptr[p++] = (byte)(val & 127);
+        if (val < 128) break;
+        ptr[p - 1] |= 128;
+        val >>= 7;
+      }
+      return p;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ReadPacketInt(byte* ptr, out ulong val)
+    {
+      uint p = 0;
+      val = ptr[p++];
+      if (val > 127)
+      {
+        val &= 127;
+        for (int bit = 7; ; bit += 7)
+        {
+          byte b = ptr[p++];
+          val |= (ulong)(b & 127) << bit;
+          if (b <= 127) break;
+        }
+      }
+      return p;
     }
   }
 }
