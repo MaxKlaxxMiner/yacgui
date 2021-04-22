@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using FastBitmapLib.Extras;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FastBitmapLib.Test.BitmapBasics

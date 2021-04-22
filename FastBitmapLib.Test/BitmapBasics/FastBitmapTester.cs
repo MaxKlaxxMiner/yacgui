@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using FastBitmapLib.Extras;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FastBitmapLib.Test.BitmapBasics

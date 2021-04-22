@@ -50,6 +50,14 @@ namespace FastBitmapLib
       dataFragmented = 0;
     }
 
+    public MiniMemoryManager(ulong exactSize)
+    {
+      data = new byte[exactSize];
+      dataSize = exactSize;
+      dataFilled = 0;
+      dataFragmented = 0;
+    }
+
     public void SetMemoryLength(ulong minSize)
     {
       ulong targetSize = 255;
@@ -236,6 +244,14 @@ namespace FastBitmapLib
       {
         SetMemoryLength(dataFilled);
       }
+    }
+
+    public void OverwriteManager(MiniMemoryManager newMem)
+    {
+      data = newMem.data;
+      dataSize = newMem.dataSize;
+      dataFilled = newMem.dataFilled;
+      dataFragmented = newMem.dataFragmented;
     }
   }
 }

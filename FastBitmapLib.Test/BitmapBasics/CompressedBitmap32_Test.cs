@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FastBitmapLib.Test.BitmapBasics
 {
   [TestClass]
-  public sealed class ReferenceBitmap64_Test : FastBitmapTester
+  public sealed class CompressedBitmap32_Test : FastBitmapTester
   {
     /// <summary>
     /// Create Testbitmap
@@ -15,7 +15,7 @@ namespace FastBitmapLib.Test.BitmapBasics
     /// <returns>Created Bitmap</returns>
     public override IFastBitmap CreateBitmap(int width, int height, Color backgroundColor)
     {
-      return new ReferenceBitmap64(width, height, Color64.From(backgroundColor));
+      return new CompressedBitmap(width, height, Color32.From(backgroundColor));
     }
 
     [TestMethod]

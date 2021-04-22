@@ -1,13 +1,12 @@
-﻿// ReSharper disable UnusedType.Global
-// ReSharper disable MemberCanBePrivate.Local
-
+﻿#region # using *.*
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
-
+// ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable RedundantIfElseBlock
-// ReSharper disable UnusedMethodReturnValue.Local
+// ReSharper disable UnusedMember.Global
+#endregion
 
 namespace FastBitmapLib
 {
@@ -19,6 +18,7 @@ namespace FastBitmapLib
     readonly MiniMemoryManager mem;
     readonly MiniMemoryManager.Entry[] memIndex;
 
+    #region # // --- Constructors ---
     /// <summary>
     /// Constructor
     /// </summary>
@@ -63,6 +63,7 @@ namespace FastBitmapLib
     {
       CopyFromGDIBitmap(bitmap);
     }
+    #endregion
 
     #region # // --- CompressLine() ---
     void SearchRepeats(uint* pixelPtr, uint pixelStart, out uint sameAlpha, out uint sameColor)
@@ -290,28 +291,6 @@ namespace FastBitmapLib
       }
     }
 
-    uint DecompressLine()
-    {
-      uint p = 0;
-
-      fixed (byte* ptr = &mem.data[memIndex[height].ofs])
-      {
-        uint* rawPixels = (uint*)ptr;
-        byte* compPtr = (byte*)&rawPixels[width];
-
-        for (uint pixelCount = 0; pixelCount < width; )
-        {
-          uint currentPixel = *(uint*)(compPtr + p); p += sizeof(uint);
-          rawPixels[pixelCount++] = currentPixel;
-          uint count;
-          p += UnpackValue(currentPixel, compPtr + p, rawPixels + pixelCount, out count);
-          pixelCount += count;
-          Debug.Assert(pixelCount <= width);
-        }
-      }
-      return p;
-    }
-
     uint DecompressLine(uint ofs)
     {
       uint p = 0;
@@ -334,9 +313,11 @@ namespace FastBitmapLib
     }
     #endregion
 
+    #region # // --- Helper Methods ---
     void CopyCompCacheTo(ulong ofs, ulong len)
     {
-      fixed (byte* compPtr = &mem.data[memIndex[height].ofs + (uint)width * sizeof(uint)], destPtr = &mem.data[ofs])
+      ulong srcOfs = memIndex[height].ofs + (uint)width * sizeof(uint);
+      fixed (byte* compPtr = &mem.data[srcOfs], destPtr = &mem.data[ofs])
       {
         for (uint i = 0; i < len; i++)
         {
@@ -356,15 +337,86 @@ namespace FastBitmapLib
         var entry = mem.Resize(memIndex[lastCacheLine], newLen);
         memIndex[lastCacheLine] = entry;
         CopyCompCacheTo(entry.ofs, entry.len);
-        // todo: optimize memory fragmentations
+        if (mem.dataFragmented > mem.dataFilled / 4)
+        {
+          mem.Optimize(memIndex, false);
+        }
       }
 
       lastCacheLine = y;
-      uint len = DecompressLine((uint)memIndex[y].ofs);
-      Debug.Assert(len == memIndex[y].len);
+      DecompressLine((uint)memIndex[y].ofs);
       return memIndex[height].ofs;
     }
+    #endregion
 
+    #region # // --- Additional Compressed Features ---
+    /// <summary>
+    /// optimize the data structure
+    /// </summary>
+    /// <param name="full">true = full optimize (smallest version), false = quick optimize</param>
+    public void Optimize(bool full)
+    {
+      if (full)
+      {
+        ulong totalSize = 0;
+        foreach (var index in memIndex)
+        {
+          totalSize += index.len;
+        }
+        var newMem = new MiniMemoryManager(totalSize);
+        var newMemIndex = new MiniMemoryManager.Entry[height + 1];
+        for (int y = 0; y <= height; y++)
+        {
+          newMemIndex[y] = newMem.Alloc(memIndex[y].len);
+          Debug.Assert(newMemIndex[y].len == memIndex[y].len);
+          Array.Copy(mem.data, (int)memIndex[y].ofs, newMem.data, (int)newMemIndex[y].ofs, (int)memIndex[y].len);
+        }
+        for (int i = 0; i < memIndex.Length; i++) memIndex[i] = newMemIndex[i];
+        mem.OverwriteManager(newMem);
+        Debug.Assert(newMem.dataFilled == totalSize);
+        Debug.Assert(newMem.dataSize == totalSize);
+      }
+      else
+      {
+        if (mem.dataFragmented > 0) mem.Optimize(memIndex);
+      }
+    }
+
+    /// <summary>
+    /// reserved memory in bytes
+    /// </summary>
+    public ulong CompressedSizeReserved
+    {
+      get
+      {
+        return (ulong)mem.data.Length + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
+      }
+    }
+
+    /// <summary>
+    /// used memory in bytes
+    /// </summary>
+    public ulong CompressedSizeUsed
+    {
+      get
+      {
+        return mem.dataFilled + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
+      }
+    }
+
+    /// <summary>
+    /// calculated uncompressed size
+    /// </summary>
+    public ulong UncompressedSize
+    {
+      get
+      {
+        return (ulong)width * (ulong)height * sizeof(uint);
+      }
+    }
+    #endregion
+
+    #region # // --- IFastBitmap32 ---
     /// <summary>
     /// Set the pixel color at a specific position (without boundary check)
     /// </summary>
@@ -373,7 +425,8 @@ namespace FastBitmapLib
     /// <param name="color">Pixel color</param>
     public override void SetPixelUnsafe(int x, int y, uint color)
     {
-      fixed (byte* ptr = &mem.data[SetCacheLine(y)])
+      ulong ofs = SetCacheLine(y);
+      fixed (byte* ptr = &mem.data[ofs])
       {
         ((uint*)ptr)[x] = color;
       }
@@ -387,41 +440,74 @@ namespace FastBitmapLib
     /// <returns>Pixel color</returns>
     public override uint GetPixelUnsafe32(int x, int y)
     {
-      fixed (byte* ptr = &mem.data[SetCacheLine(y)])
+      ulong ofs = SetCacheLine(y);
+      fixed (byte* ptr = &mem.data[ofs])
       {
         return ((uint*)ptr)[x];
       }
     }
 
     /// <summary>
+    /// Fill the Scanline with a specific color (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="color">fill-color</param>
+    public override void FillScanlineUnsafe(int x, int y, int w, uint color)
+    {
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      fixed (byte* ptr = &mem.data[ofs])
+      {
+        for (uint i = 0; i < w; i++)
+        {
+          ((uint*)ptr)[i] = color;
+        }
+      }
+    }
+
+    /// <summary>
+    /// Writes a Scanline with a array of specific colors. (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="srcPixels">Pointer at Source array of pixels</param>
+    public override void WriteScanLineUnsafe(int x, int y, int w, uint* srcPixels)
+    {
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      fixed (byte* ptr = &mem.data[ofs])
+      {
+        for (uint i = 0; i < w; i++)
+        {
+          ((uint*)ptr)[i] = srcPixels[i];
+        }
+      }
+    }
+
+    /// <summary>
+    /// Read a Scanline array of pixels type: color32 (without boundary check)
+    /// </summary>
+    /// <param name="x">X-Start (column)</param>
+    /// <param name="y">Y-Pos (line)</param>
+    /// <param name="w">width</param>
+    /// <param name="destPixels">Pointer at Destination array to write pixels</param>
+    public override void ReadScanLineUnsafe(int x, int y, int w, uint* destPixels)
+    {
+      ulong ofs = SetCacheLine(y) + (uint)x * sizeof(uint);
+      fixed (byte* ptr = &mem.data[ofs])
+      {
+        for (uint i = 0; i < w; i++)
+        {
+          destPixels[i] = ((uint*)ptr)[i];
+        }
+      }
+    }
+
+    /// <summary>
     /// Release unmanaged ressources
     /// </summary>
-    public override void Dispose()
-    {
-    }
-
-    public ulong CompressedSizeReserved
-    {
-      get
-      {
-        return (ulong)mem.data.Length + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
-      }
-    }
-
-    public ulong CompressedSizeUsed
-    {
-      get
-      {
-        return mem.dataFilled - mem.dataFragmented + (ulong)memIndex.Length * (ulong)sizeof(MiniMemoryManager.Entry);
-      }
-    }
-
-    public ulong UncompressedSize
-    {
-      get
-      {
-        return (ulong)width * (ulong)height * sizeof(uint);
-      }
-    }
+    public override void Dispose() { }
+    #endregion
   }
 }

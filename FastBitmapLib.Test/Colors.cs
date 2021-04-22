@@ -300,7 +300,7 @@ namespace FastBitmapLib.Test
       CheckBlend32(0x112233, 0x99ccff);
     }
 
-    [TestMethod]
+    //[TestMethod]
     public void Blend32Full()
     {
       for (uint cFirst = 0; cFirst < 256; cFirst++)
@@ -327,7 +327,7 @@ namespace FastBitmapLib.Test
       CheckBlend64(0x111122223333, 0x9999ccccffff);
     }
 
-    [TestMethod]
+    //[TestMethod]
     public void Blend64Full()
     {
       for (uint cFirst = 0; cFirst < 256; cFirst++)
