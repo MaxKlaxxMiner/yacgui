@@ -60,6 +60,17 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public CompressedBitmap64(IFastBitmap bitmap, ulong backgroundColor = 0x0000000000000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
     public CompressedBitmap64(Bitmap bitmap, ulong backgroundColor = 0x0000000000000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {
@@ -384,7 +395,7 @@ namespace FastBitmapLib
     }
     #endregion
 
-    #region # // --- IFastBitmap32 ---
+    #region # // --- IFastBitmap64 ---
     /// <summary>
     /// Set the pixel color at a specific position (without boundary check)
     /// </summary>

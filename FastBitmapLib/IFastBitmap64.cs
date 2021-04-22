@@ -728,6 +728,46 @@ namespace FastBitmapLib
     }
 
     /// <summary>
+    /// Copies the pixel data from a bitmap of the same size
+    /// </summary>
+    /// <param name="srcBitmap">Image from where to read the pixel data</param>
+    public override void CopyFromBitmap(IFastBitmap srcBitmap)
+    {
+      if (srcBitmap == null) throw new NullReferenceException("srcBitmap");
+      if (srcBitmap.width != width || srcBitmap.height != height) throw new ArgumentException("Size of the image does not match");
+
+      ColorType[] line = new ColorType[width];
+      fixed (ColorType* linePtr = line)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          srcBitmap.ReadScanLineUnsafe(0, y, width, linePtr);
+          WriteScanLineUnsafe(0, y, width, linePtr);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Copies the pixel data to a GDI bitmap of the same size
+    /// </summary>
+    /// <param name="destBitmap">Image where the pixel data is written to</param>
+    public override void CopyToBitmap(IFastBitmap destBitmap)
+    {
+      if (destBitmap == null) throw new NullReferenceException("destBitmap");
+      if (destBitmap.width != width || destBitmap.height != height) throw new ArgumentException("Size of the image does not match");
+
+      ColorType[] line = new ColorType[width];
+      fixed (ColorType* linePtr = line)
+      {
+        for (int y = 0; y < height; y++)
+        {
+          ReadScanLineUnsafe(0, y, width, linePtr);
+          destBitmap.WriteScanLineUnsafe(0, y, width, linePtr);
+        }
+      }
+    }
+
+    /// <summary>
     /// Copies the pixel data from a GDI bitmap of the same size
     /// </summary>
     /// <param name="srcBitmap">Image from where to read the pixel data</param>

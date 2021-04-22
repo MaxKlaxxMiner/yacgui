@@ -60,6 +60,17 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public CompressedBitmap(IFastBitmap bitmap, uint backgroundColor = 0x00000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
     public CompressedBitmap(Bitmap bitmap, uint backgroundColor = 0x00000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {

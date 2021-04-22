@@ -7,12 +7,13 @@ using System.Runtime.InteropServices;
 // ReSharper disable RedundantUnsafeContext
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
 // ReSharper disable UnusedType.Global
+// ReSharper disable ClassCanBeSealed.Global
 #endregion
 
 namespace FastBitmapLib
 {
   /// <summary>
-  /// Slow minimum Reference-Version of FastBitmap
+  /// Base-Version of FastBitmap
   /// </summary>
   public unsafe class FastBitmap64 : IFastBitmap64
   {
@@ -25,7 +26,7 @@ namespace FastBitmapLib
     ulong* pixels;
 #endif
 
-    #region # // --- Constructor ---
+    #region # // --- Constructors ---
     /// <summary>
     /// Constructor
     /// </summary>
@@ -50,7 +51,18 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public FastBitmap64(Bitmap bitmap, uint backgroundColor = 0x00000000)
+    public FastBitmap64(IFastBitmap bitmap, ulong backgroundColor = 0x0000000000000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public FastBitmap64(Bitmap bitmap, ulong backgroundColor = 0x0000000000000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {
       CopyFromGDIBitmap(bitmap);

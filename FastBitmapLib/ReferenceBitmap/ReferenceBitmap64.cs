@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
+// ReSharper disable ClassCanBeSealed.Global
 
 namespace FastBitmapLib
 {
@@ -14,19 +15,19 @@ namespace FastBitmapLib
     /// </summary>
     readonly ulong[,] pixels;
 
-    #region # // --- Constructor ---
+    #region # // --- Constructors ---
     /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public ReferenceBitmap64(int width, int height, ulong backgroundColor = 0x00000000)
+    public ReferenceBitmap64(int width, int height, ulong backgroundColor = 0x0000000000000000)
       : base(width, height, backgroundColor)
     {
       pixels = new ulong[width, height];
 
-      if (backgroundColor != 0x00000000) Clear();
+      if (backgroundColor != 0x0000000000000000) Clear();
     }
 
     /// <summary>
@@ -34,7 +35,18 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public ReferenceBitmap64(Bitmap bitmap, uint backgroundColor = 0x00000000)
+    public ReferenceBitmap64(IFastBitmap bitmap, uint backgroundColor = 0x0000000000000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public ReferenceBitmap64(Bitmap bitmap, uint backgroundColor = 0x0000000000000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {
       CopyFromGDIBitmap(bitmap);

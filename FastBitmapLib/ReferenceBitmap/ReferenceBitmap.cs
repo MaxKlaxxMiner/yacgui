@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
+// ReSharper disable ClassCanBeSealed.Global
 
 namespace FastBitmapLib
 {
@@ -14,7 +15,7 @@ namespace FastBitmapLib
     /// </summary>
     readonly uint[,] pixels;
 
-    #region # // --- Constructor ---
+    #region # // --- Constructors ---
     /// <summary>
     /// Constructor
     /// </summary>
@@ -27,6 +28,17 @@ namespace FastBitmapLib
       pixels = new uint[width, height];
 
       if (backgroundColor != 0x00000000) Clear();
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public ReferenceBitmap(IFastBitmap bitmap, uint backgroundColor = 0x00000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
     }
 
     /// <summary>

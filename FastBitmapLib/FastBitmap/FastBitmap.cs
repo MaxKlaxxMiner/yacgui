@@ -7,12 +7,13 @@ using System.Runtime.InteropServices;
 // ReSharper disable RedundantUnsafeContext
 // ReSharper disable DoNotCallOverridableMethodsInConstructor
 // ReSharper disable UnusedType.Global
+// ReSharper disable ClassCanBeSealed.Global
 #endregion
 
 namespace FastBitmapLib
 {
   /// <summary>
-  /// Slow minimum Reference-Version of FastBitmap
+  /// Base-Version of FastBitmap
   /// </summary>
   public unsafe class FastBitmap : IFastBitmap32
   {
@@ -25,7 +26,7 @@ namespace FastBitmapLib
     uint* pixels;
 #endif
 
-    #region # // --- Constructor ---
+    #region # // --- Constructors ---
     /// <summary>
     /// Constructor
     /// </summary>
@@ -43,6 +44,17 @@ namespace FastBitmapLib
       if (pixels == null) throw new OutOfMemoryException();
       Clear();
 #endif
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="bitmap">Bitmap to be used</param>
+    /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
+    public FastBitmap(IFastBitmap bitmap, uint backgroundColor = 0x00000000)
+      : this(bitmap.width, bitmap.height, backgroundColor)
+    {
+      CopyFromBitmap(bitmap);
     }
 
     /// <summary>

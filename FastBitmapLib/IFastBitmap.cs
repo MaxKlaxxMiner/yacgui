@@ -612,6 +612,18 @@ namespace FastBitmapLib
     public abstract void Clear();
 
     /// <summary>
+    /// Copies the pixel data from a bitmap of the same size
+    /// </summary>
+    /// <param name="srcBitmap">Image from where to read the pixel data</param>
+    public abstract void CopyFromBitmap(IFastBitmap srcBitmap);
+
+    /// <summary>
+    /// Copies the pixel data to a bitmap of the same size
+    /// </summary>
+    /// <param name="destBitmap">Image where the pixel data is written to</param>
+    public abstract void CopyToBitmap(IFastBitmap destBitmap);
+
+    /// <summary>
     /// Copies the pixel data from a GDI bitmap of the same size
     /// </summary>
     /// <param name="srcBitmap">Image from where to read the pixel data</param>
