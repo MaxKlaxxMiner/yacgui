@@ -848,7 +848,14 @@ namespace FastBitmapLib
             ReadScanLineUnsafe(0, y, width, (ColorType*)tmpPtr);
             for (int i = 0; i < tmp.Length; i++)
             {
-              ((ushort*)ptr)[i] = map[tmp[i]];
+              if ((i & 3) < 3)
+              {
+                ((ushort*)ptr)[i] = map[tmp[i]]; // gamma corrected color values
+              }
+              else
+              {
+                ((ushort*)ptr)[i] = (ushort)(tmp[i] * 8192 / 65535); // linear alpha channel
+              }
             }
             ptr += bits.Stride;
           }
