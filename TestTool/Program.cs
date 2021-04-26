@@ -134,9 +134,7 @@ namespace TestTool
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 
-      //var comp = new CompressedBitmap(320, 240);
-
-      BitmapTests.Run();
+      //BitmapTests.Run();
       //MemTest();
     }
   }
