@@ -499,6 +499,16 @@ namespace FastBitmapLib
         }
       }
     }
+
+    /// <summary>
+    /// drawing normal line (safe-mode)
+    /// </summary>
+    /// <param name="x1">start x-position</param>
+    /// <param name="y1">start y-position</param>
+    /// <param name="x2">end x-position</param>
+    /// <param name="y2">end y-position</param>
+    /// <param name="color">line-color</param>
+    public abstract void DrawLine(int x1, int y1, int x2, int y2, uint color);
     #endregion
 
     #region # // --- Color64 ---
@@ -592,6 +602,16 @@ namespace FastBitmapLib
         }
       }
     }
+
+    /// <summary>
+    /// drawing normal line (safe-mode)
+    /// </summary>
+    /// <param name="x1">start x-position</param>
+    /// <param name="y1">start y-position</param>
+    /// <param name="x2">end x-position</param>
+    /// <param name="y2">end y-position</param>
+    /// <param name="color">line-color</param>
+    public abstract void DrawLine(int x1, int y1, int x2, int y2, ulong color);
     #endregion
 
     #region # // --- ColorGDI ---

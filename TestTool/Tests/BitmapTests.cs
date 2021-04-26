@@ -70,7 +70,7 @@ namespace TestTool
 
       //ShowAllTestPictures();
 
-      ShowShinyPieces();
+      ShowDrawLines();
     }
   }
 }
