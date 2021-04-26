@@ -509,6 +509,15 @@ namespace FastBitmapLib
     /// <param name="y2">end y-position</param>
     /// <param name="color">line-color</param>
     public abstract void DrawLine(int x1, int y1, int x2, int y2, uint color);
+
+    /// <summary>
+    /// Draw a circle
+    /// </summary>
+    /// <param name="x">Center x-position</param>
+    /// <param name="y">Center y-position</param>
+    /// <param name="r">Radius</param>
+    /// <param name="color">Color</param>
+    public abstract void DrawCircle(int x, int y, int r, uint color);
     #endregion
 
     #region # // --- Color64 ---
@@ -612,6 +621,15 @@ namespace FastBitmapLib
     /// <param name="y2">end y-position</param>
     /// <param name="color">line-color</param>
     public abstract void DrawLine(int x1, int y1, int x2, int y2, ulong color);
+
+    /// <summary>
+    /// Draw a circle
+    /// </summary>
+    /// <param name="x">Center x-position</param>
+    /// <param name="y">Center y-position</param>
+    /// <param name="r">Radius</param>
+    /// <param name="color">Color</param>
+    public abstract void DrawCircle(int x, int y, int r, ulong color);
     #endregion
 
     #region # // --- ColorGDI ---

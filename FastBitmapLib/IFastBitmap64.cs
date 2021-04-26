@@ -722,6 +722,55 @@ namespace FastBitmapLib
         }
       }
     }
+
+    /// <summary>
+    /// Draw a circle
+    /// </summary>
+    /// <param name="x">Center x-position</param>
+    /// <param name="y">Center y-position</param>
+    /// <param name="r">Radius</param>
+    /// <param name="color">Color</param>
+    public override void DrawCircle(int x, int y, int r, ColorType color)
+    {
+      int f = 1 - r;
+      int ddF_x = 1;
+      int ddF_y = -2 * r;
+      int px = 0;
+      int py = r;
+
+      if ((uint)x < width)
+      {
+        if ((uint)(y + r) < height) SetPixelUnsafe(x, y + r, color);
+        if ((uint)(y - r) < height) SetPixelUnsafe(x, y - r, color);
+      }
+      if ((uint)y < height)
+      {
+        if ((uint)(x + r) < width) SetPixelUnsafe(x + r, y, color);
+        if ((uint)(x - r) < width) SetPixelUnsafe(x - r, y, color);
+      }
+
+      while (px < py)
+      {
+        if (f >= 0)
+        {
+          py--;
+          ddF_y += 2;
+          f += ddF_y;
+        }
+        px++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        if ((uint)(x + px) < width && (uint)(y + py) < height) SetPixelUnsafe(x + px, y + py, color);
+        if ((uint)(x - px) < width && (uint)(y + py) < height) SetPixelUnsafe(x - px, y + py, color);
+        if ((uint)(x + px) < width && (uint)(y - py) < height) SetPixelUnsafe(x + px, y - py, color);
+        if ((uint)(x - px) < width && (uint)(y - py) < height) SetPixelUnsafe(x - px, y - py, color);
+        if ((uint)(x + py) < width && (uint)(y + px) < height) SetPixelUnsafe(x + py, y + px, color);
+        if ((uint)(x - py) < width && (uint)(y + px) < height) SetPixelUnsafe(x - py, y + px, color);
+        if ((uint)(x + py) < width && (uint)(y - px) < height) SetPixelUnsafe(x + py, y - px, color);
+        if ((uint)(x - py) < width && (uint)(y - px) < height) SetPixelUnsafe(x - py, y - px, color);
+      }
+    }
     #endregion
 
     #region # // --- ColorTypeB (secondary compatibility color type) ---
@@ -749,6 +798,18 @@ namespace FastBitmapLib
     public override void DrawLine(int x1, int y1, int x2, int y2, ColorTypeB color)
     {
       DrawLine(x1, y1, x2, y2, Conv(color));
+    }
+
+    /// <summary>
+    /// Draw a circle
+    /// </summary>
+    /// <param name="x">Center x-position</param>
+    /// <param name="y">Center y-position</param>
+    /// <param name="r">Radius</param>
+    /// <param name="color">Color</param>
+    public override void DrawCircle(int x, int y, int r, ColorTypeB color)
+    {
+      DrawCircle(x, y, r, Conv(color));
     }
     #endregion
 
