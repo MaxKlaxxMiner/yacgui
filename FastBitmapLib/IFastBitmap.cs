@@ -28,7 +28,7 @@ namespace FastBitmapLib
     /// <summary>
     /// Max dimensions of the Bitmap for width and height
     /// </summary>
-    public const int MaxSize = 1000000;
+    public virtual int MaxSize { get { return ushort.MaxValue; } }
 
     /// <summary>
     /// Constructor

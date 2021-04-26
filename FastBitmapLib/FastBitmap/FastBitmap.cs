@@ -22,8 +22,18 @@ namespace FastBitmapLib
     /// </summary>
 #if DEBUG
     readonly uint[] pixels;
+
+    /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 33554431; } }
 #else
     uint* pixels;
+
+    /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 200000000; } }
 #endif
 
     #region # // --- Constructors ---
@@ -36,11 +46,12 @@ namespace FastBitmapLib
     public FastBitmap(int width, int height, uint backgroundColor = 0x00000000)
       : base(width, height, backgroundColor)
     {
+      long size = (long)width * height;
 #if DEBUG
-      pixels = new uint[width * height];
+      pixels = new uint[size];
       if (backgroundColor != 0x00000000) Clear();
 #else
-      pixels = (uint*)Marshal.AllocHGlobal((IntPtr)((long)width * height * sizeof(uint)));
+      pixels = (uint*)Marshal.AllocHGlobal((IntPtr)(size * sizeof(uint)));
       if (pixels == null) throw new OutOfMemoryException();
       Clear();
 #endif
@@ -78,7 +89,7 @@ namespace FastBitmapLib
     /// <param name="color32">Pixel <see cref="Color32"/></param>
     public override void SetPixelUnsafe(int x, int y, uint color32)
     {
-      pixels[x + y * width] = color32;
+      pixels[x + (long)y * width] = color32;
     }
 
     /// <summary>
@@ -89,7 +100,7 @@ namespace FastBitmapLib
     /// <returns>Pixel <see cref="Color32"/></returns>
     public override uint GetPixelUnsafe32(int x, int y)
     {
-      return pixels[x + y * width];
+      return pixels[x + (long)y * width];
     }
     #endregion
 
@@ -106,7 +117,7 @@ namespace FastBitmapLib
 #if DEBUG
       fixed (uint* ptr = &pixels[x + y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) ptr[i] = color;
@@ -125,7 +136,7 @@ namespace FastBitmapLib
 #if DEBUG
       fixed (uint* ptr = &pixels[x + y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) ptr[i] = srcPixels[i];
@@ -144,7 +155,7 @@ namespace FastBitmapLib
 #if DEBUG
       fixed (uint* ptr = &pixels[x + y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) destPixels[i] = ptr[i];

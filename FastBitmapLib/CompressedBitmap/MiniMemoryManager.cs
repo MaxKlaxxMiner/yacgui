@@ -78,6 +78,7 @@ namespace FastBitmapLib
         if (dataSize - reduce < dataFilled) return; // can't reduce already used memory
         dataSize -= reduce;
       }
+      if (dataSize > int.MaxValue) throw new OutOfMemoryException();
       Array.Resize(ref data, checked((int)dataSize));
 
       Debug.Assert(dataSize >= minSize);

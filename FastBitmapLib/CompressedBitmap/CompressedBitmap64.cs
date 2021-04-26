@@ -22,6 +22,11 @@ namespace FastBitmapLib
 
     #region # // --- Constructors ---
     /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 100000000; } }
+
+    /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="width">Width in pixels</param>
@@ -32,7 +37,7 @@ namespace FastBitmapLib
     {
       mem = new MiniMemoryManager();
       memIndex = new MiniMemoryManager.Entry[height + 1];
-      memIndex[height] = mem.Alloc((uint)width * sizeof(ulong) * 2 + 8 + (uint)width / 2048); // last line = raw-cache + comp-cache + comp-overhead
+      memIndex[height] = mem.Alloc((ulong)(uint)width * sizeof(ulong) * 2 + 8 + (uint)width / 2048); // last line = raw-cache + comp-cache + comp-overhead
 
       fixed (byte* rawPixelPtr = &mem.data[memIndex[height].ofs])
       {

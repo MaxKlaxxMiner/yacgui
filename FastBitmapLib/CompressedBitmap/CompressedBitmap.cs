@@ -22,6 +22,11 @@ namespace FastBitmapLib
 
     #region # // --- Constructors ---
     /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 134217723; } }
+
+    /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="width">Width in pixels</param>

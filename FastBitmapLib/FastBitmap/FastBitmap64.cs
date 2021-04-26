@@ -22,8 +22,18 @@ namespace FastBitmapLib
     /// </summary>
 #if DEBUG
     readonly ulong[] pixels;
+
+    /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 16777215; } }
 #else
     ulong* pixels;
+
+    /// <summary>
+    /// Max width of the Bitmap
+    /// </summary>
+    public override int MaxSize { get { return 100000000; } }
 #endif
 
     #region # // --- Constructors ---
@@ -37,7 +47,7 @@ namespace FastBitmapLib
       : base(width, height, backgroundColor)
     {
 #if DEBUG
-      pixels = new ulong[width * height];
+      pixels = new ulong[(long)width * height];
       if (backgroundColor != 0x0000000000000000) Clear();
 #else
       pixels = (ulong*)Marshal.AllocHGlobal((IntPtr)((long)width * height * sizeof(ulong)));
@@ -78,7 +88,7 @@ namespace FastBitmapLib
     /// <param name="color64">Pixel <see cref="Color64"/></param>
     public override void SetPixelUnsafe(int x, int y, ulong color64)
     {
-      pixels[x + y * width] = color64;
+      pixels[x + (long)y * width] = color64;
     }
 
     /// <summary>
@@ -89,7 +99,7 @@ namespace FastBitmapLib
     /// <returns>Pixel <see cref="Color64"/></returns>
     public override ulong GetPixelUnsafe64(int x, int y)
     {
-      return pixels[x + y * width];
+      return pixels[x + (long)y * width];
     }
     #endregion
 
@@ -104,9 +114,9 @@ namespace FastBitmapLib
     public override unsafe void FillScanlineUnsafe(int x, int y, int w, ulong color)
     {
 #if DEBUG
-      fixed (ulong* ptr = &pixels[x + y * width])
+      fixed (ulong* ptr = &pixels[x + (long)y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) ptr[i] = color;
@@ -123,9 +133,9 @@ namespace FastBitmapLib
     public override unsafe void WriteScanLineUnsafe(int x, int y, int w, ulong* srcPixels)
     {
 #if DEBUG
-      fixed (ulong* ptr = &pixels[x + y * width])
+      fixed (ulong* ptr = &pixels[x + (long)y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) ptr[i] = srcPixels[i];
@@ -142,9 +152,9 @@ namespace FastBitmapLib
     public override unsafe void ReadScanLineUnsafe(int x, int y, int w, ulong* destPixels)
     {
 #if DEBUG
-      fixed (ulong* ptr = &pixels[x + y * width])
+      fixed (ulong* ptr = &pixels[x + (long)y * width])
 #else
-      var ptr = &pixels[x + y * width];
+      var ptr = &pixels[x + (long)y * width];
 #endif
       {
         for (int i = 0; i < w; i++) destPixels[i] = ptr[i];
