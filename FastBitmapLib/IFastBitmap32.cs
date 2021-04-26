@@ -331,7 +331,7 @@ namespace FastBitmapLib
     public override void ReadScanLine(int x, int y, int w, ColorType[] destPixels, int destPixelOffset = 0)
     {
       if (destPixels == null) throw new ArgumentNullException("destPixels");
-      if (destPixelOffset < 0 || destPixelOffset + width > destPixels.Length) throw new ArgumentOutOfRangeException();
+      if (destPixelOffset < 0 || destPixelOffset + w > destPixels.Length) throw new ArgumentOutOfRangeException();
       if (w < 1) return;
       fixed (ColorType* ptr = &destPixels[destPixelOffset])
       {

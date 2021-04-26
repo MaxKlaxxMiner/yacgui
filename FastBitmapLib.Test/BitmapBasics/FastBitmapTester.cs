@@ -522,6 +522,7 @@ namespace FastBitmapLib.Test.BitmapBasics
             int posX = rnd.Next(b.width);
             int posY = rnd.Next(b.height);
             int w = rnd.Next(b.width - posX);
+            if (w == 0) continue;
             b.FillScanlineUnsafe(posX, posY, w, Color32.From(Get32(rnd), false));
           }
           return "FillScanlineUnsafe32 - random";
@@ -624,6 +625,7 @@ namespace FastBitmapLib.Test.BitmapBasics
             int posX = rnd.Next(b.width);
             int posY = rnd.Next(b.height);
             int w = rnd.Next(b.width - posX);
+            if (w == 0) continue;
             b.FillScanlineUnsafe(posX, posY, w, Color64.From(Get64(rnd), false));
           }
           return "FillScanlineUnsafe64 - random";
@@ -710,6 +712,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int posY = rnd.Next(b.height);
               int w = rnd.Next(b.width - posX);
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               Fill(buf, Color32.From(Get32(rnd), false));
               b.WriteScanLineUnsafe(posX, posY, w, ptr);
             }
@@ -729,6 +732,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int posY = rnd.Next(b.height);
               int w = rnd.Next(b.width - posX);
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               b.WriteScanLineUnsafe(posX, posY, w, ptr);
             }
           }
@@ -832,6 +836,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int w = rnd.Next(b.width - posX);
               Fill(buf, Color64.From(Get64(rnd), false));
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               b.WriteScanLineUnsafe(posX, posY, w, ptr);
             }
           }
@@ -850,6 +855,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int posY = rnd.Next(b.height);
               int w = rnd.Next(b.width - posX);
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               b.WriteScanLineUnsafe(posX, posY, w, ptr);
             }
           }
@@ -972,6 +978,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int posY = rnd.Next(b.height);
               int w = rnd.Next(b.width - posX);
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               b.ReadScanLineUnsafe(posX, posY, w, ptr);
               if (rnd.Next(2) == 0)
               {
@@ -1161,6 +1168,7 @@ namespace FastBitmapLib.Test.BitmapBasics
               int posY = rnd.Next(b.height);
               int w = rnd.Next(b.width - posX);
               if (w > buf.Length) throw new IndexOutOfRangeException();
+              if (w == 0) continue;
               b.ReadScanLineUnsafe(posX, posY, w, ptr);
               if (rnd.Next(2) == 0)
               {

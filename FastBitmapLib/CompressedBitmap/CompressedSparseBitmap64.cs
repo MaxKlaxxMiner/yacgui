@@ -16,7 +16,7 @@ namespace FastBitmapLib
   /// <summary>
   /// Compressed-Version of FastBitmap for sparse filled pictures
   /// </summary>
-  public unsafe class CompressedSparseBitmap : IFastBitmap32
+  public unsafe class CompressedSparseBitmap64 : IFastBitmapSimple64
   {
     readonly MiniMemoryManager mem;
     readonly MiniMemoryManager.Entry[] memIndex;
@@ -28,14 +28,14 @@ namespace FastBitmapLib
     /// <param name="width">Width in pixels</param>
     /// <param name="height">Height in pixels</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public CompressedSparseBitmap(int width, int height, uint backgroundColor = 0x00000000)
+    public CompressedSparseBitmap64(int width, int height, ulong backgroundColor = 0x0000000000000000)
       : base(width, height, backgroundColor)
     {
       mem = new MiniMemoryManager();
       memIndex = new MiniMemoryManager.Entry[height + 1];
-      memIndex[height] = mem.Alloc((uint)width * sizeof(uint) * 2); // last line = comp-cache + comp-overhead
+      memIndex[height] = mem.Alloc((uint)width * sizeof(ulong) + (uint)width * sizeof(uint)); // last line = comp-cache + comp-overhead
 
-      uint[] emptyLine = { backgroundColor, (uint)width };
+      uint[] emptyLine = { (uint)backgroundColor, (uint)(backgroundColor >> 32), (uint)width };
       uint compressedSize = (uint)emptyLine.Length * sizeof(uint);
 
       fixed (uint* ptr = emptyLine)
@@ -57,7 +57,7 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public CompressedSparseBitmap(IFastBitmap bitmap, uint backgroundColor = 0x00000000)
+    public CompressedSparseBitmap64(IFastBitmap bitmap, ulong backgroundColor = 0x0000000000000000)
       : this(bitmap.width, bitmap.height, backgroundColor)
     {
       CopyFromBitmap(bitmap);
@@ -68,7 +68,7 @@ namespace FastBitmapLib
     /// </summary>
     /// <param name="bitmap">Bitmap to be used</param>
     /// <param name="backgroundColor">Optional: Background-Color, default: 100% transparency</param>
-    public CompressedSparseBitmap(Bitmap bitmap, uint backgroundColor = 0x00000000)
+    public CompressedSparseBitmap64(Bitmap bitmap, ulong backgroundColor = 0x0000000000000000)
       : this(bitmap.Width, bitmap.Height, backgroundColor)
     {
       CopyFromGDIBitmap(bitmap);
@@ -137,7 +137,7 @@ namespace FastBitmapLib
     {
       get
       {
-        return (ulong)width * (ulong)height * sizeof(uint);
+        return (ulong)width * (ulong)height * sizeof(ulong);
       }
     }
     #endregion
@@ -145,14 +145,14 @@ namespace FastBitmapLib
     #region # // --- Helper methods ---
     void CopyComp(byte* srcPtr, ulong destOfs, ulong len)
     {
-      Debug.Assert(len % 8 == 0);
+      Debug.Assert(len % 4 == 0);
 
       fixed (byte* destPtr = &mem.data[destOfs])
       {
-        len >>= 3;
+        len >>= 2;
         for (uint i = 0; i < len; i++)
         {
-          *((ulong*)destPtr + i) = *((ulong*)srcPtr + i);
+          *((uint*)destPtr + i) = *((uint*)srcPtr + i);
         }
 
 #if ExtraDebugValidation && DEBUG
@@ -160,31 +160,31 @@ namespace FastBitmapLib
         uint cx = 0;
         for (; cx < width; )
         {
-          srcP += sizeof(uint); // skip color
+          srcP += sizeof(ulong); // skip color
           uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           cx += srcCount;
           Debug.Assert(cx <= width);
         }
         Debug.Assert(cx == width);
-        Debug.Assert(srcP == len * 8);
+        Debug.Assert(srcP == len * 4);
 #endif
       }
     }
     #endregion
 
-    #region # // --- IFastBitmap32 ---
+    #region # // --- IFastBitmap64 ---
     /// <summary>
     /// Set the pixel color at a specific position (without boundary check)
     /// </summary>
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="color">Pixel color</param>
-    public override void SetPixelUnsafe(int x, int y, uint color)
+    public override void SetPixelUnsafe(int x, int y, ulong color)
     {
       fixed (byte* srcPtr = &mem.data[memIndex[y].ofs], destPtr = &mem.data[memIndex[height].ofs])
       {
         uint srcP = 0;
-        uint srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+        ulong srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
         uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
         uint destP = 0;
 
@@ -195,11 +195,11 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           uint copyCount = Math.Min((uint)x - cx, srcCount);
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = copyCount; destP += sizeof(uint);
           cx += copyCount;
           srcCount -= copyCount;
@@ -209,12 +209,12 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           cx++;
           srcCount--;
-          *(uint*)(destPtr + destP) = color; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = color; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = 1; destP += sizeof(uint);
         }
 
@@ -223,10 +223,10 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = srcCount; destP += sizeof(uint);
           cx += srcCount;
           srcCount = 0;
@@ -245,7 +245,7 @@ namespace FastBitmapLib
     /// <param name="x">X-Pos (column)</param>
     /// <param name="y">Y-Pos (line)</param>
     /// <returns>Pixel color</returns>
-    public override uint GetPixelUnsafe32(int x, int y)
+    public override ulong GetPixelUnsafe64(int x, int y)
     {
       fixed (byte* srcPtr = &mem.data[memIndex[y].ofs])
       {
@@ -255,7 +255,7 @@ namespace FastBitmapLib
         // --- decode ---
         for (; ; )
         {
-          uint srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+          ulong srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
           uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           cx += srcCount;
           if (cx > x) return srcColor;
@@ -271,12 +271,12 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="color">fill-color</param>
-    public override void FillScanlineUnsafe(int x, int y, int w, uint color)
+    public override void FillScanlineUnsafe(int x, int y, int w, ulong color)
     {
       fixed (byte* srcPtr = &mem.data[memIndex[y].ofs], destPtr = &mem.data[memIndex[height].ofs])
       {
         uint srcP = 0;
-        uint srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+        ulong srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
         uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
         uint destP = 0;
 
@@ -287,25 +287,25 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           uint copyCount = Math.Min((uint)x - cx, srcCount);
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = copyCount; destP += sizeof(uint);
           cx += copyCount;
           srcCount -= copyCount;
         }
 
         // --- set middle ---
-        *(uint*)(destPtr + destP) = color; destP += sizeof(uint);
+        *(ulong*)(destPtr + destP) = color; destP += sizeof(ulong);
         *(uint*)(destPtr + destP) = (uint)w; destP += sizeof(uint);
         x += w;
         for (; cx < x; )
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           uint stepX = Math.Min((uint)x - cx, srcCount);
@@ -318,10 +318,10 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = srcCount; destP += sizeof(uint);
           cx += srcCount;
           srcCount = 0;
@@ -341,12 +341,12 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="srcPixels">Pointer at Source array of pixels</param>
-    public override void WriteScanLineUnsafe(int x, int y, int w, uint* srcPixels)
+    public override void WriteScanLineUnsafe(int x, int y, int w, ulong* srcPixels)
     {
       fixed (byte* srcPtr = &mem.data[memIndex[y].ofs], destPtr = &mem.data[memIndex[height].ofs])
       {
         uint srcP = 0;
-        uint srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+        ulong srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
         uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
         uint destP = 0;
 
@@ -357,11 +357,11 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           uint copyCount = Math.Min((uint)x - cx, srcCount);
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = copyCount; destP += sizeof(uint);
           cx += copyCount;
           srcCount -= copyCount;
@@ -370,13 +370,13 @@ namespace FastBitmapLib
         // --- set middle ---
         Debug.Assert(w > 0);
         x += w;
-        uint color = *srcPixels++;
-        *(uint*)(destPtr + destP) = color; destP += sizeof(uint);
+        ulong color = *srcPixels++;
+        *(ulong*)(destPtr + destP) = color; destP += sizeof(ulong);
         *(uint*)(destPtr + destP) = 1; destP += sizeof(uint);
         w--;
         for (; w > 0; w--)
         {
-          uint color2 = *srcPixels++;
+          ulong color2 = *srcPixels++;
           if (color2 == color)
           {
             ((uint*)(destPtr + destP - sizeof(uint)))[0]++;
@@ -384,7 +384,7 @@ namespace FastBitmapLib
           else
           {
             color = color2;
-            *(uint*)(destPtr + destP) = color; destP += sizeof(uint);
+            *(ulong*)(destPtr + destP) = color; destP += sizeof(ulong);
             *(uint*)(destPtr + destP) = 1; destP += sizeof(uint);
           }
         }
@@ -392,7 +392,7 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
           uint stepX = Math.Min((uint)x - cx, srcCount);
@@ -405,10 +405,10 @@ namespace FastBitmapLib
         {
           if (srcCount == 0)
           {
-            srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+            srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
             srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           }
-          *(uint*)(destPtr + destP) = srcColor; destP += sizeof(uint);
+          *(ulong*)(destPtr + destP) = srcColor; destP += sizeof(ulong);
           *(uint*)(destPtr + destP) = srcCount; destP += sizeof(uint);
           cx += srcCount;
           srcCount = 0;
@@ -428,7 +428,7 @@ namespace FastBitmapLib
     /// <param name="y">Y-Pos (line)</param>
     /// <param name="w">width</param>
     /// <param name="destPixels">Pointer at Destination array to write pixels</param>
-    public override void ReadScanLineUnsafe(int x, int y, int w, uint* destPixels)
+    public override void ReadScanLineUnsafe(int x, int y, int w, ulong* destPixels)
     {
       fixed (byte* srcPtr = &mem.data[memIndex[y].ofs])
       {
@@ -438,7 +438,7 @@ namespace FastBitmapLib
         // --- decode ---
         for (; ; )
         {
-          uint srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+          ulong srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
           uint srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
           cx += srcCount;
           if (cx > x)
@@ -448,7 +448,7 @@ namespace FastBitmapLib
             {
               if (srcCount == 0)
               {
-                srcColor = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
+                srcColor = *(ulong*)(srcPtr + srcP); srcP += sizeof(ulong);
                 srcCount = *(uint*)(srcPtr + srcP); srcP += sizeof(uint);
               }
 
