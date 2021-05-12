@@ -1,11 +1,14 @@
 ﻿#define AllowUnsafeValues
 //#define SupportValidation
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 #if SupportValidation
 using System.Linq;
 using System.Text;
@@ -104,6 +107,19 @@ namespace FastBitmapLib.Extras
     }
   }
 
+  /// <summary>
+  /// Debug-View
+  /// </summary>
+  internal sealed class DebugViewCollection<T>
+  {
+    readonly ICollection<T> collection;
+    public DebugViewCollection(IList<T> collection) { if (collection == null) throw new NullReferenceException(); this.collection = collection; }
+    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+    public T[] Items { get { var items = new T[collection.Count]; collection.CopyTo(items, 0); return items; } }
+  }
+
+  [DebuggerTypeProxy(typeof(DebugViewCollection<>))]
+  [DebuggerDisplay("Count = {Count}, InternalArray[{dataRaw.Length}]")]
   public class BucketList<T> : IList<T>
   {
     /// <summary>
@@ -304,19 +320,36 @@ namespace FastBitmapLib.Extras
       buckets[srcBucket] = default(BucketListBucket);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void MemCopyForward(byte* dest, byte* src, int count)
+    {
+      Debug.Assert(dest <= src);
+
+      uint to = (uint)count >> 3;
+      for (uint i = 0; i < to; i++)
+      {
+        *((ulong*)dest + i) = *((ulong*)src + i);
+      }
+      uint ofs = to << 3;
+      for (; ofs < (uint)count; ofs++)
+      {
+        dest[ofs] = src[ofs];
+      }
+    }
+
     /// <summary>
     /// Move Data-Elements (and zero old values)
     /// </summary>
     /// <param name="srcOffset">Source-Offset in Data Array</param>
     /// <param name="destOffset">Destination-Offset in Date Array</param>
     /// <param name="count">Element-Count</param>
-    void MoveDataLeft(int srcOffset, int destOffset, int count)
+    unsafe void MoveDataLeft(int srcOffset, int destOffset, int count)
     {
       Debug.Assert(srcOffset > destOffset);
 
       if (UnsafeMode)
       {
-        UnsafeHelper.MemCopyForward(unsafeDataPinned + destOffset * UnsafeSize, unsafeDataPinned + srcOffset * UnsafeSize, count * UnsafeSize);
+        MemCopyForward((byte*)(unsafeDataPinned + destOffset * UnsafeSize), (byte*)(unsafeDataPinned + srcOffset * UnsafeSize), count * UnsafeSize);
       }
       else
       {
@@ -329,19 +362,35 @@ namespace FastBitmapLib.Extras
       }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void MemCopyBackward(byte* dest, byte* src, int count)
+    {
+      Debug.Assert(dest >= src);
+
+      for (; count > 7; count -= sizeof(ulong))
+      {
+        *(ulong*)(dest + count - 7) = *(ulong*)(src + count - 7);
+      }
+
+      for (; count >= 0; count--)
+      {
+        dest[count] = src[count];
+      }
+    }
+
     /// <summary>
     /// Move Data-Elements (and zero old values)
     /// </summary>
     /// <param name="srcOffset">Source-Offset in Data Array</param>
     /// <param name="destOffset">Destination-Offset in Date Array</param>
     /// <param name="count">Element-Count</param>
-    void MoveDataRight(int srcOffset, int destOffset, int count)
+    unsafe void MoveDataRight(int srcOffset, int destOffset, int count)
     {
       Debug.Assert(srcOffset < destOffset);
 
       if (UnsafeMode)
       {
-        UnsafeHelper.MemCopyBackward(unsafeDataPinned + destOffset * UnsafeSize, unsafeDataPinned + srcOffset * UnsafeSize, count * UnsafeSize);
+        MemCopyBackward((byte*)(unsafeDataPinned + destOffset * UnsafeSize), (byte*)(unsafeDataPinned + srcOffset * UnsafeSize), count * UnsafeSize);
       }
       else
       {
@@ -457,11 +506,13 @@ namespace FastBitmapLib.Extras
     }
 
     /// <summary>
-    /// remove an empty bucket
+    /// remove an empty bucket and return next bucket
     /// </summary>
     /// <param name="bucket">Bucket to remove</param>
-    void RemoveEmptyBucket(int bucket)
+    /// <returns>next bucket</returns>
+    int RemoveEmptyBucket(int bucket)
     {
+      int next = buckets[bucket].next;
       for (; ; )
       {
         var b = buckets[bucket];
@@ -501,17 +552,20 @@ namespace FastBitmapLib.Extras
           Debug.Assert(nextRoot >= 0);
           Debug.Assert(buckets[nextRoot].prev == -1);
           MoveBucket(nextRoot, 0);
+          if (next == nextRoot) next = 0;
           bucket = nextRoot;
         }
         if (bucket < bucketsFill)
         {
           MoveBucket(bucketsFill, bucket);
+          if (next == bucketsFill) next = bucket;
         }
 
         if (nextEmptyBucket < 0) break;
 
         bucket = nextEmptyBucket;
       }
+      return next;
     }
 
     /// <summary>
@@ -541,11 +595,12 @@ namespace FastBitmapLib.Extras
     }
 
     /// <summary>
-    /// subtract from dataCount in bucket (inclusive parents)
+    /// subtract from dataCount in bucket (inclusive parents) and return next bucket
     /// </summary>
     /// <param name="bucket">Bucket to update</param>
     /// <param name="count">count to subtract</param>
-    void SubtractCount(int bucket, int count)
+    /// <returns>next bucket</returns>
+    int SubtractCount(int bucket, int count)
     {
       Debug.Assert((uint)bucket < bucketsFill);
       Debug.Assert(count > 0);
@@ -563,8 +618,9 @@ namespace FastBitmapLib.Extras
 
       if (buckets[bucket].dataCount == 0 && buckets[bucket].prev + buckets[bucket].next != -2)
       {
-        RemoveEmptyBucket(bucket);
+        return RemoveEmptyBucket(bucket);
       }
+      return buckets[bucket].next;
     }
 
     /// <summary>
@@ -821,6 +877,7 @@ namespace FastBitmapLib.Extras
     /// <returns>An enumerator that can be used to iterate through the collection.</returns>
     public IEnumerator<T> GetEnumerator()
     {
+      if (dataCount == 0) yield break;
       int firstIndex;
       int b = GetDataBucketFromIndex(0, out firstIndex);
       Debug.Assert(firstIndex == 0);
@@ -953,6 +1010,40 @@ namespace FastBitmapLib.Extras
       }
     }
 
+    /// <summary>Copies the elements of the <see cref="T:System.Collections.Generic.ICollection`1" /> to an <see cref="T:System.Array" />, starting at a particular <see cref="T:System.Array" /> index.</summary>
+    /// <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the elements copied from <see cref="T:System.Collections.Generic.ICollection`1" />. The <see cref="T:System.Array" /> must have zero-based indexing.</param>
+    /// <param name="arrayIndex">The zero-based index in <paramref name="array" /> at which copying begins.</param>
+    /// <param name="sourceIndex">source-offset</param>
+    /// <param name="itemCount">Count of Items</param>
+    /// <exception cref="T:System.ArgumentNullException">
+    /// <paramref name="array" /> is null.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">
+    /// <paramref name="arrayIndex" /> is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />.</exception>
+    public void CopyTo(T[] array, int arrayIndex, int sourceIndex, int itemCount)
+    {
+      if (array == null) throw new ArgumentNullException("array");
+      if (arrayIndex + itemCount > array.Length) throw new ArgumentOutOfRangeException("arrayIndex");
+      if ((uint)(sourceIndex + itemCount) > dataCount) throw new IndexOutOfRangeException("sourceIndex");
+
+      var bs = buckets;
+
+      int firstIndex;
+      int firstBucket = GetDataBucketFromIndex(sourceIndex, out firstIndex);
+      int copyItems = Math.Min(itemCount, bs[firstBucket].dataCount - firstIndex);
+      Array.Copy(dataRaw, bs[firstBucket].DataOffset + firstIndex, array, arrayIndex, copyItems);
+      itemCount -= copyItems;
+      arrayIndex += copyItems;
+
+      for (int bucket = bs[firstBucket].next; itemCount > 0; bucket = bs[bucket].next)
+      {
+        copyItems = Math.Min(itemCount, bs[bucket].dataCount);
+        Array.Copy(dataRaw, bs[bucket].DataOffset, array, arrayIndex, copyItems);
+        itemCount -= copyItems;
+        arrayIndex += copyItems;
+      }
+    }
+
     /// <summary>Gets or sets the element at the specified index.</summary>
     /// <returns>The element at the specified index.</returns>
     /// <param name="index">The zero-based index of the element to get or set.</param>
@@ -1012,34 +1103,22 @@ namespace FastBitmapLib.Extras
 
       int localIndex;
       int bucket = GetDataBucketFromIndex(index, out localIndex);
-      int next = buckets[bucket].next;
 
-      // --- remove first items --
+      // --- remove first items from bucket --
       if (localIndex > 0)
       {
         int removeItems = Math.Min(buckets[bucket].dataCount - localIndex, count);
         MoveDataLeft(buckets[bucket].DataOffset + localIndex + removeItems, buckets[bucket].DataOffset + localIndex, buckets[bucket].dataCount - localIndex - removeItems);
         if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataEndOffset - removeItems, removeItems); // clear last items
-        SubtractCount(bucket, removeItems);
+        bucket = SubtractCount(bucket, removeItems);
         count -= removeItems;
       }
-      else next = bucket;
 
       while (count > 0)
       {
-        if (next < bucketsFill)
-        {
-          bucket = next;
-        }
-        else
-        {
-          bucket = GetDataBucketFromIndex(index, out localIndex);
-          Debug.Assert(localIndex == 0);
-        }
-        next = buckets[bucket].next;
         Debug.Assert((uint)bucket < bucketsFill);
 
-        // --- remove last items ---
+        // --- remove last items from bucket ---
         if (count < buckets[bucket].dataCount)
         {
           MoveDataLeft(buckets[bucket].DataOffset + count, buckets[bucket].DataOffset, buckets[bucket].dataCount - count);
@@ -1048,10 +1127,10 @@ namespace FastBitmapLib.Extras
           break;
         }
 
-        // --- remove all items from a bucket ---
+        // --- remove all items from bucket ---
         if (NeedSafeData) Array.Clear(dataRaw, buckets[bucket].DataOffset, buckets[bucket].dataCount); // clear all items
         count -= buckets[bucket].dataCount;
-        SubtractCount(bucket, buckets[bucket].dataCount);
+        bucket = SubtractCount(bucket, buckets[bucket].dataCount);
       }
     }
 
