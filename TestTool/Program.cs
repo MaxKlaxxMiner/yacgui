@@ -48,8 +48,10 @@ namespace TestTool
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 
-      BitmapTests.Run();
+      //BitmapTests.Run();
       //MemTest();
+
+
     }
   }
 }

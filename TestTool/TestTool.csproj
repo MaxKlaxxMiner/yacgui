@@ -73,6 +73,10 @@
       <Project>{b92376ad-1c93-4080-9624-a2e818fc3b7d}</Project>
       <Name>FastBitmapLib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\YacGui.Core\YacGui.Core.csproj">
+      <Project>{f772d1f5-2e5c-4246-a80a-ef7293dfdcb2}</Project>
+      <Name>YacGui.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\YacGui.csproj">
       <Project>{96665a66-ba7d-41dd-ab74-63d7631a296a}</Project>
       <Name>YacGui</Name>

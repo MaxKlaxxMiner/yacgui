@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBitmapLib", "FastBitmap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBitmapLib.Test", "FastBitmapLib.Test\FastBitmapLib.Test.csproj", "{46788B1A-44B2-4E52-A34F-A2904F7158D4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YacGui.Core", "YacGui.Core\YacGui.Core.csproj", "{F772D1F5-2E5C-4246-A80A-EF7293DFDCB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YacGui.Core.Test", "YacGui.Core.Test\YacGui.Core.Test.csproj", "{4078A0BF-AFF8-43CF-9F2F-14E6F4FD0AB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{46788B1A-44B2-4E52-A34F-A2904F7158D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46788B1A-44B2-4E52-A34F-A2904F7158D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46788B1A-44B2-4E52-A34F-A2904F7158D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F772D1F5-2E5C-4246-A80A-EF7293DFDCB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F772D1F5-2E5C-4246-A80A-EF7293DFDCB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F772D1F5-2E5C-4246-A80A-EF7293DFDCB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F772D1F5-2E5C-4246-A80A-EF7293DFDCB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4078A0BF-AFF8-43CF-9F2F-14E6F4FD0AB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4078A0BF-AFF8-43CF-9F2F-14E6F4FD0AB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4078A0BF-AFF8-43CF-9F2F-14E6F4FD0AB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4078A0BF-AFF8-43CF-9F2F-14E6F4FD0AB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
