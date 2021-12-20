@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -39,8 +41,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extras\LinqHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SimpleBoard\Board.cs" />
+    <Compile Include="SimpleBoard\BoardInfo.cs" />
+    <Compile Include="SimpleBoard\BoardTools.cs" />
+    <Compile Include="Extras\Crc64.cs" />
+    <Compile Include="SimpleBoard\IBoard.cs" />
+    <Compile Include="SimpleBoard\Move.cs" />
+    <Compile Include="SimpleBoard\MoveList.cs" />
+    <Compile Include="SimpleBoard\MoveListSingle.cs" />
+    <Compile Include="SimpleBoard\Piece.cs" />
+    <Compile Include="SimpleBoard\Scanner.cs" />
+    <Compile Include="Extras\Tools.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

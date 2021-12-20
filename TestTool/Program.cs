@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using FastBitmapLib;
 using FastBitmapLib.Extras;
 using YacGui;
+using YacGui.Core.SimpleBoard;
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMember.Local
 // ReSharper disable FieldCanBeMadeReadOnly.Local
@@ -51,7 +53,17 @@ namespace TestTool
       //BitmapTests.Run();
       //MemTest();
 
+      var board = new Board();
+      board.SetFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+      board.PrintBoard();
+      Console.WriteLine();
 
+      var moves = board.GetMovesArray();
+      for (int i = 0; i < moves.Length; i++)
+      {
+        Console.WriteLine("{0,6} {1}", i + 1, moves[i]);
+      }
+      Console.WriteLine();
     }
   }
 }
