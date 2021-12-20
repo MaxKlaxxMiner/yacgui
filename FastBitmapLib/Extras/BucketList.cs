@@ -16,11 +16,19 @@ using System.Text;
 
 namespace FastBitmapLib.Extras
 {
+  internal sealed class DebugViewCollection<T>
+  {
+    readonly ICollection<T> collection;
+    public DebugViewCollection(IList<T> collection) { if (collection == null) throw new NullReferenceException(); this.collection = collection; }
+    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+    public T[] Items { get { var items = new T[collection.Count]; collection.CopyTo(items, 0); return items; } }
+  }
+
   /// <summary>
   /// Bucket-Struct
   /// </summary>
   [StructLayout(LayoutKind.Explicit, Size = 20)]
-  public struct BucketListBucket
+  internal struct BucketListBucket
   {
     /// <summary>
     /// total containing data count
@@ -105,17 +113,6 @@ namespace FastBitmapLib.Extras
         ? new { dataCount, prev, next, parent, DataOffset }.ToString()
         : new { dataCount, prev, next, parent, childStart }.ToString();
     }
-  }
-
-  /// <summary>
-  /// Debug-View
-  /// </summary>
-  internal sealed class DebugViewCollection<T>
-  {
-    readonly ICollection<T> collection;
-    public DebugViewCollection(IList<T> collection) { if (collection == null) throw new NullReferenceException(); this.collection = collection; }
-    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    public T[] Items { get { var items = new T[collection.Count]; collection.CopyTo(items, 0); return items; } }
   }
 
   [DebuggerTypeProxy(typeof(DebugViewCollection<>))]
@@ -209,6 +206,36 @@ namespace FastBitmapLib.Extras
       bucketsReserved = 1;
       buckets = new BucketListBucket[bucketsReserved];
       Clear();
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="items">current items</param>
+    public BucketList(IEnumerable<T> items)
+    {
+      if (items == null) throw new ArgumentNullException("items");
+
+      var icollection = items as ICollection<T>;
+      if (icollection != null && icollection.Count > MaxBucketSize)
+      {
+        int minData = bucketsReserved = (icollection.Count + MaxBucketSize) / MaxBucketSize * MaxBucketSize;
+        dataRaw = new T[minData];
+      }
+      else
+      {
+        dataRaw = new T[MaxBucketSize];
+      }
+      if (UnsafeMode)
+      {
+        unsafeDataPinnedHandle = GCHandle.Alloc(dataRaw, GCHandleType.Pinned);
+        unsafeDataPinned = (long)unsafeDataPinnedHandle.AddrOfPinnedObject();
+      }
+      bucketsReserved = 1;
+      buckets = new BucketListBucket[bucketsReserved];
+      Clear();
+
+      AddRange(items);
     }
 
     ~BucketList()
@@ -972,7 +999,8 @@ namespace FastBitmapLib.Extras
       var bs = buckets;
 
       var equalityComparer = EqualityComparer<T>.Default;
-      for (int bucket = 0, index = 0; bucket >= 0; bucket = bs[bucket].next)
+      int firstIndex;
+      for (int bucket = GetDataBucketFromIndex(0, out firstIndex), index = 0; bucket >= 0; bucket = bs[bucket].next)
       {
         int end = bs[bucket].DataEndOffset;
         for (int i = bs[bucket].DataOffset; i < end; i++)
