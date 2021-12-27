@@ -44,26 +44,74 @@ namespace TestTool
   class Program : ConsoleExtras
   {
     /// <summary>
+    /// Matt in 14 mit Turm (alle Schritte)
+    /// </summary>
+    static readonly string[] MatesWithRook =
+    {
+      "8/8/8/4k3/8/8/8/4K2R w - - 0 1",    // -M0 (no moves = Mate)
+      "8/8/8/4k2R/8/8/8/4K3 b - - 1 1",    // +M1
+      "8/8/4k3/7R/8/8/8/4K3 w - - 2 2",    // -M1
+      "8/8/4k3/7R/8/8/4K3/8 b - - 3 2",    // +M2
+      "8/8/3k4/7R/8/8/4K3/8 w - - 4 3",    // -M2
+      "8/8/3k4/7R/8/3K4/8/8 b - - 5 3",    // +M3
+      "8/8/2k5/7R/8/3K4/8/8 w - - 6 4",    // -M3
+      "8/8/2k5/7R/3K4/8/8/8 b - - 7 4",    // +M4
+      "8/8/3k4/7R/3K4/8/8/8 w - - 8 5",    // -M4
+      "8/8/3k3R/8/3K4/8/8/8 b - - 9 5",    // +M5
+      "8/4k3/7R/8/3K4/8/8/8 w - - 10 6",   // -M5
+      "8/4k3/7R/3K4/8/8/8/8 b - - 11 6",   // +M6
+      "8/5k2/7R/3K4/8/8/8/8 w - - 12 7",   // -M6
+      "8/5k2/7R/4K3/8/8/8/8 b - - 13 7",   // +M7
+      "8/6k1/7R/4K3/8/8/8/8 w - - 14 8",   // -M7
+      "8/6k1/5R2/4K3/8/8/8/8 b - - 15 8",  // +M8
+      "8/7k/5R2/4K3/8/8/8/8 w - - 16 9",   // -M8
+      "8/7k/5R2/5K2/8/8/8/8 b - - 17 9",   // +M9
+      "8/6k1/5R2/5K2/8/8/8/8 w - - 18 10", // -M9
+      "8/6k1/5R2/6K1/8/8/8/8 b - - 19 10", // +M10
+      "8/7k/5R2/6K1/8/8/8/8 w - - 20 11",  // -M10
+      "8/5R1k/8/6K1/8/8/8/8 b - - 21 11",  // +M11
+      "7k/5R2/8/6K1/8/8/8/8 w - - 22 12",  // -M11
+      "7k/5R2/5K2/8/8/8/8/8 b - - 23 12",  // +M12
+      "6k1/5R2/5K2/8/8/8/8/8 w - - 24 13", // -M12
+      "6k1/5R2/6K1/8/8/8/8/8 b - - 25 13", // +M13
+      "7k/5R2/6K1/8/8/8/8/8 w - - 26 14",  // -M13
+      "5R1k/8/6K1/8/8/8/8/8 b - - 27 14"   // +M14
+    };
+
+    static void MateScan()
+    {
+      var board = new Board();
+      //board.SetFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); // Startaufstellung
+
+      //board.SetFEN("8/8/8/4k3/8/Q7/Q7/K7 w - - 0 1"); // Dame + Dame Mattsuche (Matt in 3)
+      //board.SetFEN("8/8/8/4k3/8/Q7/R7/K7 w - - 0 1"); // Dame + Turm Mattsuche (Matt in 5)
+      //board.SetFEN("8/8/8/4k3/8/R7/R7/K7 w - - 0 1"); // Turm + Turm Mattsuche (Matt in 7)
+      //board.SetFEN("7k/5n2/8/8/8/8/5Q2/K7 w - - 0 1"); // Dame Mattsuche (Matt in 12)
+      //board.SetFEN("8/5rK1/6R1/8/4k3/8/8/8 w - - 0 1"); // Turm Mattsuche (Matt in 15)
+      //board.SetFEN("8/8/4k3/8/8/8/8/K2BB3 w - - 0 1"); // Läufer + Läufer Mattsuche (Matt in 17)
+      //board.SetFEN("8/8/8/8/3k4/8/N7/KB6 w - - 0 1"); // Läufer + Springer Mattsuche (Matt in 31)
+      //board.SetFEN("8/8/4k3/3bn3/8/4Q3/8/K7 w - - 0 1"); // Dame gegen Läufer + Springer Mattsuche (Matt in 39)
+      //board.SetFEN("5k2/5P1P/4P3/pP6/P6q/3P2P1/2P5/K7 w - a6 0 1"); // Bauern-Test (Matt in 6)
+
+      for (int i = 0; i < MatesWithRook.Length; i++)
+      {
+        board.SetFEN(MatesWithRook[i]);
+
+      }
+
+    }
+
+    /// <summary>
     /// TestTool program entry
     /// </summary>
     static void Main()
     {
       ConsoleHead("Test Tool: " + MainForm.FullName);
 
+      MateScan();
+
       //BitmapTests.Run();
       //MemTest();
-
-      var board = new Board();
-      board.SetFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-      board.PrintBoard();
-      Console.WriteLine();
-
-      var moves = board.GetMovesArray();
-      for (int i = 0; i < moves.Length; i++)
-      {
-        Console.WriteLine("{0,6} {1}", i + 1, moves[i]);
-      }
-      Console.WriteLine();
     }
   }
 }

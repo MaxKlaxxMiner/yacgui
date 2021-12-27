@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extras\LinqHelper.cs" />
+    <Compile Include="MateScanner\MateScanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleBoard\Board.cs" />
     <Compile Include="SimpleBoard\BoardInfo.cs" />
