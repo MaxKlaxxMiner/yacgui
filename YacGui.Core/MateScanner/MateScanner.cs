@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using YacGui.Core.SimpleBoard;
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
@@ -58,6 +59,11 @@ namespace YacGui.Core
     }
 
     /// <summary>
+    /// Positionsangaben des Schachbrettes sortiert um schneller (abwechselnd) weiße und schwarze Figuren schneller auf dem Brett zu finden
+    /// </summary>
+    static readonly int[] MaterialCheckPosOrder = Enumerable.Range(0, IBoard.Width * IBoard.Height).Select(x => x % 2 == 0 ? x / 2 : IBoard.Width * IBoard.Height - 1 - x / 2).ToArray();
+
+    /// <summary>
     /// prüft den Status des Schachbrettes (ob z.B. bereits Matt gesetzt wurde)
     /// </summary>
     /// <param name="board">Spielbrett, welches geprüft werden soll</param>
@@ -70,8 +76,8 @@ namespace YacGui.Core
         if (board.IsMate()) // wurde Matt gesetzt?
         {
           return board.WhiteMove
-            ? Result.WhiteWins | Result.BlackCannotWin
-            : Result.BlackWins | Result.WhiteCannotWin;
+            ? Result.BlackWins | Result.WhiteCannotWin
+            : Result.WhiteWins | Result.BlackCannotWin;
         }
 
         // Patt = Remis
@@ -80,7 +86,31 @@ namespace YacGui.Core
 
       if (checkMaterial)
       {
-        throw new NotImplementedException();
+        int materialWhite = 0;
+        int materialBlack = 0;
+        for (int i = 0; i < MaterialCheckPosOrder.Length; i++)
+        {
+          var piece = board.GetField(MaterialCheckPosOrder[i]);
+          if (piece == Piece.None) continue;
+          switch (piece)
+          {
+            case Piece.WhiteQueen:
+            case Piece.WhiteRook:
+            case Piece.WhitePawn: materialWhite += 3; if (materialBlack > 2) i = IBoard.Width * IBoard.Height; break;
+            case Piece.WhiteBishop: materialWhite += 2; if (materialBlack > 2 && materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
+            case Piece.WhiteKnight: materialWhite++; if (materialBlack > 2 && materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
+
+            case Piece.BlackQueen:
+            case Piece.BlackRook:
+            case Piece.BlackPawn: materialBlack += 3; if (materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
+            case Piece.BlackBishop: materialBlack += 2; if (materialWhite > 2 && materialBlack > 2) i = IBoard.Width * IBoard.Height; break;
+            case Piece.BlackKnight: materialBlack++; if (materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
+          }
+        }
+        var state = Result.Unknown;
+        if (materialWhite < 3) state |= Result.WhiteCannotWin;
+        if (materialBlack < 3) state |= Result.BlackCannotWin;
+        return state;
       }
 
       return Result.Unknown;
@@ -99,9 +129,14 @@ namespace YacGui.Core
       var b = new Board();
       b.SetFEN(board.GetFEN());
 
-      var state = CheckSimpleState(board);
+      var state = CheckSimpleState(board, true);
 
-      return new KeyValuePair<Result, Move>(Result.Unknown, default(Move));
+      if ((state & Result.MaskWins) != 0 || (state & Result.MaskCannotWin) == Result.MaskCannotWin) // Spielende wurde bereits erreicht?
+      {
+        return new KeyValuePair<Result, Move>(state, default(Move));
+      }
+
+      return new KeyValuePair<Result, Move>(state, default(Move));
     }
   }
 }
