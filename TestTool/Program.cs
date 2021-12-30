@@ -94,19 +94,19 @@ namespace TestTool
       //board.SetFEN("8/8/4k3/3bn3/8/4Q3/8/K7 w - - 0 1"); // Dame gegen Läufer + Springer Mattsuche (Matt in 39)
       //board.SetFEN("5k2/5P1P/4P3/pP6/P6q/3P2P1/2P5/K7 w - a6 0 1"); // Bauern-Test (Matt in 6)
 
-      board.SetFEN("8/8/8/8/3k4/8/NN6/KN6 w - - 0 1"); // drei Springer vorhanden (Matt in 18)
+      //board.SetFEN("8/8/8/8/3k4/8/NN6/KN6 w - - 0 1"); // drei Springer vorhanden (Matt in 18)
       //board.SetFEN("8/8/8/8/3k4/8/N7/KN6 w - - 0 1"); // nur zwei Springer vorhanden = Remis
       //board.SetFEN("8/8/8/8/3k4/8/N7/K7 w - - 0 1"); // nur ein Springer vorhanden = Remis
       //board.SetFEN("8/8/8/8/3k4/8/8/K7 w - - 0 1"); // keine Figur mehr vorhanden = Remis
 
-      var result = MateScanner.RunScan(board);
+      //var result = MateScanner.RunScan(board);
 
-      //for (int i = 0; i < MatesWithRook.Length; i++)
-      //{
-      //  board.SetFEN(MatesWithRook[i]);
-      //  var result = MateScanner.RunScan(board);
-      //}
-
+      for (int i = 0; i < MatesWithRook.Length; i++)
+      {
+        board.SetFEN(MatesWithRook[i]);
+        var result = MateScanner.RunScan(board);
+        Console.WriteLine("Check {0} = {1}", i, result.TxtInfo());
+      }
     }
 
     /// <summary>
