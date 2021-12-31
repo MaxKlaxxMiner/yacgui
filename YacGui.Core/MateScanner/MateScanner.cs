@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using YacGui.Core.SimpleBoard;
-// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 // ReSharper disable RedundantIfElseBlock
 // ReSharper disable MemberCanBePrivate.Local
-// ReSharper disable NotAccessedField.Local
-// ReSharper disable CollectionNeverQueried.Local
-// ReSharper disable ConditionIsAlwaysTrueOrFalse
-// ReSharper disable UnusedType.Local
-// ReSharper disable UseObjectOrCollectionInitializer
-#pragma warning disable 219
+// ReSharper disable FieldCanBeMadeReadOnly.Local
 
 namespace YacGui.Core
 {
@@ -25,44 +20,43 @@ namespace YacGui.Core
     /// bewertetes Ergebnis, welche eine Stellung annehmen kann
     /// </summary>
     [Flags]
-    public enum Result : ushort
+    public enum ResultState : ushort
     {
       /// <summary>
       /// Ergebnis unbekannt
       /// </summary>
       None = 0x0000,
+
       /// <summary>
-      /// Bitmaske für das Ergebnis
+      /// gesamte Status-Maske
       /// </summary>
-      MaskResult = 0xf000,
+      ResultMask = WinMask | CannotWinMask,
+
       /// <summary>
       /// Bitmaske für die Marker "garantierte Gewinnmöglichkeit"
       /// </summary>
-      MaskWins = 0xa000,
-      /// <summary>
-      /// Bitmaske für die Marker "keine Gewinnmöglichkeit"
-      /// </summary>
-      MaskCannotWin = 0x3000,
+      WinMask = WhiteWins | BlackWins,
       /// <summary>
       /// Weiß gewinnt in x Halbzügen
       /// </summary>
       WhiteWins = 0x8000,
       /// <summary>
-      /// Weiß kann nicht mehr gewinnen
-      /// </summary>
-      WhiteCannotWin = 0x4000,
-      /// <summary>
       /// Schwarz gewinnt in x Halbzügen
       /// </summary>
-      BlackWins = 0x2000,
+      BlackWins = 0x4000,
+
+      /// <summary>
+      /// Bitmaske für die Marker "keine Gewinnmöglichkeit" - Remis in x Halbzügen
+      /// </summary>
+      CannotWinMask = WhiteCannotWin | BlackCannotWin,
+      /// <summary>
+      /// Weiß kann nicht mehr gewinnen
+      /// </summary>
+      WhiteCannotWin = 0x2000,
       /// <summary>
       /// Schwarz kann nicht mehr gewinnen
       /// </summary>
       BlackCannotWin = 0x1000,
-      /// <summary>
-      /// Remis wird in x Halbzügen erreicht
-      /// </summary>
-      Remis = WhiteWins | BlackWins,
 
       /// <summary>
       /// Bitmaske für die Anzahl der Halbzüge
@@ -73,12 +67,12 @@ namespace YacGui.Core
     /// <summary>
     /// gibt das erreichbare Spielergebnis als lesbare Zeichenkette zurück
     /// </summary>
-    /// <param name="result">Ergebnis, welches betroffen ist</param>
+    /// <param name="state">Ergebnis, welches betroffen ist</param>
     /// <returns>lesbare Zeichenkette</returns>
-    public static string TxtInfo(this Result result)
+    public static string TxtInfo(this ResultState state)
     {
-      int halfmoves = (int)(result & Result.MaskHalfmoves);
-      if ((result & Result.WhiteWins) == Result.WhiteWins)
+      int halfmoves = (int)(state & ResultState.MaskHalfmoves);
+      if ((state & ResultState.WhiteWins) == ResultState.WhiteWins)
       {
         if (halfmoves % 2 == 0)
         {
@@ -89,7 +83,7 @@ namespace YacGui.Core
           return "+M" + (halfmoves + 1) / 2;
         }
       }
-      else if ((result & Result.BlackWins) == Result.BlackWins)
+      else if ((state & ResultState.BlackWins) == ResultState.BlackWins)
       {
         if (halfmoves % 2 == 0)
         {
@@ -100,7 +94,11 @@ namespace YacGui.Core
           return "-M" + (halfmoves + 1) / 2;
         }
       }
-      return result.ToString();
+      else if ((state & ResultState.CannotWinMask) == ResultState.CannotWinMask)
+      {
+        return "=R" + (halfmoves + 1) / 2;
+      }
+      return state.ToString();
     }
     #endregion
 
@@ -115,19 +113,19 @@ namespace YacGui.Core
     /// </summary>
     /// <param name="board">Spielbrett, welches geprüft werden soll</param>
     /// <returns>einfaches Zwischenergebnis, ob ein Matt, Patt oder einfaches Remis erkannt wurde</returns>
-    static Result CheckSimpleState(IBoard board)
+    static ResultState CheckSimpleState(IBoard board)
     {
       if (!board.HasMoves) // sind keine Züge mehr möglich? = Matt oder Patt gefunden
       {
         if (board.IsMate()) // Matt wurde gesetzt
         {
           return board.WhiteMove
-            ? Result.BlackWins | Result.WhiteCannotWin
-            : Result.WhiteWins | Result.BlackCannotWin;
+            ? ResultState.BlackWins | ResultState.WhiteCannotWin
+            : ResultState.WhiteWins | ResultState.BlackCannotWin;
         }
 
         // Patt wurde erreicht = Remis
-        return Result.WhiteCannotWin | Result.BlackCannotWin;
+        return ResultState.WhiteCannotWin | ResultState.BlackCannotWin;
       }
 
       // --- Material zu Mattsetzen prüfen ---
@@ -152,9 +150,9 @@ namespace YacGui.Core
           case Piece.BlackKnight: materialBlack++; if (materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
         }
       }
-      var state = Result.None;
-      if (materialWhite < 3) state |= Result.WhiteCannotWin;
-      if (materialBlack < 3) state |= Result.BlackCannotWin;
+      var state = ResultState.None;
+      if (materialWhite < 3) state |= ResultState.WhiteCannotWin;
+      if (materialBlack < 3) state |= ResultState.BlackCannotWin;
       return state;
     }
     #endregion
@@ -166,19 +164,19 @@ namespace YacGui.Core
     struct HashElement
     {
       /// <summary>
-      /// Prüfsumme der vorherigen Stellung
+      /// Prüfsummen der vorherigen Stellungen
       /// </summary>
-      public readonly ulong parentCrc;
+      public ulong[] parentCrcs;
 
       /// <summary>
-      /// aktueller Ergebnis-Status der Stellung
+      /// aktuelles Ergebnis der Stellung
       /// </summary>
-      public Result state;
+      public ResultState state;
 
       /// <summary>
       /// merkt sich die aktuelle Stellung
       /// </summary>
-      public readonly string fen;
+      public string fen;
 
       /// <summary>
       /// Konstruktor
@@ -186,9 +184,9 @@ namespace YacGui.Core
       /// <param name="parentCrc">Prüfsumme der vorherigen Stellung</param>
       /// <param name="fen">FEN der aktuellen Stellung</param>
       /// <param name="state">aktueller Ergebnis-Status der Stellung</param>
-      public HashElement(ulong parentCrc, Result state, string fen)
+      public HashElement(ulong parentCrc, ResultState state, string fen)
       {
-        this.parentCrc = parentCrc;
+        parentCrcs = new[] { parentCrc };
         this.state = state;
         this.fen = fen;
       }
@@ -199,108 +197,10 @@ namespace YacGui.Core
       /// <returns>lesbare Zeichenkette</returns>
       public override string ToString()
       {
-        return new { parentCrc, state = state.TxtInfo(), fen }.ToString();
+        return new { state = state.TxtInfo(), parentCrcs = string.Join(", ", parentCrcs), fen }.ToString();
       }
     }
     #endregion
-
-    static void ParentUpdate(ulong currentCrc, Dictionary<ulong, HashElement> hashTable, bool whiteMove)
-    {
-      var current = hashTable[currentCrc];
-
-      var board = new Board();
-      board.SetFEN(current.fen);
-
-      var moves = board.GetMovesArray();
-      var boardInfos = board.BoardInfos;
-
-      var bestState = current.state;
-
-      foreach (var move in moves)
-      {
-        board.DoMoveFast(move);
-
-        ulong crc = board.GetChecksum();
-        var next = hashTable[crc];
-
-        if ((next.state & Result.MaskWins) != 0 || (next.state & Result.MaskCannotWin) == Result.MaskCannotWin)
-        {
-          throw new NotImplementedException();
-        }
-        else
-        {
-          return;
-        }
-
-        board.DoMoveBackward(move, boardInfos);
-      }
-
-      if (bestState != current.state)
-      {
-        throw new NotImplementedException();
-      }
-    }
-
-    static void SubScan(IBoard board, Dictionary<ulong, HashElement> hashTable, List<string> nextFens)
-    {
-      var moves = board.GetMovesArray();
-      var parentBoardInfos = board.BoardInfos;
-      var parentCrc = board.GetChecksum();
-
-      foreach (var move in moves)
-      {
-        board.DoMoveFast(move);
-
-        ulong crc = board.GetChecksum();
-        if (hashTable.ContainsKey(crc)) // Stellung schon bekannt? -> überspringen
-        {
-          board.DoMoveBackward(move, parentBoardInfos);
-          continue;
-        }
-
-        var state = CheckSimpleState(board);
-
-        hashTable.Add(crc, new HashElement(parentCrc, state, board.GetFEN()));
-
-        if ((state & Result.MaskWins) != 0 || (state & Result.MaskCannotWin) == Result.MaskCannotWin) // Spielende wurde erreicht?
-        {
-          if ((state & Result.WhiteWins) == Result.WhiteWins) // Weiß hat Matt gesetzt
-          {
-            if (!board.WhiteMove)
-            {
-              var parent = hashTable[parentCrc];
-              if (parent.state == Result.BlackCannotWin)
-              {
-                parent.state = Result.BlackCannotWin | Result.WhiteWins | (Result)1;
-                hashTable[parentCrc] = parent;
-              }
-              else
-              {
-                throw new NotImplementedException();
-              }
-            }
-            else
-            {
-              throw new NotImplementedException();
-            }
-          }
-          else if ((state & Result.BlackWins) == Result.BlackWins) // Schwarz hat Matt gesetzt
-          {
-            throw new NotImplementedException();
-          }
-          else // Remis wurde erreicht
-          {
-            throw new NotImplementedException();
-          }
-        }
-
-        nextFens.Add(board.GetFEN());
-
-        board.DoMoveBackward(move, parentBoardInfos);
-      }
-
-      ParentUpdate(parentCrc, hashTable, board.WhiteMove);
-    }
 
     /// <summary>
     /// führt eine Mattsuche durch und gibt den bestmöglichen Zug bei perfektem Spiel zurück (sofern nicht abgebrochen, sonst: Unknown)
@@ -309,42 +209,231 @@ namespace YacGui.Core
     /// <param name="maxDepth">maximale Suchtiefe in Halbzügen</param>
     /// <param name="cancel">optionale Abbruchbedinung</param>
     /// <returns>Bestmöglicher Zug und entsprechendes Ergebnis</returns>
-    public static Result RunScan(IBoard board, int maxDepth = 250, Func<bool> cancel = null)
+    public static ResultState RunScan(IBoard board, int maxDepth = 250, Func<bool> cancel = null)
     {
       if (cancel == null) cancel = () => false;
       var b = new Board();
       b.SetFEN(board.GetFEN());
 
       var state = CheckSimpleState(b);
+      Debug.Assert(AllowedResults.Contains(state));
 
-      if ((state & Result.MaskWins) != 0 || (state & Result.MaskCannotWin) == Result.MaskCannotWin) // Spielende wurde jetzt schon erreicht?
+      if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) // Spielende wurde jetzt schon erreicht?
       {
         return state;
       }
 
-      var hashTable = new Dictionary<ulong, HashElement>();
       ulong baseCrc = b.GetChecksum();
-      hashTable.Add(baseCrc, new HashElement(0, state, b.GetFEN()));
-      var nextFens = new List<string> { b.GetFEN() };
+      var hashTable = new Dictionary<ulong, HashElement> { { baseCrc, new HashElement(0, state, b.GetFEN()) { parentCrcs = new ulong[0] } } };
+      var nextFens = new HashSet<string> { b.GetFEN() };
 
-      for (; maxDepth > 0; maxDepth--)
+      for (int depth = 0; depth < maxDepth; depth++)
       {
+        if (cancel()) break;
+
         var scanFens = nextFens.ToArray();
         nextFens.Clear();
+
         foreach (var scanFen in scanFens)
         {
           b.SetFEN(scanFen);
-          SubScan(b, hashTable, nextFens);
-        }
-        state = hashTable[baseCrc].state;
+          ulong parentCrc = b.GetChecksum();
+          var boardInfos = b.BoardInfos;
+          var moves = b.GetMovesArray();
+          ulong[] moveCrcs = new ulong[moves.Length];
+          for (var moveIndex = 0; moveIndex < moves.Length; moveIndex++)
+          {
+            b.DoMoveFast(moves[moveIndex]);
+            ulong crc = b.GetChecksum();
+            moveCrcs[moveIndex] = crc;
+            HashElement hash;
+            if (hashTable.TryGetValue(crc, out hash))
+            {
+              throw new NotImplementedException();
+            }
+            else
+            {
+              state = CheckSimpleState(b);
+              Debug.Assert(AllowedResults.Contains(state));
+              hash = new HashElement(parentCrc, state, b.GetFEN());
+              hashTable.Add(crc, hash);
+              nextFens.Add(hash.fen);
+            }
+            b.DoMoveBackward(moves[moveIndex], boardInfos);
+          }
 
-        if ((state & Result.MaskWins) != 0 || (state & Result.MaskCannotWin) == Result.MaskCannotWin) // Spielende wurde jetzt schon erreicht?
+          UpdateParentStates(hashTable, moveCrcs, b.WhiteMove);
+        }
+
+        // --- Ende schon erreicht? ---
+        state = hashTable[baseCrc].state;
+        if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) // Spielende wurde jetzt schon erreicht?
         {
+          // todo: eventuell wird nicht immer das schnellste Matt gefunden
           return state;
         }
       }
 
       return state;
+    }
+
+    /// <summary>
+    /// erlaubte Zustände von (Zwischen-) Ergebnissen, muss vor mit <see cref="ResultState.ResultMask"/> maskiert werden
+    /// </summary>
+    static readonly HashSet<ResultState> AllowedResults = new HashSet<ResultState>
+    {
+      ResultState.None,                                   // Weiß [offen],               Schwarz [offen]
+      ResultState.BlackCannotWin,                         // Weiß [offen],               Schwarz [kann nicht gewinnen]
+      ResultState.WhiteCannotWin,                         // Weiß [kann nicht gewinnen], Schwarz [offen]
+      ResultState.CannotWinMask,                          // Weiß [kann nicht gewinnen], Schwarz [kann nicht gewinnen]   ->  1/2 - 1/2
+      ResultState.WhiteWins | ResultState.BlackCannotWin, // Weiß [gewinnt],             Schwarz [kann nicht gewinnen]   ->    1 - 0
+      ResultState.BlackWins | ResultState.WhiteCannotWin, // Weiß [kann nicht gewinnen], Schwarz [gewinnt]               ->    0 - 1
+    };
+
+    /// <summary>
+    /// berechnet das beste Ergebnis aus mehreren Zügmöglichkeiten (sofern möglich)
+    /// </summary>
+    /// <param name="hashTable">Hashtable, welche die Zwischenergebnisse enthält</param>
+    /// <param name="moveCrcs">Prüfsummen der Positionen, welche durch die Züge erreichbar sind (müssen alle bereits in der Hashtable enthalten sein)</param>
+    /// <param name="whiteMoves">gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)</param>
+    /// <returns>beste Ergebnis</returns>
+    static ResultState BestState(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves)
+    {
+      var bestState = ResultState.None;
+      for (int i = 0; i < moveCrcs.Length; i++)
+      {
+        var state = hashTable[moveCrcs[i]].state;
+        if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) state++; // wenn ein Spielende in Sicht ist, den Counter hoch zählen
+
+        if (i == 0) // Ergebnis direkt nehmen, wenn es das Erste ist
+        {
+          bestState = state;
+          continue;
+        }
+        if (state == bestState) continue; // kein Unterschied?
+
+        if (whiteMoves) // --- nach besten Weißen Zügen optimieren ---
+        {
+          switch (bestState & ResultState.ResultMask)
+          {
+            case ResultState.BlackCannotWin:                                          // bisher: Weiß [offen], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Weiß [kann nicht gewinnen] -> keine Verbesserung, da Weiß mit einem anderen Zug noch gewinnen könnte
+              {
+                continue;
+              }
+              if ((state & ResultState.WhiteWins) == ResultState.WhiteWins)           //    neu: Weiß [gewinnt] -> besser, da nun ein garantierter Gewinnweg bekannt ist
+              {
+                bestState = state;
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.WhiteWins | ResultState.BlackCannotWin:                  // bisher: Weiß [gewinnt], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteWins) == ResultState.None)                //    neu: Weiß [unbekannt] -> keine Verbesserung, da Weiß mit einem anderen Zug garantiert gewinnt
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.CannotWinMask:                                           // bisher: Weiß [kann nicht gewinnen], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteCannotWin) == ResultState.None)           //    neu: Schwarz [unbekannt] -> keine Verbesserung zum Remis, da Schwarz noch gewinnen könnte
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.WhiteCannotWin:                                          // bisher: Weiß [kann nicht gewinnen], Schwarz [offen]
+            {
+              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Schwarz [kann nicht gewinnen] -> besser, da Schwarz nicht mehr gewinnen kann
+              {
+                bestState = state;
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            default: throw new NotImplementedException();
+          }
+        }
+        else // --- nach besten Schwarzen Zügen optimieren ---
+        {
+          switch (bestState & ResultState.ResultMask)
+          {
+            case ResultState.WhiteCannotWin:                                          // bisher: Weiß [kann nicht gewinnen], Schwarz [offen]
+            {
+              if ((state & ResultState.BlackCannotWin) == ResultState.BlackCannotWin) //    neu: Schwarz [kann nicht gewinnen] -> keine Verbesserung, da Schwarz mit einem anderen Zug noch gewinnen könnte
+              {
+                continue;
+              }
+              if ((state & ResultState.BlackWins) == ResultState.BlackWins)           //    neu: Schwarz [gewinnt] -> besser, da nun ein garantierter Gewinnweg bekannt ist
+              {
+                bestState = state;
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.BlackWins | ResultState.WhiteCannotWin:                  // bisher: Weiß [kann nicht gewinnen], Schwarz [gewinnt]
+            {
+              if ((state & ResultState.BlackWins) == ResultState.None)                //    neu: Schwarz [unbekannt] -> keine Verbesserung, da Schwarz mit einem anderen Zug garantiert gewinnt
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.CannotWinMask:                                           // bisher: Weiß [kann nicht gewinnen], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteCannotWin) == ResultState.None)           //    neu: Weiß [unbekannt] -> keine Verbesserung zum Remis, da Weiß noch gewinnen könnte
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.BlackCannotWin:                                          // bisher: Weiß [offen], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Weiß [kann nicht gewinnen] -> besser, da Weiß nicht mehr gewinnen kann
+              {
+                bestState = state;
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            default: throw new NotImplementedException();
+          }
+        }
+      }
+
+      Debug.Assert(AllowedResults.Contains(bestState & ResultState.ResultMask));
+
+      return bestState;
+    }
+
+    /// <summary>
+    /// übergeordnete Positionen in der Hashtable aktualisieren (sofern notwendig)
+    /// </summary>
+    /// <param name="hashTable">Hashtable, welche aktualisiert werden soll</param>
+    /// <param name="moveCrcs">Prüfsummen der Positionen, welche erreichbar sind</param>
+    /// <param name="whiteMoves">gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)</param>
+    static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves)
+    {
+      var bestState = BestState(hashTable, moveCrcs, whiteMoves);
+
+      foreach (ulong moveCrc in moveCrcs)
+      {
+        var parentCrcs = hashTable[moveCrc].parentCrcs;
+        foreach (ulong parentCrc in parentCrcs)
+        {
+          var hash = hashTable[parentCrc];
+          while (hash.state != bestState) // sinnvolle Änderung erkannt?
+          {
+            hash.state = bestState;
+            hashTable[parentCrc] = hash;
+            UpdateParentStates(hashTable, parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
+            bestState = BestState(hashTable, moveCrcs, whiteMoves);
+          }
+        }
+      }
     }
   }
 }
