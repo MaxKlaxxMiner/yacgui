@@ -49,7 +49,7 @@ namespace TestTool
     /// </summary>
     static readonly string[] MatesWithRook =
     {
-      "5R1k/8/6K1/8/8/8/8/8 b - - 27 14",  // -M0 (no moves = Mate)
+      "5R1k/8/6K1/8/8/8/8/8 b - - 27 14",  // -M0 (no moves + check = Mate)
       "7k/5R2/6K1/8/8/8/8/8 w - - 26 14",  // +M1
       "6k1/5R2/6K1/8/8/8/8/8 b - - 25 13", // -M1
       "6k1/5R2/5K2/8/8/8/8/8 w - - 24 13", // +M2

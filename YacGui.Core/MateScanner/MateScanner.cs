@@ -249,12 +249,20 @@ namespace YacGui.Core
             HashElement hash;
             if (hashTable.TryGetValue(crc, out hash))
             {
-              throw new NotImplementedException();
+              state = hash.state;
+              Debug.Assert(AllowedResults.Contains(state & ResultState.ResultMask));
+              Debug.Assert(!hash.parentCrcs.Contains(parentCrc)); // übergeordnete Positionen sollten nicht doppelt vorhanden sein
+
+              // --- neuer übergeordnete Position verknüpfen ---
+              Array.Resize(ref hash.parentCrcs, hash.parentCrcs.Length + 1);
+              hash.parentCrcs[hash.parentCrcs.Length - 1] = parentCrc;
             }
             else
             {
               state = CheckSimpleState(b);
-              Debug.Assert(AllowedResults.Contains(state));
+              Debug.Assert(AllowedResults.Contains(state & ResultState.ResultMask));
+
+              // --- ersten Hashtable-Eintrag Erstellen und Position für weitere Untersuchungen vormerken ---
               hash = new HashElement(parentCrc, state, b.GetFEN());
               hashTable.Add(crc, hash);
               nextFens.Add(hash.fen);
@@ -310,7 +318,11 @@ namespace YacGui.Core
           bestState = state;
           continue;
         }
-        if (state == bestState) continue; // kein Unterschied?
+        if ((state & ResultState.ResultMask) == (bestState & ResultState.ResultMask)) // gleiches Ergebnis?
+        {
+          if (state < bestState) bestState = state; // kürzere Variante bevorzugen
+          continue;
+        }
 
         if (whiteMoves) // --- nach besten Weißen Zügen optimieren ---
         {
@@ -348,6 +360,19 @@ namespace YacGui.Core
             case ResultState.WhiteCannotWin:                                          // bisher: Weiß [kann nicht gewinnen], Schwarz [offen]
             {
               if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Schwarz [kann nicht gewinnen] -> besser, da Schwarz nicht mehr gewinnen kann
+              {
+                bestState = state;
+                continue;
+              }
+              if ((state & ResultState.BlackWins) == ResultState.BlackWins)           //    neu: Schwarz [gewinnt] -> keine Verbesserung, da es noch Varianten ohne garantiertem Gewinn für Schwarz gibt
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.WhiteCannotWin | ResultState.BlackWins:                  // bisher: Weiß [kann nicht gewinnen], Schwarz [gewinnt]
+            {
+              if ((state & ResultState.BlackWins) == ResultState.None)                //    neu: Schwarz [unbekannt] -> besser, da Schwarz zumindest nicht mehr garantiert gewinnt
               {
                 bestState = state;
                 continue;
@@ -397,6 +422,19 @@ namespace YacGui.Core
                 bestState = state;
                 continue;
               }
+              if ((state & ResultState.WhiteWins) == ResultState.WhiteWins)           //    neu: Weiß [gewinnt] -> keine Verbesserung, da es noch Varianten ohne garantiertem Gewinn für Weiß gibt
+              {
+                continue;
+              }
+              throw new NotImplementedException();
+            }
+            case ResultState.WhiteWins | ResultState.BlackCannotWin:                  // bisher: Weiß [gewinnt], Schwarz [kann nicht gewinnen]
+            {
+              if ((state & ResultState.WhiteWins) == ResultState.None)                //    neu: Weiß [unbekannt] -> besser, da Weiß zumindest nicht mehr garantiert gewinnt
+              {
+                bestState = state;
+                continue;
+              }
               throw new NotImplementedException();
             }
             default: throw new NotImplementedException();
@@ -429,7 +467,7 @@ namespace YacGui.Core
           {
             hash.state = bestState;
             hashTable[parentCrc] = hash;
-            UpdateParentStates(hashTable, parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
+            UpdateParentStates(hashTable, hash.parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
             bestState = BestState(hashTable, moveCrcs, whiteMoves);
           }
         }
