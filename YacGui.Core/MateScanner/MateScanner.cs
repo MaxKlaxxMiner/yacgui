@@ -226,7 +226,7 @@ namespace YacGui.Core
       ulong baseCrc = b.GetChecksum();
       var hashTable = new Dictionary<ulong, HashElement> { { baseCrc, new HashElement(0, state, b.GetFEN()) { parentCrcs = new ulong[0] } } };
       var nextFens = new HashSet<string> { b.GetFEN() };
-      Display(hashTable, baseCrc, b.WhiteMove, "init");
+      Display(hashTable, baseCrc, b.WhiteMove, "init", false);
 
       for (int depth = 0; depth < maxDepth; depth++)
       {
@@ -274,7 +274,7 @@ namespace YacGui.Core
             b.DoMoveBackward(moves[moveIndex], boardInfos);
           }
 
-          UpdateParentStates(hashTable, moveCrcs, b.WhiteMove, b);
+          UpdateParentStates(hashTable, scanCrc, moveCrcs, b);
         }
 
         // --- Ende schon erreicht? ---
@@ -376,10 +376,11 @@ namespace YacGui.Core
     /// berechnet das beste Ergebnis aus mehreren Zügmöglichkeiten (sofern möglich)
     /// </summary>
     /// <param name="hashTable">Hashtable, welche die Zwischenergebnisse enthält</param>
+    /// <param name="currentCrc">Prüfsumme der aktuellen Stellung</param>
     /// <param name="moveCrcs">Prüfsummen der Positionen, welche durch die Züge erreichbar sind (müssen alle bereits in der Hashtable enthalten sein)</param>
     /// <param name="whiteMoves">gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)</param>
     /// <returns>beste Ergebnis</returns>
-    static ResultState BestState(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves)
+    static ResultState BestState(Dictionary<ulong, HashElement> hashTable, ulong currentCrc, ulong[] moveCrcs, bool whiteMoves)
     {
       var bestState = ResultState.None;
       for (int i = 0; i < moveCrcs.Length; i++)
@@ -396,11 +397,21 @@ namespace YacGui.Core
         bestState = CompareState(bestState, state, whiteMoves);
       }
 
+      if (bestState == ResultState.None) bestState = hashTable[currentCrc].state;
+
       Debug.Assert(AllowedResults.Contains(bestState & ResultState.ResultMask));
 
       return bestState;
     }
 
+    /// <summary>
+    /// zeigt den Hash-Inhalt einer bestimmten Stellung an
+    /// </summary>
+    /// <param name="hashTable">Hashtable, welche alle Positionen enthält</param>
+    /// <param name="crc">Prüfsumme der aktuellen Stellung</param>
+    /// <param name="whiteMoves">Ist Weiß am Zug?</param>
+    /// <param name="name">optionaler Name</param>
+    /// <param name="readline">gibt an, ob auf die Enter-Taste gewartet wird</param>
     static void Display(Dictionary<ulong, HashElement> hashTable, ulong crc, bool whiteMoves, string name, bool readline = true)
     {
       var hash = hashTable[crc];
@@ -415,33 +426,51 @@ namespace YacGui.Core
     /// übergeordnete Positionen in der Hashtable aktualisieren (sofern notwendig)
     /// </summary>
     /// <param name="hashTable">Hashtable, welche aktualisiert werden soll</param>
+    /// <param name="currentCrc">Prüfsumme der aktuellen Stellung</param>
     /// <param name="moveCrcs">Prüfsummen der Positionen, welche erreichbar sind</param>
-    /// <param name="whiteMoves">gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)</param>
     /// <param name="board">Schachbrett zur weiteren Verwendung</param>
-    static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves, IBoard board)
+    static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong currentCrc, ulong[] moveCrcs, IBoard board)
     {
+      bool whiteMoves = board.WhiteMove; // gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)
       for (int m = 0; m < moveCrcs.Length; m++)
       {
         Display(hashTable, moveCrcs[m], !whiteMoves, "scan best " + (m + 1) + "/" + moveCrcs.Length, false);
       }
-      var bestState = BestState(hashTable, moveCrcs, whiteMoves);
-      Console.WriteLine("    Best: " + bestState.TxtInfo() + ": " + (bestState & ResultState.ResultMask) + " - " + (int)(bestState & ResultState.MaskHalfmoves));
+      var bestState = BestState(hashTable, currentCrc, moveCrcs, whiteMoves);
+      Display(hashTable, currentCrc, whiteMoves, "Best from " + moveCrcs.Length, false);
+      Console.WriteLine("    Best [" + currentCrc + "]: " + bestState.TxtInfo() + ": " + (bestState & ResultState.ResultMask) + " - " + (int)(bestState & ResultState.MaskHalfmoves));
 
-      foreach (ulong moveCrc in moveCrcs)
+      if ((bestState & ResultState.WinMask) != 0 || (bestState & ResultState.CannotWinMask) == ResultState.CannotWinMask) bestState++; // wenn ein Spielende in Sicht ist, den Counter hoch zählen
+      //bestState = SwapWhiteBlackState(bestState);
+      var parentCrcs = hashTable[currentCrc].parentCrcs;
+      foreach (ulong parentCrc in parentCrcs)
       {
-        var parentCrcs = hashTable[moveCrc].parentCrcs;
-        foreach (ulong parentCrc in parentCrcs)
-        {
-          var hash = hashTable[parentCrc];
-          while (hash.state != bestState) // sinnvolle Änderung erkannt?
-          {
-            hash.state = bestState;
-            hashTable[parentCrc] = hash;
-            Display(hashTable, parentCrc, whiteMoves, "update parent");
-            //UpdateParentStates(hashTable, hash.parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
+        var hash = hashTable[parentCrc];
+        var newState = CompareState(hash.state, bestState, !whiteMoves);
 
-            bestState = BestState(hashTable, moveCrcs, whiteMoves);
+        while (hash.state != newState) // sinnvolle Änderung erkannt?
+        {
+          hash.state = newState;
+          hashTable[parentCrc] = hash;
+          Display(hashTable, parentCrc, whiteMoves, "update parent", false);
+
+          // --- übergeordnete Positionen rekursiv ebenfalls aktualisieren ---
+          board.SetFEN(hash.fen);
+
+          var boardInfos = board.BoardInfos;
+          var moves = board.GetMovesArray();
+          var nextCrcs = new ulong[moves.Length];
+          for (var moveIndex = 0; moveIndex < moves.Length; moveIndex++)
+          {
+            board.DoMoveFast(moves[moveIndex]);
+            nextCrcs[moveIndex] = board.GetChecksum();
+            Debug.Assert(hashTable.ContainsKey(nextCrcs[moveIndex])); // alle untergeordneten Züge sollten bereits in der Hashtable enthalten sein
+            board.DoMoveBackward(moves[moveIndex], boardInfos);
           }
+
+          UpdateParentStates(hashTable, parentCrc, nextCrcs, board);
+
+          bestState = BestState(hashTable, parentCrc, moveCrcs, whiteMoves); // neuen Status ermitteln (falls es z.B. durch Loops Änderungen gab)
         }
       }
     }

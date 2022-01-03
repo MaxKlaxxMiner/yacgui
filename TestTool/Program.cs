@@ -103,7 +103,7 @@ namespace TestTool
 
       //var result = MateScanner.RunScan(board);
 
-      for (int i = 2; i < MatesWithRook.Length; i++)
+      for (int i = 0; i < MatesWithRook.Length; i++)
       {
         board.SetFEN(MatesWithRook[i]);
         var result = MateScanner.RunScan(board);
