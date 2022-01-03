@@ -9,6 +9,17 @@ namespace YacGui.Core.SimpleBoard
   public static class BoardTools
   {
     /// <summary>
+    /// gibt dasSpielbrett in der Console aus
+    /// </summary>
+    /// <param name="fen">FEN</param>
+    public static void PrintBoard(string fen)
+    {
+      var board = new Board();
+      board.SetFEN(fen);
+      board.PrintBoard();
+    }
+
+    /// <summary>
     /// gibt das Spielbrett in der Console aus (optional mit markierten Feldern)
     /// </summary>
     /// <param name="b">Spielbrett, welches ausgegeben werden soll</param>

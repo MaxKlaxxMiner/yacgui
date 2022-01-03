@@ -26,7 +26,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 85;
+    const int SubVersion = 86;
 
     /// <summary>
     /// get title name

@@ -98,14 +98,23 @@ namespace TestTool
       //board.SetFEN("8/8/8/8/3k4/8/N7/KN6 w - - 0 1"); // nur zwei Springer vorhanden = Remis
       //board.SetFEN("8/8/8/8/3k4/8/N7/K7 w - - 0 1"); // nur ein Springer vorhanden = Remis
       //board.SetFEN("8/8/8/8/3k4/8/8/K7 w - - 0 1"); // keine Figur mehr vorhanden = Remis
+      //board.SetFEN("5k2/5p2/8/8/1R1KBbN1/8/8/6r1 w - - 1 54"); // Remis mit mehreren Figuren + Bauer
+      //board.SetFEN("7r/6N1/5R2/2b5/2k1B3/8/8/4K3 w - - 1 98"); // Remis mit mehreren Figuren ohne Bauern
 
       //var result = MateScanner.RunScan(board);
 
-      for (int i = 0; i < MatesWithRook.Length; i++)
+      for (int i = 2; i < MatesWithRook.Length; i++)
       {
         board.SetFEN(MatesWithRook[i]);
         var result = MateScanner.RunScan(board);
-        Console.WriteLine("Check {0} = {1}", i, result.TxtInfo());
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine();
+        BoardTools.PrintBoard(MatesWithRook[i]);
+        Console.WriteLine();
+        Console.WriteLine("    --- [" + MatesWithRook[i].Split(' ')[1].ToUpper() + "] Check {0} = {1} ---", i, result.TxtInfo());
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.WriteLine();
       }
     }
 

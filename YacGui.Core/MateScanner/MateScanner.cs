@@ -226,6 +226,7 @@ namespace YacGui.Core
       ulong baseCrc = b.GetChecksum();
       var hashTable = new Dictionary<ulong, HashElement> { { baseCrc, new HashElement(0, state, b.GetFEN()) { parentCrcs = new ulong[0] } } };
       var nextFens = new HashSet<string> { b.GetFEN() };
+      Display(hashTable, baseCrc, b.WhiteMove, "init");
 
       for (int depth = 0; depth < maxDepth; depth++)
       {
@@ -234,13 +235,13 @@ namespace YacGui.Core
         var scanFens = nextFens.ToArray();
         nextFens.Clear();
 
-        foreach (var scanFen in scanFens)
+        for (int scanIndex = 0; scanIndex < scanFens.Length; scanIndex++)
         {
-          b.SetFEN(scanFen);
-          ulong parentCrc = b.GetChecksum();
+          b.SetFEN(scanFens[scanIndex]);
+          ulong scanCrc = b.GetChecksum();
           var boardInfos = b.BoardInfos;
           var moves = b.GetMovesArray();
-          ulong[] moveCrcs = new ulong[moves.Length];
+          var moveCrcs = new ulong[moves.Length];
           for (var moveIndex = 0; moveIndex < moves.Length; moveIndex++)
           {
             b.DoMoveFast(moves[moveIndex]);
@@ -251,11 +252,13 @@ namespace YacGui.Core
             {
               state = hash.state;
               Debug.Assert(AllowedResults.Contains(state & ResultState.ResultMask));
-              Debug.Assert(!hash.parentCrcs.Contains(parentCrc)); // übergeordnete Positionen sollten nicht doppelt vorhanden sein
+              Debug.Assert(!hash.parentCrcs.Contains(scanCrc)); // übergeordnete Positionen sollten nicht doppelt vorhanden sein
 
               // --- neuer übergeordnete Position verknüpfen ---
               Array.Resize(ref hash.parentCrcs, hash.parentCrcs.Length + 1);
-              hash.parentCrcs[hash.parentCrcs.Length - 1] = parentCrc;
+              hash.parentCrcs[hash.parentCrcs.Length - 1] = scanCrc;
+              hashTable[crc] = hash;
+              //Display(hashTable, crc, b.WhiteMove, "update hash, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length);
             }
             else
             {
@@ -263,14 +266,15 @@ namespace YacGui.Core
               Debug.Assert(AllowedResults.Contains(state & ResultState.ResultMask));
 
               // --- ersten Hashtable-Eintrag Erstellen und Position für weitere Untersuchungen vormerken ---
-              hash = new HashElement(parentCrc, state, b.GetFEN());
+              hash = new HashElement(scanCrc, state, b.GetFEN());
               hashTable.Add(crc, hash);
+              //Display(hashTable, crc, b.WhiteMove, "insert hash, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length);
               nextFens.Add(hash.fen);
             }
             b.DoMoveBackward(moves[moveIndex], boardInfos);
           }
 
-          UpdateParentStates(hashTable, moveCrcs, b.WhiteMove);
+          UpdateParentStates(hashTable, moveCrcs, b.WhiteMove, b);
         }
 
         // --- Ende schon erreicht? ---
@@ -299,6 +303,76 @@ namespace YacGui.Core
     };
 
     /// <summary>
+    /// vergleicht zwei Ergbnisse und gibt das bessere für Weiß zurück
+    /// </summary>
+    /// <param name="s1">erstes Ergebnis</param>
+    /// <param name="s2">zweiten Ergebnis</param>
+    /// <returns>besseres Ergebnis</returns>
+    static ResultState CompareStateWhite(ResultState s1, ResultState s2)
+    {
+      switch (s1 & ResultState.ResultMask)
+      {
+        case ResultState.None: throw new NotSupportedException();
+        case ResultState.CannotWinMask: throw new NotSupportedException();
+        case ResultState.WhiteCannotWin: throw new NotSupportedException();
+        case ResultState.WhiteCannotWin | ResultState.BlackWins: throw new NotSupportedException();
+        case ResultState.BlackCannotWin:
+        {
+          switch (s2 & ResultState.ResultMask)
+          {
+            case ResultState.CannotWinMask: return s1; // offener Ausgang für Weiß war besser als Remis
+            case ResultState.WhiteWins | ResultState.BlackCannotWin: return s2; // Weiß kann nun gewinnen
+            default: throw new NotSupportedException();
+          }
+        }
+        case ResultState.BlackCannotWin | ResultState.WhiteWins:
+        {
+          switch (s2 & ResultState.ResultMask)
+          {
+            case ResultState.BlackCannotWin: return s1; // weißer Gewinn war besser als offener Ausgang
+            default: throw new NotSupportedException();
+          }
+        }
+        default: throw new NotSupportedException();
+      }
+    }
+
+    /// <summary>
+    /// wechselt den Status zwischen Weiß und Schwarz
+    /// </summary>
+    /// <param name="s">Status, welcher gewechselt werden soll</param>
+    /// <returns>fertig gewechselter Status</returns>
+    static ResultState SwapWhiteBlackState(ResultState s)
+    {
+      return (s & ResultState.MaskHalfmoves) |
+            ((s & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin ? ResultState.BlackCannotWin : ResultState.None) |
+            ((s & ResultState.BlackCannotWin) == ResultState.BlackCannotWin ? ResultState.WhiteCannotWin : ResultState.None) |
+            ((s & ResultState.WhiteWins) == ResultState.WhiteWins ? ResultState.BlackWins : ResultState.None) |
+            ((s & ResultState.BlackWins) == ResultState.BlackWins ? ResultState.WhiteWins : ResultState.None);
+    }
+
+    /// <summary>
+    /// vergleicht zwei Ergbnisse und gibt das bessere zurück
+    /// </summary>
+    /// <param name="s1">erstes Ergebnis</param>
+    /// <param name="s2">zweiten Ergebnis</param>
+    /// <param name="whiteMove">gibt an, ob für Weiß optimiert werden soll</param>
+    /// <returns>besseres Ergebnis</returns>
+    static ResultState CompareState(ResultState s1, ResultState s2, bool whiteMove)
+    {
+      if (s1 == s2) return s1; // kein Unterschied erkannt
+
+      if (whiteMove) // --- nach Weißen Zügen optimieren ---
+      {
+        return CompareStateWhite(s1, s2);
+      }
+      else // --- nach Schwarzen Zügen optimieren ---
+      {
+        return SwapWhiteBlackState(CompareStateWhite(SwapWhiteBlackState(s1), SwapWhiteBlackState(s2)));
+      }
+    }
+
+    /// <summary>
     /// berechnet das beste Ergebnis aus mehreren Zügmöglichkeiten (sofern möglich)
     /// </summary>
     /// <param name="hashTable">Hashtable, welche die Zwischenergebnisse enthält</param>
@@ -313,138 +387,28 @@ namespace YacGui.Core
         var state = hashTable[moveCrcs[i]].state;
         if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) state++; // wenn ein Spielende in Sicht ist, den Counter hoch zählen
 
-        if (i == 0) // Ergebnis direkt nehmen, wenn es das Erste ist
+        if (i == 0) // erstes Ergebnis direkt nehmen
         {
           bestState = state;
           continue;
         }
-        if ((state & ResultState.ResultMask) == (bestState & ResultState.ResultMask)) // gleiches Ergebnis?
-        {
-          if (state < bestState) bestState = state; // kürzere Variante bevorzugen
-          continue;
-        }
 
-        if (whiteMoves) // --- nach besten Weißen Zügen optimieren ---
-        {
-          switch (bestState & ResultState.ResultMask)
-          {
-            case ResultState.BlackCannotWin:                                          // bisher: Weiß [offen], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Weiß [kann nicht gewinnen] -> keine Verbesserung, da Weiß mit einem anderen Zug noch gewinnen könnte
-              {
-                continue;
-              }
-              if ((state & ResultState.WhiteWins) == ResultState.WhiteWins)           //    neu: Weiß [gewinnt] -> besser, da nun ein garantierter Gewinnweg bekannt ist
-              {
-                bestState = state;
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.WhiteWins | ResultState.BlackCannotWin:                  // bisher: Weiß [gewinnt], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteWins) == ResultState.None)                //    neu: Weiß [unbekannt] -> keine Verbesserung, da Weiß mit einem anderen Zug garantiert gewinnt
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.CannotWinMask:                                           // bisher: Weiß [kann nicht gewinnen], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteCannotWin) == ResultState.None)           //    neu: Schwarz [unbekannt] -> keine Verbesserung zum Remis, da Schwarz noch gewinnen könnte
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.WhiteCannotWin:                                          // bisher: Weiß [kann nicht gewinnen], Schwarz [offen]
-            {
-              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Schwarz [kann nicht gewinnen] -> besser, da Schwarz nicht mehr gewinnen kann
-              {
-                bestState = state;
-                continue;
-              }
-              if ((state & ResultState.BlackWins) == ResultState.BlackWins)           //    neu: Schwarz [gewinnt] -> keine Verbesserung, da es noch Varianten ohne garantiertem Gewinn für Schwarz gibt
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.WhiteCannotWin | ResultState.BlackWins:                  // bisher: Weiß [kann nicht gewinnen], Schwarz [gewinnt]
-            {
-              if ((state & ResultState.BlackWins) == ResultState.None)                //    neu: Schwarz [unbekannt] -> besser, da Schwarz zumindest nicht mehr garantiert gewinnt
-              {
-                bestState = state;
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            default: throw new NotImplementedException();
-          }
-        }
-        else // --- nach besten Schwarzen Zügen optimieren ---
-        {
-          switch (bestState & ResultState.ResultMask)
-          {
-            case ResultState.WhiteCannotWin:                                          // bisher: Weiß [kann nicht gewinnen], Schwarz [offen]
-            {
-              if ((state & ResultState.BlackCannotWin) == ResultState.BlackCannotWin) //    neu: Schwarz [kann nicht gewinnen] -> keine Verbesserung, da Schwarz mit einem anderen Zug noch gewinnen könnte
-              {
-                continue;
-              }
-              if ((state & ResultState.BlackWins) == ResultState.BlackWins)           //    neu: Schwarz [gewinnt] -> besser, da nun ein garantierter Gewinnweg bekannt ist
-              {
-                bestState = state;
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.BlackWins | ResultState.WhiteCannotWin:                  // bisher: Weiß [kann nicht gewinnen], Schwarz [gewinnt]
-            {
-              if ((state & ResultState.BlackWins) == ResultState.None)                //    neu: Schwarz [unbekannt] -> keine Verbesserung, da Schwarz mit einem anderen Zug garantiert gewinnt
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.CannotWinMask:                                           // bisher: Weiß [kann nicht gewinnen], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteCannotWin) == ResultState.None)           //    neu: Weiß [unbekannt] -> keine Verbesserung zum Remis, da Weiß noch gewinnen könnte
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.BlackCannotWin:                                          // bisher: Weiß [offen], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteCannotWin) == ResultState.WhiteCannotWin) //    neu: Weiß [kann nicht gewinnen] -> besser, da Weiß nicht mehr gewinnen kann
-              {
-                bestState = state;
-                continue;
-              }
-              if ((state & ResultState.WhiteWins) == ResultState.WhiteWins)           //    neu: Weiß [gewinnt] -> keine Verbesserung, da es noch Varianten ohne garantiertem Gewinn für Weiß gibt
-              {
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            case ResultState.WhiteWins | ResultState.BlackCannotWin:                  // bisher: Weiß [gewinnt], Schwarz [kann nicht gewinnen]
-            {
-              if ((state & ResultState.WhiteWins) == ResultState.None)                //    neu: Weiß [unbekannt] -> besser, da Weiß zumindest nicht mehr garantiert gewinnt
-              {
-                bestState = state;
-                continue;
-              }
-              throw new NotImplementedException();
-            }
-            default: throw new NotImplementedException();
-          }
-        }
+        bestState = CompareState(bestState, state, whiteMoves);
       }
 
       Debug.Assert(AllowedResults.Contains(bestState & ResultState.ResultMask));
 
       return bestState;
+    }
+
+    static void Display(Dictionary<ulong, HashElement> hashTable, ulong crc, bool whiteMoves, string name, bool readline = true)
+    {
+      var hash = hashTable[crc];
+      Console.WriteLine();
+      BoardTools.PrintBoard(hash.fen);
+      Console.WriteLine();
+      Console.WriteLine("    " + hash.fen.Split(' ')[1].ToUpper() + (whiteMoves ? "W" : "B") + " " + hash.state.TxtInfo() + ": " + (hash.state & ResultState.ResultMask) + " - " + (int)(hash.state & ResultState.MaskHalfmoves) + " (" + name + ")");
+      if (readline) Console.ReadLine(); else Console.WriteLine();
     }
 
     /// <summary>
@@ -453,9 +417,15 @@ namespace YacGui.Core
     /// <param name="hashTable">Hashtable, welche aktualisiert werden soll</param>
     /// <param name="moveCrcs">Prüfsummen der Positionen, welche erreichbar sind</param>
     /// <param name="whiteMoves">gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)</param>
-    static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves)
+    /// <param name="board">Schachbrett zur weiteren Verwendung</param>
+    static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong[] moveCrcs, bool whiteMoves, IBoard board)
     {
+      for (int m = 0; m < moveCrcs.Length; m++)
+      {
+        Display(hashTable, moveCrcs[m], !whiteMoves, "scan best " + (m + 1) + "/" + moveCrcs.Length, false);
+      }
       var bestState = BestState(hashTable, moveCrcs, whiteMoves);
+      Console.WriteLine("    Best: " + bestState.TxtInfo() + ": " + (bestState & ResultState.ResultMask) + " - " + (int)(bestState & ResultState.MaskHalfmoves));
 
       foreach (ulong moveCrc in moveCrcs)
       {
@@ -467,7 +437,9 @@ namespace YacGui.Core
           {
             hash.state = bestState;
             hashTable[parentCrc] = hash;
-            UpdateParentStates(hashTable, hash.parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
+            Display(hashTable, parentCrc, whiteMoves, "update parent");
+            //UpdateParentStates(hashTable, hash.parentCrcs, !whiteMoves); // übergeordnete Positionen rekursiv ebenfalls aktualisieren
+
             bestState = BestState(hashTable, moveCrcs, whiteMoves);
           }
         }
