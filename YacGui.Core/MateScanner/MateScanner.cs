@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using YacGui.Core.SimpleBoard;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable RedundantIfElseBlock
 // ReSharper disable MemberCanBePrivate.Local
 // ReSharper disable FieldCanBeMadeReadOnly.Local
+// ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 
 namespace YacGui.Core
 {
@@ -15,6 +17,11 @@ namespace YacGui.Core
   /// </summary>
   public static class MateScanner
   {
+    /// <summary>
+    /// Debug-Anzeigen (0 - 4)
+    /// </summary>
+    static readonly int VerboseDebug = 1;
+
     #region # public enum Result : ushort // bewertetes Ergebnis, welche eine Stellung annehmen kann
     /// <summary>
     /// bewertetes Ergebnis, welche eine Stellung annehmen kann
@@ -226,11 +233,23 @@ namespace YacGui.Core
       ulong baseCrc = b.GetChecksum();
       var hashTable = new Dictionary<ulong, HashElement> { { baseCrc, new HashElement(0, state, b.GetFEN()) { parentCrcs = new ulong[0] } } };
       var nextFens = new HashSet<string> { b.GetFEN() };
-      Display(hashTable, baseCrc, b.WhiteMove, "init", false);
+      if (VerboseDebug > 0)
+      {
+        parentUpdates = 0;
+        Display(hashTable, baseCrc, b.WhiteMove, "init", false);
+      }
 
       for (int depth = 0; depth < maxDepth; depth++)
       {
         if (cancel()) break;
+
+        if (VerboseDebug > 0)
+        {
+          Console.ForegroundColor = ConsoleColor.Yellow;
+          Console.WriteLine("\r\n   --- Depth: " + (depth + 1) + ", Nodes: " + nextFens.Count.ToString("N0") + ", Hash: " + hashTable.Count.ToString("N0") + ", Parent-Updates: " + parentUpdates.ToString("N0") + " ---\r\n");
+          Console.ForegroundColor = ConsoleColor.Gray;
+          Thread.Sleep(VerboseDebug > 1 ? 1000 : 250);
+        }
 
         var scanFens = nextFens.ToArray();
         nextFens.Clear();
@@ -258,18 +277,23 @@ namespace YacGui.Core
               Array.Resize(ref hash.parentCrcs, hash.parentCrcs.Length + 1);
               hash.parentCrcs[hash.parentCrcs.Length - 1] = scanCrc;
               hashTable[crc] = hash;
-              //Display(hashTable, crc, b.WhiteMove, "update hash, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length);
+              if (VerboseDebug > 2) Display(hashTable, crc, b.WhiteMove, "add parent, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length, VerboseDebug > 3);
             }
             else
             {
               state = CheckSimpleState(b);
               Debug.Assert(AllowedResults.Contains(state & ResultState.ResultMask));
 
-              // --- ersten Hashtable-Eintrag Erstellen und Position für weitere Untersuchungen vormerken ---
+              // --- ersten Hashtable-Eintrag Erstellen ---
               hash = new HashElement(scanCrc, state, b.GetFEN());
               hashTable.Add(crc, hash);
-              //Display(hashTable, crc, b.WhiteMove, "insert hash, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length);
-              nextFens.Add(hash.fen);
+              if (VerboseDebug > 2) Display(hashTable, crc, b.WhiteMove, "insert hash, move " + (moveIndex + 1) + "/" + moves.Length + " (" + moves[moveIndex] + ") - " + (scanIndex + 1) + "/" + scanFens.Length, VerboseDebug > 3);
+
+              // --- Position für weitere Untersuchungen vormerken, sofern noch kein eindeutiges Ergebnis bekannt ist ---
+              if ((state & ResultState.WinMask) == 0 && (state & ResultState.CannotWinMask) != ResultState.CannotWinMask)
+              {
+                nextFens.Add(hash.fen);
+              }
             }
             b.DoMoveBackward(moves[moveIndex], boardInfos);
           }
@@ -279,9 +303,9 @@ namespace YacGui.Core
 
         // --- Ende schon erreicht? ---
         state = hashTable[baseCrc].state;
-        if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) // Spielende wurde jetzt schon erreicht?
+        if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) // Spielende wurde erreicht?
         {
-          // todo: eventuell wird nicht immer das schnellste Matt gefunden
+          // todo: eventuell wurde nicht die kürzeste Variante gefunden
           return state;
         }
       }
@@ -312,27 +336,63 @@ namespace YacGui.Core
     {
       switch (s1 & ResultState.ResultMask)
       {
-        case ResultState.None: throw new NotSupportedException();
-        case ResultState.CannotWinMask: throw new NotSupportedException();
-        case ResultState.WhiteCannotWin: throw new NotSupportedException();
-        case ResultState.WhiteCannotWin | ResultState.BlackWins: throw new NotSupportedException();
+        case ResultState.None: return s2;                                        // s1 = N/A, s2 = etwas anderes   -> s2 besser
+
+        case ResultState.CannotWinMask:
+        {
+          switch (s2 & ResultState.ResultMask)
+          {
+            case ResultState.WhiteCannotWin: return s1;                          // s1 = Remis, s2 = kein Gewinn   -> s1 besser
+            case ResultState.BlackWins | ResultState.WhiteCannotWin: return s1;  // s1 = Remis, s2 = Verlust       -> s1 besser
+            case ResultState.BlackCannotWin: return s2;                          // s1 = Remis, s2 = Unbekannt     -> s2 besser
+            case ResultState.WhiteWins | ResultState.BlackCannotWin: return s2;  // s1 = Remis, s2 = Gewinn        -> s2 besser
+            case ResultState.CannotWinMask: return s1 < s2 ? s1 : s2;            // s1 = Remis, s2 = Remis         -> kürzere Variante bevorzugen
+            default: throw new NotSupportedException();
+          }
+        }
+
+        case ResultState.WhiteCannotWin:
+        {
+          switch (s2 & ResultState.ResultMask)
+          {
+            case ResultState.CannotWinMask: return s2;                           // s1 = kein Gewinn, s2 = Remis   -> s2 besser
+            case ResultState.BlackWins | ResultState.WhiteCannotWin: return s1;  // s1 = kein Gewinn, s2 = Verlust -> s1 besser
+            default: throw new NotSupportedException();
+          }
+        }
+
+        case ResultState.WhiteCannotWin | ResultState.BlackWins:
+        {
+          switch (s2 & ResultState.ResultMask)
+          {
+            case ResultState.WhiteCannotWin: return s2;                          // s1 = Verlust, s2 = kein Gewinn -> s2 besser
+            case ResultState.CannotWinMask: return s2;                           // s1 = Verlust, s2 = Remis       -> s2 besser
+            case ResultState.BlackWins | ResultState.WhiteCannotWin: return s1 > s2 ? s1 : s2; // s1 = Verlust, s2 = Verlust -> längere Variante bevorzugen
+            default: throw new NotSupportedException();
+          }
+        }
+
         case ResultState.BlackCannotWin:
         {
           switch (s2 & ResultState.ResultMask)
           {
-            case ResultState.CannotWinMask: return s1; // offener Ausgang für Weiß war besser als Remis
-            case ResultState.WhiteWins | ResultState.BlackCannotWin: return s2; // Weiß kann nun gewinnen
+            case ResultState.CannotWinMask: return s1;                           // s1 = unbekannt, s2 = Remis     -> s1 besser
+            case ResultState.WhiteWins | ResultState.BlackCannotWin: return s2;  // s1 = unbekannt, s2 = Gewinn    -> s2 besser
             default: throw new NotSupportedException();
           }
         }
-        case ResultState.BlackCannotWin | ResultState.WhiteWins:
+
+        case ResultState.WhiteWins | ResultState.BlackCannotWin:
         {
           switch (s2 & ResultState.ResultMask)
           {
-            case ResultState.BlackCannotWin: return s1; // weißer Gewinn war besser als offener Ausgang
+            case ResultState.BlackCannotWin: return s1;                          // s1 = Gewinn, s2 = unbekannt    -> s1 besser
+            case ResultState.CannotWinMask: return s1;                           // s1 = Gewinn, s2 = Remis        -> s1 besser
+            case ResultState.WhiteWins | ResultState.BlackCannotWin: return s1 < s2 ? s1 : s2; // s1 = Gewinn, s2 = Gewinn -> kürzere Variante bevorzugen
             default: throw new NotSupportedException();
           }
         }
+
         default: throw new NotSupportedException();
       }
     }
@@ -383,18 +443,12 @@ namespace YacGui.Core
     static ResultState BestState(Dictionary<ulong, HashElement> hashTable, ulong currentCrc, ulong[] moveCrcs, bool whiteMoves)
     {
       var bestState = ResultState.None;
-      for (int i = 0; i < moveCrcs.Length; i++)
+      foreach (var moveCrc in moveCrcs)
       {
-        var state = hashTable[moveCrcs[i]].state;
+        var state = hashTable[moveCrc].state;
         if ((state & ResultState.WinMask) != 0 || (state & ResultState.CannotWinMask) == ResultState.CannotWinMask) state++; // wenn ein Spielende in Sicht ist, den Counter hoch zählen
 
-        if (i == 0) // erstes Ergebnis direkt nehmen
-        {
-          bestState = state;
-          continue;
-        }
-
-        bestState = CompareState(bestState, state, whiteMoves);
+        bestState = CompareState(bestState, state, whiteMoves); // mit bester Variante vergleichen und ggf. übernehmen
       }
 
       if (bestState == ResultState.None) bestState = hashTable[currentCrc].state;
@@ -423,6 +477,11 @@ namespace YacGui.Core
     }
 
     /// <summary>
+    /// merkt sich die Anzahl der übergeordneten Updates
+    /// </summary>
+    static long parentUpdates;
+
+    /// <summary>
     /// übergeordnete Positionen in der Hashtable aktualisieren (sofern notwendig)
     /// </summary>
     /// <param name="hashTable">Hashtable, welche aktualisiert werden soll</param>
@@ -432,30 +491,39 @@ namespace YacGui.Core
     static void UpdateParentStates(Dictionary<ulong, HashElement> hashTable, ulong currentCrc, ulong[] moveCrcs, IBoard board)
     {
       bool whiteMoves = board.WhiteMove; // gibt an, ob aus den Zügen das optimum für Weiß gesucht werden soll (sonst: Schwarz)
-      for (int m = 0; m < moveCrcs.Length; m++)
+      if (VerboseDebug > 2)
       {
-        Display(hashTable, moveCrcs[m], !whiteMoves, "scan best " + (m + 1) + "/" + moveCrcs.Length, false);
+        Console.WriteLine("\r\n    --- Best Scan ---");
+        for (int m = 0; m < moveCrcs.Length; m++)
+        {
+          Display(hashTable, moveCrcs[m], !whiteMoves, "scan best " + (m + 1) + "/" + moveCrcs.Length, false);
+        }
       }
       var bestState = BestState(hashTable, currentCrc, moveCrcs, whiteMoves);
-      Display(hashTable, currentCrc, whiteMoves, "Best from " + moveCrcs.Length, false);
-      Console.WriteLine("    Best [" + currentCrc + "]: " + bestState.TxtInfo() + ": " + (bestState & ResultState.ResultMask) + " - " + (int)(bestState & ResultState.MaskHalfmoves));
-
-      if ((bestState & ResultState.WinMask) != 0 || (bestState & ResultState.CannotWinMask) == ResultState.CannotWinMask) bestState++; // wenn ein Spielende in Sicht ist, den Counter hoch zählen
-      //bestState = SwapWhiteBlackState(bestState);
-      var parentCrcs = hashTable[currentCrc].parentCrcs;
-      foreach (ulong parentCrc in parentCrcs)
+      if (VerboseDebug > 1)
       {
-        var hash = hashTable[parentCrc];
-        var newState = CompareState(hash.state, bestState, !whiteMoves);
+        Display(hashTable, currentCrc, whiteMoves, "Best from " + moveCrcs.Length, false);
+        Console.WriteLine("    Best [" + currentCrc + "]: " + bestState.TxtInfo() + ": " + (bestState & ResultState.ResultMask) + " - " + (int)(bestState & ResultState.MaskHalfmoves));
+      }
 
-        while (hash.state != newState) // sinnvolle Änderung erkannt?
+      var hash = hashTable[currentCrc];
+      while (hash.state != bestState) // Änderung erkannt? -> übergeordnete Knoten ebenfalls aktualisieren
+      {
+        hash.state = bestState;
+        hashTable[currentCrc] = hash;
+        if (VerboseDebug > 0)
         {
-          hash.state = newState;
-          hashTable[parentCrc] = hash;
-          Display(hashTable, parentCrc, whiteMoves, "update parent", false);
+          parentUpdates++;
+          if (VerboseDebug > 1 || parentUpdates % 1000 == 0 || parentUpdates == 1)
+          {
+            Console.Title = "Hash: " + hashTable.Count.ToString("N0") + ", Updates: " + parentUpdates.ToString("N0");
+          }
+        }
 
-          // --- übergeordnete Positionen rekursiv ebenfalls aktualisieren ---
-          board.SetFEN(hash.fen);
+        foreach (var parentCrc in hash.parentCrcs)
+        {
+          var parentHash = hashTable[parentCrc];
+          board.SetFEN(parentHash.fen);
 
           var boardInfos = board.BoardInfos;
           var moves = board.GetMovesArray();
@@ -469,8 +537,14 @@ namespace YacGui.Core
           }
 
           UpdateParentStates(hashTable, parentCrc, nextCrcs, board);
+        }
 
-          bestState = BestState(hashTable, parentCrc, moveCrcs, whiteMoves); // neuen Status ermitteln (falls es z.B. durch Loops Änderungen gab)
+        // --- weitere Updates (bei Loops) ---
+        hash = hashTable[currentCrc];
+        bestState = BestState(hashTable, currentCrc, moveCrcs, whiteMoves);
+        if (hash.state != bestState)
+        {
+          throw new NotImplementedException("check");
         }
       }
     }

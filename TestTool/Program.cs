@@ -112,9 +112,10 @@ namespace TestTool
         Console.WriteLine();
         BoardTools.PrintBoard(MatesWithRook[i]);
         Console.WriteLine();
-        Console.WriteLine("    --- [" + MatesWithRook[i].Split(' ')[1].ToUpper() + "] Check {0} = {1} ---", i, result.TxtInfo());
+        Console.WriteLine("    --- [" + MatesWithRook[i].Split(' ')[1].ToUpper() + "] Check {0} = {1} ---", ((MateScanner.ResultState)((int)(MateScanner.ResultState.WhiteWins | MateScanner.ResultState.BlackCannotWin) + i)).TxtInfo(), result.TxtInfo());
         Console.ForegroundColor = ConsoleColor.Gray;
-        Console.WriteLine();
+        Console.ReadLine();
+        //Console.WriteLine();
       }
     }
 
