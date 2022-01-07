@@ -102,11 +102,19 @@ namespace TestTool
       //board.SetFEN("7r/6N1/5R2/2b5/2k1B3/8/8/4K3 w - - 1 98"); // Remis mit mehreren Figuren ohne Bauern
 
       //var result = MateScanner.RunScan(board);
+      //Console.WriteLine();
+      //Console.ForegroundColor = ConsoleColor.Yellow;
+      //Console.WriteLine();
+      //board.PrintBoard();
+      //Console.WriteLine();
+      //Console.WriteLine("    --- [" + board.GetFEN().Split(' ')[1].ToUpper() + "] Check {0} ---", result.TxtInfo());
+      //Console.ForegroundColor = ConsoleColor.Gray;
+      //Console.ReadLine();
 
-      for (int i = 0; i < MatesWithRook.Length; i++)
+      for (int i = 2; i < MatesWithRook.Length; i++)
       {
         board.SetFEN(MatesWithRook[i]);
-        var result = MateScanner.RunScan(board);
+        var result = MateScanner2.RunScan(board);
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine();
@@ -118,6 +126,7 @@ namespace TestTool
         //Console.WriteLine();
       }
     }
+
 
     /// <summary>
     /// TestTool program entry
