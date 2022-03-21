@@ -29,19 +29,8 @@
     private void InitializeComponent()
     {
       this.components = new System.ComponentModel.Container();
-      this.pictureBoxMain = new System.Windows.Forms.PictureBox();
       this.timer1 = new System.Windows.Forms.Timer(this.components);
-      ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
       this.SuspendLayout();
-      // 
-      // pictureBoxMain
-      // 
-      this.pictureBoxMain.Cursor = System.Windows.Forms.Cursors.Hand;
-      this.pictureBoxMain.Location = new System.Drawing.Point(12, 12);
-      this.pictureBoxMain.Name = "pictureBoxMain";
-      this.pictureBoxMain.Size = new System.Drawing.Size(1350, 450);
-      this.pictureBoxMain.TabIndex = 0;
-      this.pictureBoxMain.TabStop = false;
       // 
       // timer1
       // 
@@ -55,19 +44,19 @@
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(37)))), ((int)(((byte)(38)))));
       this.ClientSize = new System.Drawing.Size(1373, 474);
-      this.Controls.Add(this.pictureBoxMain);
       this.Name = "MainForm";
       this.Text = "yacgui";
       this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
       this.Load += new System.EventHandler(this.MainForm_Load);
-      ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).EndInit();
+      this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseDown);
+      this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseMove);
+      this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseUp);
       this.ResumeLayout(false);
 
     }
 
     #endregion
 
-    private System.Windows.Forms.PictureBox pictureBoxMain;
     private System.Windows.Forms.Timer timer1;
   }
 }

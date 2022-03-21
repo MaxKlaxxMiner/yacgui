@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using FastBitmapLib;
 using FastBitmapLib.Extras;
+// ReSharper disable NotAccessedField.Local
 
 #endregion
 
@@ -27,7 +29,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 92;
+    const int SubVersion = 93;
 
     /// <summary>
     /// get title name
@@ -64,7 +66,10 @@ namespace YacGui
       InitializeComponent();
 
       Text = FullName;
+      mouseY = 0;
     }
+
+    Bitmap background;
 
     /// <summary>
     /// load form
@@ -87,9 +92,27 @@ namespace YacGui
         }
       }
 
-      pictureBoxMain.Image = chessPieces.ToGDIBitmap();
+      background = chessPieces.ToGDIBitmap();
+      DoubleBuffered = true;
+      SetStyle(ControlStyles.ResizeRedraw, true);
 
       ReadConfig();
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+      timer1_Tick(null, null);
+
+      base.OnPaintBackground(e);
+      var g = e.Graphics;
+      var state = g.Save();
+
+      g.TranslateTransform(mouseX, mouseY);
+      if (mouseLeft) g.RotateTransform((float)(-360.0 / Width * (mouseX - Width / 2)));
+      if (mouseRight) g.ScaleTransform((float)((Height - mouseY - 20) / 200.0), (float)((Height - mouseY - 20) / 200.0));
+      g.DrawImage(background, -background.Width / 2, -background.Height / 2);
+
+      g.Restore(state);
     }
 
     /// <summary>
@@ -112,6 +135,8 @@ namespace YacGui
       else c = FastBitmapOld.ColorBlend(b, l, time - 768);
 
       BackColor = Color.FromArgb((int)c);
+
+      Text = mouseX + ", " + mouseY + " - " + mouseLeft + ", " + mouseRight + " (" + mousePressedX + ", " + mousePressedY + ")" + (mouseLeft || mouseRight ? " dragging: " + (mouseX - mousePressedX) + ", " + (mouseY - mousePressedY) : "");
     }
 
     /// <summary>
@@ -153,6 +178,53 @@ namespace YacGui
     void MainForm_FormClosing(object sender, FormClosingEventArgs e)
     {
       WriteConfig();
+    }
+
+    int mouseX, mouseY;
+    bool mouseLeft, mouseRight;
+    int mousePressedX, mousePressedY;
+
+    /// <summary>
+    /// press mouse-button
+    /// </summary>
+    void MainForm_MouseDown(object sender, MouseEventArgs e)
+    {
+      mouseX = e.X;
+      mouseY = e.Y;
+      if ((e.Button & MouseButtons.Left) == MouseButtons.Left && !mouseLeft)
+      {
+        mouseLeft = true;
+        mousePressedX = e.X;
+        mousePressedY = e.Y;
+      }
+      if ((e.Button & MouseButtons.Right) == MouseButtons.Right && !mouseRight)
+      {
+        mouseRight = true;
+        mousePressedX = e.X;
+        mousePressedY = e.Y;
+      }
+    }
+
+    /// <summary>
+    /// move mouse
+    /// </summary>
+    void MainForm_MouseMove(object sender, MouseEventArgs e)
+    {
+      mouseX = e.X;
+      mouseY = e.Y;
+      Invalidate();
+    }
+
+    /// <summary>
+    /// release mouse-button
+    /// </summary>
+    void MainForm_MouseUp(object sender, MouseEventArgs e)
+    {
+      mouseX = e.X;
+      mouseY = e.Y;
+
+      if ((e.Button & MouseButtons.Left) == MouseButtons.Left) mouseLeft = false;
+      if ((e.Button & MouseButtons.Right) == MouseButtons.Right) mouseRight = false;
     }
   }
 }
