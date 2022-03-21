@@ -58,6 +58,7 @@
       this.Controls.Add(this.pictureBoxMain);
       this.Name = "MainForm";
       this.Text = "yacgui";
+      this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
       this.Load += new System.EventHandler(this.MainForm_Load);
       ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).EndInit();
       this.ResumeLayout(false);

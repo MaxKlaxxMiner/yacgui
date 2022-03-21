@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 90;
+    const int SubVersion = 91;
 
     /// <summary>
     /// get title name
@@ -82,6 +83,8 @@ namespace YacGui
       }
 
       pictureBoxMain.Image = fastBitmap.ToGDIBitmap(PixelFormat.Format32bppArgb);
+
+      ReadConfig();
     }
 
     /// <summary>
@@ -104,6 +107,47 @@ namespace YacGui
       else c = FastBitmapOld.ColorBlend(b, l, time - 768);
 
       BackColor = Color.FromArgb((int)c);
+    }
+
+    /// <summary>
+    /// read the config-file
+    /// </summary>
+    void ReadConfig()
+    {
+      try
+      {
+        var cfg = File.ReadAllText("microconfig.cfg").Split('\t');
+        int v = int.Parse(cfg[0]);
+        if (v < 91) return;
+
+        Left = int.Parse(cfg[1]);
+        Top = int.Parse(cfg[2]);
+        Width = int.Parse(cfg[3]);
+        Height = int.Parse(cfg[4]);
+      }
+      catch
+      {
+      }
+    }
+
+    /// <summary>
+    /// write the current config to config-file
+    /// </summary>
+    void WriteConfig()
+    {
+      try
+      {
+        File.WriteAllText("microconfig.cfg", string.Join("\t", SubVersion, Left, Top, Width, Height));
+      }
+      catch { }
+    }
+
+    /// <summary>
+    /// closing-event
+    /// </summary>
+    void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+    {
+      WriteConfig();
     }
   }
 }
