@@ -27,7 +27,7 @@ namespace YacGui
     /// <summary>
     /// sub-version
     /// </summary>
-    const int SubVersion = 91;
+    const int SubVersion = 92;
 
     /// <summary>
     /// get title name
@@ -71,18 +71,23 @@ namespace YacGui
     /// </summary>
     void MainForm_Load(object sender, EventArgs e)
     {
-      var fastBitmap = new FastBitmapOld(DefaultChessPieces);
-      fastBitmap.ConvertGreenPixelsToAlpha();
+      var chessPieces = new FastBitmap(DefaultChessPieces);
+      chessPieces.ConvertGreenPixelsToAlpha();
 
-      var distMap = DistanceTransform.GenerateMap(fastBitmap.pixels.Select(x => (byte)(x >> 24)).ToArray(), fastBitmap.width, fastBitmap.height);
-      for (int i = 0; i < distMap.Length; i++)
+      int w = chessPieces.width;
+      int h = chessPieces.height;
+      var distMap = DistanceTransform.GenerateMap(Enumerable.Range(0, w * h).Select(pos => (byte)(chessPieces.GetPixel32(pos % w, pos / w) >> 24)).ToArray(), w, h);
+      for (int y = 0; y < h; y++)
       {
-        uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[i], 0.3) * 18);
-        if (opacity == 0) continue; // too far
-        fastBitmap.pixels[i] = FastBitmapOld.ColorBlendFast(0xffcc00, fastBitmap.pixels[i], fastBitmap.pixels[i] >> 24) & 0xffffff | opacity << 24;
+        for (int x = 0; x < w; x++)
+        {
+          uint opacity = (uint)Math.Max(0, 255 - Math.Pow(distMap[x + y * w], 0.3) * 18);
+          if (opacity == 0) continue; // too far
+          chessPieces.SetPixel(x, y, Color32.BlendFast(0xffcc00, chessPieces.GetPixel32(x, y), chessPieces.GetPixel32(x, y) >> 24) & 0xffffff | opacity << 24);
+        }
       }
 
-      pictureBoxMain.Image = fastBitmap.ToGDIBitmap(PixelFormat.Format32bppArgb);
+      pictureBoxMain.Image = chessPieces.ToGDIBitmap();
 
       ReadConfig();
     }
