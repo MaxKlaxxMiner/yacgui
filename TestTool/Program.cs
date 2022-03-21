@@ -111,10 +111,10 @@ namespace TestTool
       //Console.ForegroundColor = ConsoleColor.Gray;
       //Console.ReadLine();
 
-      for (int i = 2; i < MatesWithRook.Length; i++)
+      for (int i = 0; i < MatesWithRook.Length; i++)
       {
         board.SetFEN(MatesWithRook[i]);
-        var result = MateScanner2.RunScan(board);
+        var result = MateScanner3.RunScan(board);
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine();

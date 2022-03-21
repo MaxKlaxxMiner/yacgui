@@ -154,7 +154,7 @@ namespace YacGui.Core
           case Piece.BlackRook:
           case Piece.BlackPawn: materialBlack += 3; if (materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
           case Piece.BlackBishop: materialBlack += 2; if (materialWhite > 2 && materialBlack > 2) i = IBoard.Width * IBoard.Height; break;
-          case Piece.BlackKnight: materialBlack++; if (materialWhite > 2) i = IBoard.Width * IBoard.Height; break;
+          case Piece.BlackKnight: materialBlack++; if (materialWhite > 2 && materialBlack > 2) i = IBoard.Width * IBoard.Height; break;
         }
       }
       var state = ResultState.None;

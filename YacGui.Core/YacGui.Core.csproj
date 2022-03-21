@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Extras\LinqHelper.cs" />
     <Compile Include="MateScanner\MateScanner.cs" />
+    <Compile Include="MateScanner\MateScanner3.cs" />
     <Compile Include="MateScanner\MateScanner2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleBoard\Board.cs" />
